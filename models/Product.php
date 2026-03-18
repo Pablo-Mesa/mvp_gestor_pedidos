@@ -1,0 +1,92 @@
+<?php
+require_once '../config/db.php';
+
+class Product {
+    private $conn;
+    private $table = 'products';
+
+    public $id;
+    public $name;
+    public $category_id; // Cambiado de $category a $category_id
+    public $description;
+    public $price;
+    public $image;
+    public $is_active;
+
+    public function __construct() {
+        $database = new Database();
+        $this->conn = $database->getConnection();
+    }
+
+    public function readAll() {
+        $query = 'SELECT p.*, c.name as category_name FROM ' . $this->table . ' p LEFT JOIN categories c ON p.category_id = c.id ORDER BY p.created_at DESC';
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt;
+    }
+
+    /**
+     * Lee todos los productos activos.
+     * @return PDOStatement
+     */
+    public function readAllActive() {
+        $query = 'SELECT p.*, c.name as category_name FROM ' . $this->table . ' p LEFT JOIN categories c ON p.category_id = c.id WHERE p.is_active = 1 ORDER BY p.name ASC';
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt;
+    }
+
+    public function readOne() {
+        $query = 'SELECT p.*, c.name as category_name FROM ' . $this->table . ' p LEFT JOIN categories c ON p.category_id = c.id WHERE p.id = ? LIMIT 1';
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $this->id);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function create() {
+        $query = 'INSERT INTO ' . $this->table . ' (name, category_id, description, price, image, is_active) VALUES (:name, :category_id, :description, :price, :image, :is_active)';
+        $stmt = $this->conn->prepare($query);
+
+        // Limpieza básica
+        $this->name = htmlspecialchars(strip_tags($this->name));
+        $this->category_id = htmlspecialchars(strip_tags($this->category_id)); // Cambiado a category_id
+        $this->description = htmlspecialchars(strip_tags($this->description));
+
+        $stmt->bindParam(':name', $this->name);
+        $stmt->bindParam(':category_id', $this->category_id); // Cambiado a category_id
+        $stmt->bindParam(':description', $this->description);
+        $stmt->bindParam(':price', $this->price);
+        $stmt->bindParam(':image', $this->image);
+        $stmt->bindParam(':is_active', $this->is_active);
+
+        return $stmt->execute();
+    }
+
+    public function update() {
+        $query = 'UPDATE ' . $this->table . ' SET name = :name, category_id = :category_id, description = :description, price = :price, image = :image, is_active = :is_active WHERE id = :id';
+        $stmt = $this->conn->prepare($query);
+
+        $this->name = htmlspecialchars(strip_tags($this->name));
+        $this->category_id = htmlspecialchars(strip_tags($this->category_id)); // Cambiado a category_id
+        $this->description = htmlspecialchars(strip_tags($this->description));
+
+        $stmt->bindParam(':name', $this->name);
+        $stmt->bindParam(':category_id', $this->category_id); // Cambiado a category_id
+        $stmt->bindParam(':description', $this->description);
+        $stmt->bindParam(':price', $this->price);
+        $stmt->bindParam(':image', $this->image);
+        $stmt->bindParam(':is_active', $this->is_active);
+        $stmt->bindParam(':id', $this->id);
+
+        return $stmt->execute();
+    }
+
+    public function delete() {
+        $query = 'DELETE FROM ' . $this->table . ' WHERE id = :id';
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $this->id);
+        return $stmt->execute();
+    }
+}
+?>

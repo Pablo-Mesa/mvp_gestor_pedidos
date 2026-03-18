@@ -1,0 +1,21 @@
+# Archivos de configuración sensibles
+# Contiene db.php con las credenciales de la base de datos.
+config/
+
+# Archivos del Sistema Operativo
+.DS_Store
+Thumbs.db
+
+# Configuración de IDEs
+.vscode/
+.idea/
+
+# Dependencias de Composer (si se usa en el futuro)
+vendor/
+
+# Archivos subidos por los usuarios
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Archivos de instalación temporales y peligrosos
+views/auth/install_admin.php

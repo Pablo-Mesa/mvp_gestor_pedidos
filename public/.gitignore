@@ -1,0 +1,11 @@
+# Archivos del Sistema Operativo
+Thumbs.db
+.DS_Store
+
+# Configuración de IDEs
+.vscode/
+.idea/
+
+# Ignorar contenido de uploads pero mantener la carpeta
+/public/uploads/*
+!/public/uploads/.gitkeep

@@ -1,17 +1,45 @@
-<div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <h2>📦 Gestión de Pedidos</h2>
-    </div>
+<style>
+    table { width: 100%; border-collapse: collapse; background: white; }
+    th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #dee2e6; }
+    th { background-color: #f8f9fa; font-weight: 600; color: #495057; }    
 
-    <table style="width: 100%; border-collapse: collapse;">
+    .contenedor-tabla {
+        max-height: 400px;
+        overflow-y: auto;
+        border-radius: 8px; /* Movemos los bordes aquí para que enmarquen el scroll */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        background: white;
+    }
+
+        /* El secreto para el encabezado fijo */
+    thead th {
+        position: sticky;
+        top: 0;           /* Se queda pegado arriba */
+        z-index: 10;      /* Asegura que quede por encima del contenido del tbody */
+        background-color: #f8f9fa; /* Usamos el mismo gris claro de tus th originales */
+        box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4); /* Opcional: añade una sombrita para dar profundidad */
+    }
+
+    th, td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+</style>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2>📦 Gestión de Pedidos</h2>
+</div>
+<div class="contenedor-tabla">
+    <table>
         <thead>
-            <tr style="background-color: #f8f9fa; text-align: left;">
-                <th style="padding: 10px; border-bottom: 2px solid #dee2e6;">ID</th>
-                <th style="padding: 10px; border-bottom: 2px solid #dee2e6;">Cliente</th>
-                <th style="padding: 10px; border-bottom: 2px solid #dee2e6;">Fecha</th>
-                <th style="padding: 10px; border-bottom: 2px solid #dee2e6;">Total</th>
-                <th style="padding: 10px; border-bottom: 2px solid #dee2e6;">Estado</th>
-                <th style="padding: 10px; border-bottom: 2px solid #dee2e6;">Acciones</th>
+            <tr>
+                <th>ID</th>
+                <th>Cliente</th>
+                <th>Fecha</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -20,11 +48,11 @@
             <?php else: ?>
                 <?php foreach($orders as $order): ?>
                     <tr>
-                        <td style="padding: 10px; border-bottom: 1px solid #dee2e6;">#<?php echo $order['id']; ?></td>
-                        <td style="padding: 10px; border-bottom: 1px solid #dee2e6;"><?php echo htmlspecialchars($order['user_name']); ?></td>
-                        <td style="padding: 10px; border-bottom: 1px solid #dee2e6;"><?php echo date('d/m/Y H:i', strtotime($order['created_at'])); ?></td>
-                        <td style="padding: 10px; border-bottom: 1px solid #dee2e6;">$<?php echo number_format($order['total'], 2); ?></td>
-                        <td style="padding: 10px; border-bottom: 1px solid #dee2e6;">
+                        <td>#<?php echo $order['id']; ?></td>
+                        <td><?php echo htmlspecialchars($order['user_name']); ?></td>
+                        <td><?php echo date('d/m/Y H:i', strtotime($order['created_at'])); ?></td>
+                        <td>Gs. <?php echo number_format($order['total'], 0); ?></td>
+                        <td>
                             <?php 
                                 $statusColors = [
                                     'pending' => '#ffc107', 
@@ -38,7 +66,7 @@
                                 <?php echo $statusText; ?>
                             </span>
                         </td>
-                        <td style="padding: 10px; border-bottom: 1px solid #dee2e6;">
+                        <td>
                             <a href="?route=orders_show&id=<?php echo $order['id']; ?>" 
                                style="background-color: #17a2b8; color: white; padding: 5px 10px; text-decoration: none; border-radius: 4px; font-size: 0.9rem;">
                                 👁️ Ver Detalles

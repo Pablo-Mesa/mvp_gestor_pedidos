@@ -7,13 +7,39 @@
     .form-group input, .form-group select { width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; }
     .btn { display: inline-block; background: #007bff; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; text-align: center; }
     .btn-danger { background-color: #dc3545; }
-    .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.875rem; }
-    table { width: 100%; border-collapse: collapse; }
+    .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.875rem; }    
     .badge { padding: 0.25em 0.6em; font-size: 75%; font-weight: 700; line-height: 1; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: 0.25rem; }
-    .badge-success { color: #155724; background-color: #d4edda; } .badge-danger { color: #721c24; background-color: #f8d7da; }
-    th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #dee2e6; }
-    th { background-color: #f8f9fa; }
+    .badge-success { color: #155724; background-color: #d4edda; }
+    .badge-danger { color: #721c24; background-color: #f8d7da; }
+    
+    table { width: 100%; border-collapse: collapse; background: white; }
+    th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #dee2e6; }
+    th { background-color: #f8f9fa; font-weight: 600; color: #495057; }
+
     .date-selector { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+
+    .contenedor-tabla {
+        max-height: 250px;
+        overflow-y: auto;
+        border-radius: 8px; /* Movemos los bordes aquí para que enmarquen el scroll */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        background: white;
+    }
+
+        /* El secreto para el encabezado fijo */
+    thead th {
+        position: sticky;
+        top: 0;           /* Se queda pegado arriba */
+        z-index: 10;      /* Asegura que quede por encima del contenido del tbody */
+        background-color: #f8f9fa; /* Usamos el mismo gris claro de tus th originales */
+        box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4); /* Opcional: añade una sombrita para dar profundidad */
+    }
+
+    th, td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
 </style>
 
 <h1>Gestión de Menú del Día</h1>
@@ -34,38 +60,40 @@
         <?php if (empty($assigned_menus)): ?>
             <p>No hay menús asignados para esta fecha.</p>
         <?php else: ?>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Producto</th>
-                        <th style="width: 120px;">Stock Diario</th>
-                        <th style="width: 120px;">Disponibilidad</th>
-                        <th>Acción</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach($assigned_menus as $menu): ?>
+            <div class="contenedor-tabla">
+                <table>
+                    <thead>
                         <tr>
-                            <td>
-                                <?php echo htmlspecialchars($menu['product_name']); ?>
-                                <small style="display: block; color: #6c757d;">$<?php echo number_format($menu['product_price'], 2); ?></small>
-                            </td>
-                            <td><?php echo $menu['daily_stock'] !== null ? htmlspecialchars($menu['daily_stock']) : 'Ilimitado'; ?></td>
-                            <td>
-                                <?php if ($menu['is_available']): ?>
-                                    <span class="badge badge-success">Disponible</span>
-                                <?php else: ?>
-                                    <span class="badge badge-danger">Agotado</span>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <a href="?route=menus_toggle_availability&id=<?php echo $menu['id']; ?>&date=<?php echo $current_date; ?>&status=<?php echo $menu['is_available']; ?>" class="btn btn-sm" style="background-color: #ffc107; color: #212529;"><?php echo $menu['is_available'] ? 'Agotar' : 'Habilitar'; ?></a>
-                                <a href="?route=menus_unassign&id=<?php echo $menu['id']; ?>&date=<?php echo $current_date; ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿Quitar este plato del menú del día?')">Quitar</a>
-                            </td>
+                            <th>Producto</th>
+                            <th style="width: 120px;">Stock Diario</th>
+                            <th style="width: 120px;">Disponibilidad</th>
+                            <th>Acción</th>
                         </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        <?php foreach($assigned_menus as $menu): ?>
+                            <tr>
+                                <td>
+                                    <?php echo htmlspecialchars($menu['product_name']); ?>
+                                    <small style="display: block; color: #6c757d;">Gs. <?php echo number_format($menu['product_price'], 0); ?></small>
+                                </td>
+                                <td><?php echo $menu['daily_stock'] !== null ? htmlspecialchars($menu['daily_stock']) : 'Ilimitado'; ?></td>
+                                <td>
+                                    <?php if ($menu['is_available']): ?>
+                                        <span class="badge badge-success">Disponible</span>
+                                    <?php else: ?>
+                                        <span class="badge badge-danger">Agotado</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <a href="?route=menus_toggle_availability&id=<?php echo $menu['id']; ?>&date=<?php echo $current_date; ?>&status=<?php echo $menu['is_available']; ?>" class="btn btn-sm" style="background-color: #ffc107; color: #212529;"><?php echo $menu['is_available'] ? 'Agotar' : 'Habilitar'; ?></a>
+                                    <a href="?route=menus_unassign&id=<?php echo $menu['id']; ?>&date=<?php echo $current_date; ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿Quitar este plato del menú del día?')">Quitar</a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         <?php endif; ?>
     </div>
 

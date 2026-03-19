@@ -2,7 +2,6 @@
 require_once '../models/Product.php';
 
 class ProductController {
-    // No es necesario instanciar CategoryModel aquí, se hace en los métodos que lo necesitan.
 
     public function __construct() {
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
@@ -21,9 +20,6 @@ class ProductController {
     }
 
     public function create() {
-        require_once '../models/Category.php'; // Cargar el modelo Category
-        $categoryModel = new Category();
-        $categories = $categoryModel->readAll()->fetchAll(PDO::FETCH_ASSOC);
         $content_view = '../views/admin/products/form.php';
         require_once '../views/layouts/admin_layout.php';
     }
@@ -32,7 +28,6 @@ class ProductController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $product = new Product();
             $product->name = $_POST['name'];
-            $product->category_id = $_POST['category_id']; // Cambiado a category_id
             $product->description = $_POST['description'];
             $product->price = $_POST['price'];
             $product->is_active = isset($_POST['is_active']) ? 1 : 0;
@@ -64,11 +59,7 @@ class ProductController {
         if ($id) {
             $productModel = new Product();
             $productModel->id = $id;
-            $product = $productModel->readOne(); // Esto ahora incluye category_name
-
-            require_once '../models/Category.php'; // Cargar el modelo Category
-            $categoryModel = new Category();
-            $categories = $categoryModel->readAll()->fetchAll(PDO::FETCH_ASSOC);
+            $product = $productModel->readOne();
             
             $content_view = '../views/admin/products/form.php';
             require_once '../views/layouts/admin_layout.php';
@@ -80,7 +71,6 @@ class ProductController {
             $product = new Product();
             $product->id = $_POST['id'];
             $product->name = $_POST['name'];
-            $product->category_id = $_POST['category_id']; // Cambiado a category_id
             $product->description = $_POST['description'];
             $product->price = $_POST['price'];
             $product->is_active = isset($_POST['is_active']) ? 1 : 0;

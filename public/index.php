@@ -9,14 +9,21 @@ $route = $_GET['route'] ?? 'home';
 
 switch ($route) {
     case 'home':
-        // Ejemplo de lógica
-        // require_once '../controllers/HomeController.php';
-        // $controller = new HomeController();
-        // $controller->index();
-        require_once '../controllers/AuthController.php';
-        $controller = new AuthController();
-        $controller->login();
-        //echo '<h1>Bienvenido al Comedor</h1><p>Selecciona una ruta: ?route=login</p>';
+        require_once '../controllers/HomeController.php';
+        $controller = new HomeController();
+        $controller->index();
+        break;
+
+    case 'order_confirm':
+        require_once '../controllers/HomeController.php';
+        $controller = new HomeController();
+        $controller->storeOrder();
+        break;
+    
+    case 'order_success':
+        require_once '../controllers/HomeController.php';
+        $controller = new HomeController();
+        $controller->orderSuccess();
         break;
 
     case 'login':
@@ -121,6 +128,13 @@ switch ($route) {
         require_once '../controllers/MenuController.php';
         $controller = new MenuController();
         $controller->toggleAvailability();
+        break;
+
+    // --- Rutas de Pedidos (Admin) ---
+    case 'orders':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->index();
         break;
 
     case 'install':

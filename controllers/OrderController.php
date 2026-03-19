@@ -19,5 +19,34 @@ class OrderController {
         $content_view = '../views/admin/orders/index.php';
         require_once '../views/layouts/admin_layout.php';
     }
+
+    /**
+     * Muestra el detalle de un pedido específico.
+     */
+    public function show() {
+        $id = $_GET['id'] ?? null;
+        if ($id) {
+            $orderModel = new Order();
+            $orderModel->id = $id;
+            $order = $orderModel->readOne();
+            $details = $orderModel->readDetails();
+            
+            $content_view = '../views/admin/orders/show.php';
+            require_once '../views/layouts/admin_layout.php';
+        }
+    }
+
+    /**
+     * Actualiza el estado del pedido (ej. pendiente -> completado).
+     */
+    public function updateStatus() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $order = new Order();
+            $order->id = $_POST['id'];
+            $order->status = $_POST['status'];
+            $order->updateStatus();
+            header('Location: ?route=orders');
+        }
+    }
 }
 ?>

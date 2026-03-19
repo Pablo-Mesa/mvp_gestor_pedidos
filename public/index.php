@@ -137,6 +137,18 @@ switch ($route) {
         $controller->index();
         break;
 
+    case 'orders_show':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->show();
+        break;
+        
+    case 'orders_update_status':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->updateStatus();
+        break;
+
     case 'install':
         // Script temporal para crear el Admin
         $db = new Database();

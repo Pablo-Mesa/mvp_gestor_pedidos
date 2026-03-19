@@ -13,6 +13,18 @@ $action = $isEdit ? '?route=products_update' : '?route=products_store';
         <?php endif; ?>
 
         <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem;">Categoría</label>
+            <select name="category_id" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                <option value="">-- Seleccione Categoría --</option>
+                <?php foreach($categories as $cat): ?>
+                    <option value="<?php echo $cat['id']; ?>" <?php echo (isset($product['category_id']) && $product['category_id'] == $cat['id']) ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($cat['name']); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
             <label style="display: block; margin-bottom: 0.5rem;">Nombre del Plato</label>
             <input type="text" name="name" required value="<?php echo $isEdit ? $product['name'] : ''; ?>" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
         </div>

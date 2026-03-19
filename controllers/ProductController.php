@@ -1,4 +1,5 @@
 <?php
+require_once '../models/Category.php'; // Añadir esta línea para incluir el modelo Category
 require_once '../models/Product.php';
 
 class ProductController {
@@ -20,6 +21,10 @@ class ProductController {
     }
 
     public function create() {
+        // Obtener todas las categorías para el formulario
+        $categoryModel = new Category();
+        $stmt = $categoryModel->readAll();
+        $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $content_view = '../views/admin/products/form.php';
         require_once '../views/layouts/admin_layout.php';
     }
@@ -28,6 +33,7 @@ class ProductController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $product = new Product();
             $product->name = $_POST['name'];
+            $product->category_id = $_POST['category_id'];
             $product->description = $_POST['description'];
             $product->price = $_POST['price'];
             $product->is_active = isset($_POST['is_active']) ? 1 : 0;
@@ -61,6 +67,11 @@ class ProductController {
             $productModel->id = $id;
             $product = $productModel->readOne();
             
+            // Cargar categorías para el select en modo edición
+            $categoryModel = new Category();
+            $stmt = $categoryModel->readAll();
+            $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
             $content_view = '../views/admin/products/form.php';
             require_once '../views/layouts/admin_layout.php';
         }
@@ -71,6 +82,7 @@ class ProductController {
             $product = new Product();
             $product->id = $_POST['id'];
             $product->name = $_POST['name'];
+            $product->category_id = $_POST['category_id'];
             $product->description = $_POST['description'];
             $product->price = $_POST['price'];
             $product->is_active = isset($_POST['is_active']) ? 1 : 0;

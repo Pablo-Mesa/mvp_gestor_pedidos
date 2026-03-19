@@ -1,114 +1,61 @@
-<h2 class="mb-4">Menú del Día: <?php echo date('d/m/Y'); ?></h2>
+<div class="card">
+    <h2>📅 Menú de Hoy (<?php echo date('d/m/Y'); ?>)</h2>
+    <p>Selecciona los platos que deseas ordenar.</p>
+</div>
 
-<?php if (empty($menus)): ?>
-    <div class="alert alert-info">No hay menú disponible para hoy. Por favor intenta más tarde.</div>
-<?php else: ?>
-
-<form action="?route=order_confirm" method="POST" id="orderForm">
-    <div class="row">
-        <!-- Listado de Platos -->
-        <div class="col-md-8">
-            <div class="row">
-                <?php foreach ($menus as $menu): ?>
-                    <?php if($menu['is_available']): ?>
-                    <div class="col-md-6 mb-3">
-                        <div class="card menu-card shadow-sm h-100">
-                            <div class="card-body">
-                                <h5 class="card-title"><?php echo htmlspecialchars($menu['product_name']); ?></h5>
-                                <p class="card-text text-success fw-bold">$<?php echo number_format($menu['product_price'], 2); ?></p>
-                                <?php if($menu['daily_stock'] !== null): ?>
-                                    <small class="text-muted">Stock: <?php echo $menu['daily_stock']; ?></small>
-                                <?php endif; ?>
-                                
-                                <div class="mt-3">
-                                    <label class="form-label">Cantidad:</label>
-                                    <input type="number" name="products[<?php echo $menu['id']; ?>]" class="form-control" min="0" max="10" placeholder="0">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-                <?php endforeach; ?>
-            </div>
-        </div>
-
-        <!-- Panel Lateral: Datos del Pedido -->
-        <div class="col-md-4">
-            <div class="card shadow">
-                <div class="card-header bg-white fw-bold">Detalles del Pedido</div>
-                <div class="card-body">
+<form action="?route=order_confirm" method="POST">
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <?php if(empty($menus)): ?>
+            <p>No hay menús disponibles para hoy.</p>
+        <?php else: ?>
+            <?php foreach($menus as $menu): ?>
+                <div class="card" style="border: 1px solid #eee;">
+                    <h3><?php echo htmlspecialchars($menu['product_name']); ?></h3>
+                    <p style="color: #666; font-size: 0.9rem;">Precio: $<?php echo number_format($menu['product_price'], 2); ?></p>
                     
-                    <!-- Método de Pago -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Forma de Pago</label>
-                        <select name="payment_method" class="form-select" required>
-                            <option value="cash">Efectivo</option>
-                            <option value="transfer">Transferencia</option>
-                            <option value="debit">Tarjeta Débito</option>
-                        </select>
+                    <div style="margin-top: 1rem;">
+                        <label>Cantidad:</label>
+                        <input type="number" name="products[<?php echo $menu['id']; ?>]" min="0" value="0" style="width: 60px; padding: 0.25rem;">
                     </div>
-
-                    <!-- Tipo de Entrega -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Entrega</label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="delivery_type" id="pickup" value="pickup" checked onchange="toggleDelivery(false)">
-                            <label class="form-check-label" for="pickup">Retiro en local</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="delivery_type" id="delivery" value="delivery" onchange="toggleDelivery(true)">
-                            <label class="form-check-label" for="delivery">Delivery (A domicilio)</label>
-                        </div>
-                    </div>
-
-                    <!-- Sección Delivery (Oculta por defecto) -->
-                    <div id="deliverySection" style="display: none;">
-                        <div class="mb-3">
-                            <label class="form-label">Dirección escrita</label>
-                            <textarea name="delivery_address" class="form-control" rows="2" placeholder="Calle, número, ref..."></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label text-primary"><small>📍 Marca tu ubicación en el mapa</small></label>
-                            <div id="map"></div>
-                            <input type="hidden" name="delivery_lat" id="lat">
-                            <input type="hidden" name="delivery_lng" id="lng">
-                        </div>
-                    </div>
-
-                    <hr>
-                    <button type="submit" class="btn btn-primary w-100 py-2">Confirmar Pedido</button>
                 </div>
-            </div>
-        </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
     </div>
+
+    <?php if(!empty($menus)): ?>
+    <div class="card">
+        <h3>Datos de Entrega</h3>
+        
+        <div style="margin-bottom: 1rem;">
+            <label>Método de Pago:</label>
+            <select name="payment_method" style="padding: 0.5rem;">
+                <option value="cash">Efectivo</option>
+                <option value="card">Tarjeta</option>
+            </select>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label>Tipo de Entrega:</label>
+            <select name="delivery_type" id="delivery_type" onchange="toggleAddress()" style="padding: 0.5rem;">
+                <option value="pickup">Retiro en Comedor</option>
+                <option value="delivery">Delivery</option>
+            </select>
+        </div>
+
+        <div id="address_field" style="display: none; margin-bottom: 1rem;">
+            <label>Dirección de Entrega:</label>
+            <textarea name="delivery_address" placeholder="Calle, Número, Referencia" style="width: 100%; padding: 0.5rem;"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="font-size: 1.1rem;">Confirmar Pedido</button>
+    </div>
+    <?php endif; ?>
 </form>
 
 <script>
-    let map, marker;
-
-    function toggleDelivery(isDelivery) {
-        const section = document.getElementById('deliverySection');
-        const mapDiv = document.getElementById('map');
-        
-        if (isDelivery) {
-            section.style.display = 'block';
-            mapDiv.style.display = 'block';
-            
-            // Inicializar mapa si no existe (Coordenadas por defecto: Centro de ciudad ejemplo)
-            if (!map) {
-                map = L.map('map').setView([-34.6037, -58.3816], 13); // Cambia esto a las coords de tu ciudad
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-                map.on('click', function(e) {
-                    if (marker) map.removeLayer(marker);
-                    marker = L.marker(e.latlng).addTo(map);
-                    document.getElementById('lat').value = e.latlng.lat;
-                    document.getElementById('lng').value = e.latlng.lng;
-                });
-            }
-        } else {
-            section.style.display = 'none';
-        }
+    function toggleAddress() {
+        var type = document.getElementById('delivery_type').value;
+        var field = document.getElementById('address_field');
+        field.style.display = (type === 'delivery') ? 'block' : 'none';
     }
 </script>
-<?php endif; ?>

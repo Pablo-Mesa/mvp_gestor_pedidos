@@ -41,7 +41,7 @@
         <div class="sidebar-header">Comedor App</div>
         <ul class="sidebar-menu">
             <li><a href="?route=admin">📊 Dashboard</a></li>
-            <li><a href="#">📦 Pedidos (Pronto)</a></li>
+            <li><a href="?route=orders">📦 Pedidos</a></li>
             <li><a href="?route=menus">📅 Menú del Día</a></li>
             <li><a href="?route=categories">🏷️ Categorías</a></li>
             <li><a href="?route=products">🍔 Menú / Productos</a></li>

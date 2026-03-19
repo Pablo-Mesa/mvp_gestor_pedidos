@@ -89,5 +89,46 @@ class Order {
         $stmt->execute();
         return $stmt;
     }
+
+    /**
+     * Obtiene un solo pedido por ID
+     */
+    public function readOne() {
+        $query = "SELECT o.*, u.name as user_name, u.email as user_email 
+                  FROM " . $this->table . " o
+                  JOIN users u ON o.user_id = u.id
+                  WHERE o.id = :id LIMIT 0,1";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $this->id);
+        $stmt->execute();
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Obtiene los detalles (platos) de un pedido
+     */
+    public function readDetails() {
+        $query = "SELECT od.*, p.name as product_name 
+                  FROM order_details od
+                  JOIN daily_menus dm ON od.daily_menu_id = dm.id
+                  JOIN products p ON dm.product_id = p.id
+                  WHERE od.order_id = :id";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $this->id);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function updateStatus() {
+        $query = "UPDATE " . $this->table . " SET status = :status WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':status', $this->status);
+        $stmt->bindParam(':id', $this->id);
+        return $stmt->execute();
+    }
 }
 ?>

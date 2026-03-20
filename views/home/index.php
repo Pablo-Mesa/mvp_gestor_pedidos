@@ -1,61 +1,98 @@
-<div class="card">
-    <h2>📅 Menú de Hoy (<?php echo date('d/m/Y'); ?>)</h2>
-    <p>Selecciona los platos que deseas ordenar.</p>
+<?php
+// Obtener categorías únicas del menú del día para los filtros
+$categories = [];
+$menu_items = isset($daily_menus) ? $daily_menus : [];
+
+foreach ($menu_items as $item) {
+    if (!empty($item['category_name'])) {
+        $categories[$item['category_name']] = true;
+    }
+}
+$categories = array_keys($categories);
+?>
+
+<style>
+    * {
+        box-sizing: border-box;
+        padding: 0;
+        margin: 0;
+    }
+</style>
+
+<div style="margin-bottom: 0.5rem;">
+    <h1 style="color: #333; margin-bottom: 0.1rem;">Menú del Día</h1>
+    <p style="color: #666;">Selecciona tus platos favoritos para hoy.</p>
 </div>
 
-<form action="?route=order_confirm" method="POST">
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-        <?php if(empty($menus)): ?>
-            <p>No hay menús disponibles para hoy.</p>
-        <?php else: ?>
-            <?php foreach($menus as $menu): ?>
-                <div class="card" style="border: 1px solid #eee;">
-                    <h3><?php echo htmlspecialchars($menu['product_name']); ?></h3>
-                    <p style="color: #666; font-size: 0.9rem;">Precio: $<?php echo number_format($menu['product_price'], 2); ?></p>
+<!-- Filtros de Categoría -->
+<div class="category-filters">
+    <button class="cat-pill active" onclick="filterCategory('all', this)">Todos</button>
+    <?php foreach($categories as $cat): ?>
+        <button class="cat-pill" onclick="filterCategory('<?php echo htmlspecialchars($cat); ?>', this)">
+            <?php echo htmlspecialchars($cat); ?>
+        </button>
+    <?php endforeach; ?>
+</div>
+
+<!-- Grid de Productos -->
+<div class="product-grid">
+    <?php if(empty($menu_items)): ?>
+        <div style="grid-column: 1/-1; text-align: center; padding: 3rem; background: white; border-radius: 8px;">
+            <h3>No hay menú disponible hoy 😔</h3>
+            <p>Vuelve más tarde para ver las opciones.</p>
+        </div>
+    <?php else: ?>
+        <?php foreach($menu_items as $item): ?>
+            <?php 
+                // Preparar datos para JS
+                $imgUrl = !empty($item['image']) ? $item['image'] : '';                 
+                // 1. Verificamos si el archivo existe físicamente (relativo a public/index.php)
+                $physicPath = 'uploads/' . $item['image'];                
+                // 2. Si existe, usamos 'uploads/' como ruta web. Si no, usamos placeholder.
+                $displayImg = (!empty($item['image']) && file_exists($physicPath)) ? 'uploads/' . rawurlencode($item['image']) . '?v=' . time() : 'https://via.placeholder.com/300?text=Sin+Imagen';
+            ?>
+            <div class="product-card" data-category="<?php echo htmlspecialchars($item['category_name'] ?? 'all'); ?>">                
+                <img src="<?php echo $displayImg; ?>" alt="<?php echo htmlspecialchars($item['product_name']); ?>" class="product-img">
+                               
+                <div class="product-body">
+                    <div class="product-category"><?php echo htmlspecialchars($item['category_name'] ?? 'General'); ?></div>
+                    <div class="product-title"><?php echo htmlspecialchars($item['product_name']); ?></div>
+                    <div class="product-price">Gs. <?php echo number_format($item['product_price'], 0, ',', '.'); ?></div>
                     
-                    <div style="margin-top: 1rem;">
-                        <label>Cantidad:</label>
-                        <input type="number" name="products[<?php echo $menu['id']; ?>]" min="0" value="0" style="width: 60px; padding: 0.25rem;">
+                    <div class="product-actions">
+                        <div class="qty-control">
+                            <button class="qty-btn" onclick="this.nextElementSibling.value = Math.max(1, parseInt(this.nextElementSibling.value) - 1)">-</button>
+                            <input type="number" id="qty_<?php echo $item['id']; ?>" class="qty-input" value="1" min="1" readonly>
+                            <button class="qty-btn" onclick="this.previousElementSibling.value = parseInt(this.previousElementSibling.value) + 1">+</button>
+                        </div>
+                        <button class="btn btn-primary" onclick="addToCart(
+                            <?php echo $item['product_id']; ?>, 
+                            '<?php echo addslashes($item['product_name']); ?>', 
+                            <?php echo $item['product_price']; ?>, 
+                            '<?php echo addslashes($item['image']); ?>', 
+                            document.getElementById('qty_<?php echo $item['id']; ?>').value
+                        )">
+                            Agregar <i class="fas fa-plus"></i>
+                        </button>
                     </div>
                 </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
-    </div>
-
-    <?php if(!empty($menus)): ?>
-    <div class="card">
-        <h3>Datos de Entrega</h3>
-        
-        <div style="margin-bottom: 1rem;">
-            <label>Método de Pago:</label>
-            <select name="payment_method" style="padding: 0.5rem;">
-                <option value="cash">Efectivo</option>
-                <option value="card">Tarjeta</option>
-            </select>
-        </div>
-
-        <div style="margin-bottom: 1rem;">
-            <label>Tipo de Entrega:</label>
-            <select name="delivery_type" id="delivery_type" onchange="toggleAddress()" style="padding: 0.5rem;">
-                <option value="pickup">Retiro en Comedor</option>
-                <option value="delivery">Delivery</option>
-            </select>
-        </div>
-
-        <div id="address_field" style="display: none; margin-bottom: 1rem;">
-            <label>Dirección de Entrega:</label>
-            <textarea name="delivery_address" placeholder="Calle, Número, Referencia" style="width: 100%; padding: 0.5rem;"></textarea>
-        </div>
-
-        <button type="submit" class="btn btn-primary" style="font-size: 1.1rem;">Confirmar Pedido</button>
-    </div>
+            </div>
+        <?php endforeach; ?>
     <?php endif; ?>
-</form>
+</div>
 
 <script>
-    function toggleAddress() {
-        var type = document.getElementById('delivery_type').value;
-        var field = document.getElementById('address_field');
-        field.style.display = (type === 'delivery') ? 'block' : 'none';
-    }
+function filterCategory(cat, btn) {
+    // Lógica visual simple para ocultar/mostrar tarjetas
+    document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    document.querySelectorAll('.product-card').forEach(card => {
+        if (cat === 'all' || card.dataset.category === cat) {
+            card.style.display = 'flex';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
 </script>

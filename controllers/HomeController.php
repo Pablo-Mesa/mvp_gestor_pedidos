@@ -16,7 +16,7 @@ class HomeController {
         // Obtener el menú de la fecha actual
         $date = date('Y-m-d');
         $dailyMenuModel = new DailyMenu();
-        $menus = $dailyMenuModel->readForDate($date)->fetchAll(PDO::FETCH_ASSOC);
+        $daily_menus = $dailyMenuModel->readForDate($date)->fetchAll(PDO::FETCH_ASSOC);
 
         // Cargar vistas
         $content_view = '../views/home/index.php';

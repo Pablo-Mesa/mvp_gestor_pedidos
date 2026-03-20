@@ -29,10 +29,13 @@ class DailyMenu {
                     p.name as product_name, 
                     p.price as product_price,
                     p.id as product_id,
+                    c.name as category_name,
                     dm.daily_stock,
-                    dm.is_available
+                    dm.is_available,
+                    p.image as image
                   FROM ' . $this->table . ' dm
                   JOIN products p ON dm.product_id = p.id
+                  LEFT JOIN categories c ON p.category_id = c.id
                   WHERE dm.menu_date = :menu_date
                   ORDER BY p.name ASC';
         

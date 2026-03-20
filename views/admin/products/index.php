@@ -56,7 +56,15 @@
             <tr>
                 <td>
                     <?php if($prod['image']): ?>
-                        <img src="public/uploads/<?php echo rawurlencode($prod['image']); ?>?v=<?php echo time(); ?>" width="50" height="50" style="object-fit: cover; border-radius: 4px;">
+                        <?php  
+                            // Preparar datos para JS
+                            $imgUrl = !empty($prod['image']) ? $prod['image'] : '';                 
+                            // 1. Verificamos si el archivo existe físicamente (relativo a public/index.php)
+                            $physicPath = 'uploads/' . $prod['image'];                
+                            // 2. Si existe, usamos 'uploads/' como ruta web. Si no, usamos placeholder.
+                            $displayImg = (!empty($prod['image']) && file_exists($physicPath)) ? 'uploads/' . rawurlencode($prod['image']) . '?v=' . time() : 'https://via.placeholder.com/300?text=Sin+Imagen';    
+                        ?>
+                        <img src="<?php echo $displayImg; ?>" width="50" height="50" style="object-fit: cover; border-radius: 4px;">
                     <?php else: ?>
                         <span style="color: #ccc;">Sin img</span>
                     <?php endif; ?>

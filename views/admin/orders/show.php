@@ -1,3 +1,32 @@
+<style>
+    table { width: 100%; border-collapse: collapse; background: white; }
+    th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #dee2e6; }
+    th { background-color: #f8f9fa; font-weight: 600; color: #495057; }
+
+    .contenedor-tabla {
+        max-height: 400px;
+        overflow-y: auto;
+        border-radius: 8px; /* Movemos los bordes aquí para que enmarquen el scroll */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        background: white;
+    }
+
+        /* El secreto para el encabezado fijo */
+    thead th {
+        position: sticky;
+        top: 0;           /* Se queda pegado arriba */
+        z-index: 10;      /* Asegura que quede por encima del contenido del tbody */
+        background-color: #f8f9fa; /* Usamos el mismo gris claro de tus th originales */
+        box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4); /* Opcional: añade una sombrita para dar profundidad */
+    }
+
+    th, td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+</style>
+
 <div style="margin-bottom: 1rem;">
     <a href="?route=orders" style="color: #007bff; text-decoration: none;">&larr; Volver a Pedidos</a>
 </div>
@@ -9,32 +38,35 @@
         <h3>📋 Detalle del Pedido #<?php echo $order['id']; ?></h3>
         <p style="color: #666; margin-bottom: 1rem;">Realizado el: <?php echo date('d/m/Y H:i', strtotime($order['created_at'])); ?></p>
 
-        <table style="width: 100%; border-collapse: collapse; margin-top: 1rem;">
-            <thead>
-                <tr style="background-color: #f1f1f1;">
-                    <th style="padding: 8px; text-align: left;">Producto</th>
-                    <th style="padding: 8px; text-align: center;">Cant.</th>
-                    <th style="padding: 8px; text-align: right;">Precio Unit.</th>
-                    <th style="padding: 8px; text-align: right;">Subtotal</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach($details as $item): ?>
-                <tr>
-                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><?php echo htmlspecialchars($item['product_name']); ?></td>
-                    <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;"><?php echo $item['quantity']; ?></td>
-                    <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">$<?php echo number_format($item['price'], 2); ?></td>
-                    <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">$<?php echo number_format($item['price'] * $item['quantity'], 2); ?></td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="3" style="padding: 10px; text-align: right; font-weight: bold;">TOTAL:</td>
-                    <td style="padding: 10px; text-align: right; font-weight: bold; font-size: 1.2rem;">$<?php echo number_format($order['total'], 2); ?></td>
-                </tr>
-            </tfoot>
-        </table>
+        <div class="contenedor-tabla">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Cant.</th>
+                        <th>Precio Unit.</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach($details as $item): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($item['product_name']); ?></td>
+                        <td><?php echo $item['quantity']; ?></td>
+                        <td>Gs. <?php echo number_format($item['price'], 0); ?></td>
+                        <td>Gs. <?php echo number_format($item['price'] * $item['quantity'], 2); ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" style="padding: 10px; text-align: right; font-weight: bold;">TOTAL:</td>
+                        <td style="padding: 10px; text-align: right; font-weight: bold; font-size: 1.2rem;">$<?php echo number_format($order['total'], 2); ?></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        
     </div>
 
     <!-- Columna Derecha: Info Cliente y Estado -->

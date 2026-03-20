@@ -12,8 +12,11 @@ class OrderController {
     }
 
     public function index() {
+        // Obtener fecha de la URL o usar la actual por defecto
+        $date = $_GET['date'] ?? date('Y-m-d');
+
         $order = new Order();
-        $stmt = $order->readAll();
+        $stmt = $order->readAll($date);
         $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $content_view = '../views/admin/orders/index.php';

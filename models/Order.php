@@ -80,12 +80,21 @@ class Order {
     /**
      * Obtiene todos los pedidos ordenados por fecha (más reciente primero)
      */
-    public function readAll() {
+    public function readAll($date = null) {
         $query = "SELECT o.*, u.name as user_name 
                   FROM " . $this->table . " o
-                  JOIN users u ON o.user_id = u.id
-                  ORDER BY o.created_at DESC";
+                  JOIN users u ON o.user_id = u.id";
+
+        if ($date) {
+            $query .= " WHERE DATE(o.created_at) = :date";
+        }
+
+        $query .= " ORDER BY o.created_at DESC";
+        
         $stmt = $this->conn->prepare($query);
+        if ($date) {
+            $stmt->bindParam(':date', $date);
+        }
         $stmt->execute();
         return $stmt;
     }

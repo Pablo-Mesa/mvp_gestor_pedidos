@@ -25,10 +25,64 @@
         text-align: left;
         border-bottom: 1px solid #ddd;
     }
+
+    .date-filter-container {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;    
+        gap: 8px;
+        max-width: auto;
+        padding: 15px;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); /* Sombra suave */
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .date-filter-container label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #4a5568;
+    }
+
+    .modern-datepicker {
+        appearance: none;
+        -webkit-appearance: none;
+        padding: 10px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background-color: #f7fafc;
+        color: #2d3748;
+        font-size: 15px;
+        outline: none;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .modern-datepicker:focus {
+        border-color: #4299e1;
+        box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+        background-color: #fff;
+    }
+
+    /* Estilo para el icono del calendario nativo */
+    .modern-datepicker::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+        filter: invert(0.5); /* Ajusta según el tono de tu diseño */
+        padding: 5px;
+    }
+
+
 </style>
 
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
     <h2>📦 Gestión de Pedidos</h2>
+    <div class="date-filter-container">
+        <label for="order-date">Filtrar por fecha:</label>
+        <input type="date" id="order-date" class="modern-datepicker">
+    </div>
+
 </div>
 <div class="contenedor-tabla">
     <table>
@@ -78,3 +132,36 @@
         </tbody>
     </table>
 </div>
+
+<script>
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateInput = document.getElementById('order-date');
+
+        // Obtener la fecha actual en la zona horaria de Paraguay
+        const ahoraParaguay = new Date().toLocaleString("en-US", { timeZone: "America/Asuncion" });
+        const fecha = new Date(ahoraParaguay);
+
+        // Formatear a YYYY-MM-DD
+        const anio = fecha.getFullYear();
+        const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+        const dia = String(fecha.getDate()).padStart(2, '0');
+
+        const fechaFormateada = `${anio}-${mes}-${dia}`;
+
+        // Asignar el valor al input
+        dateInput.value = fechaFormateada;
+
+        // 1. Si la URL ya tiene una fecha (?route=orders&date=...), asignarla al input
+        const urlParams = new URLSearchParams(window.location.search);
+        if(urlParams.has('date')) {
+            dateInput.value = urlParams.get('date');
+        }
+
+        // 2. Al cambiar la fecha, recargar la página con el filtro
+        dateInput.addEventListener('change', function() {
+            const selectedDate = this.value;
+            window.location.href = `?route=orders&date=${selectedDate}`;
+        });
+    });
+</script>

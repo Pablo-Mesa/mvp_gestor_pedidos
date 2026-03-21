@@ -19,21 +19,6 @@ $categories = array_keys($categories);
     }
 </style>
 
-<div style="margin-bottom: 0.5rem;">
-    <h1 style="color: #333; margin-bottom: 0.1rem;">Menú del Día</h1>
-    <p style="color: #666;">Selecciona tus platos favoritos para hoy.</p>
-</div>
-
-<!-- Filtros de Categoría -->
-<div class="category-filters">
-    <button class="cat-pill active" onclick="filterCategory('all', this)">Todos</button>
-    <?php foreach($categories as $cat): ?>
-        <button class="cat-pill" onclick="filterCategory('<?php echo htmlspecialchars($cat); ?>', this)">
-            <?php echo htmlspecialchars($cat); ?>
-        </button>
-    <?php endforeach; ?>
-</div>
-
 <!-- Grid de Productos -->
 <div class="product-grid">
     <?php if(empty($menu_items)): ?>

@@ -61,7 +61,7 @@
                 <tfoot>
                     <tr>
                         <td colspan="3" style="padding: 10px; text-align: right; font-weight: bold;">TOTAL:</td>
-                        <td style="padding: 10px; text-align: right; font-weight: bold; font-size: 1.2rem;">$<?php echo number_format($order['total'], 2); ?></td>
+                        <td style="padding: 10px; text-align: right; font-weight: bold; font-size: 1.2rem;">Gs. <?php echo number_format($order['total'], 0); ?></td>
                     </tr>
                 </tfoot>
             </table>

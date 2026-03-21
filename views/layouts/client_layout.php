@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>Comedor App - Cliente</title>
+    <title>Solver</title>
     <link rel="icon" type="image/png" href="assets/icono_solver_nobg.png">
-
+    
+    <link rel="stylesheet" href="css/css_cubo.css">
+    
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; }
         
@@ -75,6 +77,10 @@
             .navbar { padding: 10px; }
             .container { padding: 0 1rem; }
             .user-menu span { margin-right: 0px;}
+            .container-logo-title{
+                width: 100%;
+                background-color: orange !important;
+            }
         }
 
         /* Estilos base para móviles (se activan debajo de 768px) */
@@ -117,7 +123,7 @@
 
             .btn-icon {
                 margin-right: 0 !important; /* Quitamos el margen manual que pusiste en el HTML */
-            }
+            }            
         }
 
 
@@ -425,6 +431,13 @@
             background-color: #25D366 !important;
         }
 
+        .container-logo-title{
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            width: auto;
+            background-color: blue;            
+        }        
         
     </style>
 
@@ -433,18 +446,21 @@
 <body>
     <nav class="navbar">
 
-        <div style="display: flex; flex-direction: column; align-items: flex-start;">            
-            <a href="?route=home" class="navbar-brand">🍽️ Menú del Día</a>
+        <div class="container-logo-title">
+            <div style="display: flex; flex-direction: row; align-items: center; width: auto">
+                <div id="here_cube" class="mr-1"></div>            
+                <a href="?route=home" class="navbar-brand"> Menú del Día</a>
+            </div>            
             <small style="color: #555;">Selecciona tus platos favoritos para hoy.</small>
         </div>
         
-        <div class="user-menu">
-            <!-- Botón del Carrito -->
-            <button class="btn-icon btn-icon-highlight btn-icon-highlight-blue" onclick="toggleCart()" style="margin-right: 15px;">
-                <i class="fas fa-shopping-cart"></i>
-                <span class="badge-count" id="cart-count" style="display: none;">0</span>
-            </button>
+        <!-- Botón del Carrito -->
+        <button class="btn-icon btn-icon-highlight btn-icon-highlight-blue" onclick="toggleCart()" style="margin-right: 15px;">
+            <i class="fas fa-shopping-cart"></i>
+            <span class="badge-count" id="cart-count" style="display: none;">0</span>
+        </button>
 
+        <div class="user-menu">
             <?php if(isset($_SESSION['user_id'])): ?>
                 <!-- Botón del usuario -->
                 <button id="openModal" class="btn-icon btn-icon-highlight btn-icon-highlight-green">
@@ -461,6 +477,13 @@
         
     </nav>
     
+    <div class="scroll-container mt-4">
+        <button class="category-btn">Almuerzos</button>
+        <button class="category-btn">Bebidas</button>
+        <button class="category-btn">Desayunos</button>
+        <button class="category-btn">Minutas</button>
+        <button class="category-btn">Postres</button>
+    </div>
     
     <!-- Filtros de Categoría 
     <div class="category-filters">
@@ -471,15 +494,6 @@
             </button>
         <?php endforeach; ?>
     </div> -->
-
-    <div class="scroll-container mt-4">
-        <button class="category-btn">Almuerzos</button>
-        <button class="category-btn">Bebidas</button>
-        <button class="category-btn">Desayunos</button>
-        <button class="category-btn">Minutas</button>
-        <button class="category-btn">Postres</button>
-    </div>
-    
 
     <!-- Overlay y Sidebar del Carrito -->
     <div class="cart-overlay" onclick="toggleCart()"></div>
@@ -575,6 +589,7 @@
 
 
     <!-- Lógica del Carrito (JS Puro) -->
+    <script src="js/tool-kit-v002.js"></script>
     <script>
         let cart = JSON.parse(localStorage.getItem('comedor_cart')) || [];
 
@@ -684,7 +699,8 @@
                 icon.classList.remove('visible');
             }
         }
-
+        
+        drawCube("here_cube", false, "28px");
 
         // Cargar carrito al iniciar
         document.addEventListener('DOMContentLoaded', updateCartUI);

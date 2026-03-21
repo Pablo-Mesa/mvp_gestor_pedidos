@@ -82,8 +82,8 @@
         <label for="order-date">Filtrar por fecha:</label>
         <input type="date" id="order-date" class="modern-datepicker">
     </div>
-
 </div>
+
 <div class="contenedor-tabla">
     <table>
         <thead>

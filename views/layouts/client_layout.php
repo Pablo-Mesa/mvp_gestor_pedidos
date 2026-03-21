@@ -78,8 +78,13 @@
             .container { padding: 0 1rem; }
             .user-menu span { margin-right: 0px;}
             .container-logo-title{
-                width: 100%;
-                background-color: orange !important;
+                width: 100% !important;
+                background-color: transparent !important;
+            }
+            .container-control-nav{
+                width: 100%!important;
+                background-color: green!important;
+                justify-content: right!important;
             }
         }
 
@@ -436,8 +441,16 @@
             flex-direction: column;
             align-items: flex-start;
             width: auto;
-            background-color: blue;            
-        }        
+            background-color: transparent;            
+        }           
+
+        .container-control-nav{
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            width: auto;
+            background-color: transparent;
+        }
         
     </style>
 
@@ -454,27 +467,29 @@
             <small style="color: #555;">Selecciona tus platos favoritos para hoy.</small>
         </div>
         
-        <!-- Botón del Carrito -->
-        <button class="btn-icon btn-icon-highlight btn-icon-highlight-blue" onclick="toggleCart()" style="margin-right: 15px;">
-            <i class="fas fa-shopping-cart"></i>
-            <span class="badge-count" id="cart-count" style="display: none;">0</span>
-        </button>
+        <div class="container-control-nav">
+            <!-- Botón del Carrito -->
+            <button class="btn-icon btn-icon-highlight btn-icon-highlight-blue" onclick="toggleCart()" style="margin-right: 15px;">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="badge-count" id="cart-count" style="display: none;">0</span>
+            </button>
 
-        <div class="user-menu">
-            <?php if(isset($_SESSION['user_id'])): ?>
-                <!-- Botón del usuario -->
-                <button id="openModal" class="btn-icon btn-icon-highlight btn-icon-highlight-green">
-                    <i class="fas fa-user"></i>
-                </button>
-                <span>Hola, <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Usuario'); ?></span>                
-                <a href="?route=logout" class="btn btn-danger">
-                    <i class="fas fa-sign-out-alt mr-1"></i>Cerrar Sesión
-                </a>
-            <?php else: ?>
-                <a href="?route=login" class="btn btn-primary">Iniciar Sesión</a>
-            <?php endif; ?>
+            <div class="user-menu">
+                <?php if(isset($_SESSION['user_id'])): ?>
+                    <!-- Botón del usuario -->
+                    <button id="openModal" class="btn-icon btn-icon-highlight btn-icon-highlight-green">
+                        <i class="fas fa-user"></i>
+                    </button>
+                    <span>Hola, <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Usuario'); ?></span>                
+                    <a href="?route=logout" class="btn btn-danger">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Cerrar Sesión
+                    </a>
+                <?php else: ?>
+                    <a href="?route=login" class="btn btn-primary">Iniciar Sesión</a>
+                <?php endif; ?>
+            </div>
         </div>
-        
+                
     </nav>
     
     <div class="scroll-container mt-4">

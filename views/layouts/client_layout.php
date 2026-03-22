@@ -14,13 +14,9 @@
         /* Navbar Estilo */
         .navbar { background-color: #ffffff; padding: 1rem 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100;  }
         .navbar-brand { font-size: 1.5rem; font-weight: bold; color: #333; text-decoration: none; }
-        .user-menu span { margin-right: 1rem; color: #555; }
         
         /* Botones y Utilidades */
         .btn { padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; cursor: pointer; border: none; font-size: 0.9rem; }
-        .btn-primary { background-color: #007bff; color: white; }
-        .btn-danger { background-color: #dc3545; color: white; }
-        .btn-success { background-color: #28a745; color: white; }
         .btn-icon { background: none; border: none; font-size: 1.2rem; cursor: pointer; position: relative; color: #333; }
         
         .container { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
@@ -38,8 +34,6 @@
         
         /* Controles de Cantidad */
         .qty-control { display: flex; align-items: center; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; }
-        .qty-btn { width: 30px; height: 32px; background: #f8f9fa; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-        .qty-btn:hover { background: #e2e6ea; }
         .qty-input { width: 40px; height: 32px; border: none; text-align: center; font-size: 0.9rem; -moz-appearance: textfield; outline: none; }
 
         /* Filtros de Categoría */
@@ -67,11 +61,7 @@
 
         .mt-4{ margin-top: 1.5rem; }
         .mr-1{ margin-right: 0.4rem; }
-        .mr-4{ margin-right: 1.5rem; }
 
-        .ml-1{ margin-left: 0.4rem; }
-        .ml-4{ margin-left: 1.5rem; }
-        
         @media (max-width: 600px) {
             .cart-sidebar { width: 100%; }
             .navbar { padding: 10px; }
@@ -84,7 +74,6 @@
             .container-control-nav{
                 width: 100%!important;
                 background-color: green!important;
-                justify-content: right!important;
             }
         }
 
@@ -104,21 +93,32 @@
             }
 
             .user-menu {
-                display: flex;
-                flex-wrap: wrap; /* Permite que los elementos bajen si no caben */
-                justify-content: center;
-                align-items: center;
-                width: 100%;
-                gap: 10px;
+                display: flex;             /* Activa el diseño flexible */
+                flex-direction: row;
+                justify-content: flex-end; /* Alinea todo el contenido a la derecha */
+                align-items: center;       /* Centra los elementos verticalmente entre sí */
+                gap: 15px;                 /* Crea una separación uniforme de 15px entre elementos */
+                width: 100%;               /* Asegura que el div ocupe todo el ancho disponible */
+                background-color: lightcoral;
             }
 
-            /* Ajuste de textos para que no ocupen tanto espacio */
-            .user-menu span {
-                font-size: 0.9rem;
-                width: 100%; /* Hace que el "Hola, Usuario" ocupe toda la línea */
-                text-align: center;
-                order: -1; /* Lo pone arriba de los botones en el menú de usuario */
+            /* Opcional: Estilo rápido para que el botón y el enlace se vean más limpios */
+            .user-menu button, 
+            .user-menu a {
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+                background: none;
+                border: none;
+                cursor: pointer;
             }
+
+            .user-menu span { 
+                width: auto;
+                 margin-right: 1rem;
+                  color: #555; 
+            }
+        
 
             /* Botones más cómodos para tocar con el dedo */
             .btn, .btn-icon {
@@ -421,10 +421,6 @@
             pointer-events: none; /* Para que no interfiera con el click */
         }
 
-        /* Cuando el checkbox esté marcado, mostramos el icono */
-        input:checked ~ .whatsapp-icon, /* Si el icono fuera hermano posterior */
-        #hasWhatsapp:checked + .slider + .whatsapp-icon { /* Dependiendo de tu orden */ }
-
         /* Usaremos una clase controlada por JS para máxima compatibilidad */
         .whatsapp-icon.visible {
             opacity: 1;
@@ -438,19 +434,84 @@
 
         .container-logo-title{
             display: flex;
+            justify-content: left;
             flex-direction: column;
-            align-items: flex-start;
-            width: auto;
+            align-items: center;
+            width: 50%;
             background-color: transparent;            
         }           
 
         .container-control-nav{
             display: flex;
             flex-direction: row;
-            align-items: flex-start;
-            width: auto;
+            justify-content: right;
+            align-items: center;
+            width: 50%;
             background-color: transparent;
         }
+
+        .btn-std{
+            width: 36px;
+            height: 36px;
+            border-radius: 50%; /* Esto crea el círculo */
+            border: none;
+            border: 1px solid #007bff;
+            background-color: #f8f9fa;
+            color: #007bff;
+        }
+
+        .btn-std:hover{
+            scale: 1.1;
+            border: 1px solid blue;
+            background-color: #007bff;
+            color: #f8f9fa;
+        }
+
+        .mr-3{
+            margin-right: 1.2rem;        
+        }
+
+        .btn-logout-solid {
+            border: none;
+            border: 1px solid #dc3545;
+            background-color: #fff;
+            color: #dc3545;            
+            padding: 6px 12px;
+            border-radius: 6px; /* Estilo píldora */
+            gap: 8px;
+            font-weight: bold;
+            transition: filter 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-logout-solid:hover {
+            border: 1px solid red;
+            background-color: #dc3545;
+            color: #fff;  
+            filter: brightness(1.1); /* Brillo sutil */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .span-user {
+            font-family: 'Segoe UI', Roboto, sans-serif; /* Tipografía moderna */
+            font-size: 0.95rem;                          /* Tamaño equilibrado */
+            color: #495057;                              /* Gris oscuro elegante */
+            font-weight: 500;                            /* Peso medio para que no sea muy grueso */
+            padding: 4px 12px;                           /* Espaciado interno */
+            background-color: #f8f9fa;                   /* Fondo muy sutil */
+            border-radius: 20px;                         /* Bordes redondeados (estilo pastilla) */
+            border: 1px solid #e9ecef;                   /* Borde suave para dar estructura */
+            display: inline-flex;                        /* Para que alinee bien con los iconos */
+            align-items: center;
+            white-space: nowrap;                         /* Evita que el nombre se parta en dos líneas */
+        }
+
+        /* Efecto opcional: Resaltar el nombre específicamente si quieres */
+        .span-user strong {
+            color: #007bff;                              /* El nombre en azul */
+            margin-left: 4px;
+        }
+
         
     </style>
 
@@ -460,34 +521,46 @@
     <nav class="navbar">
 
         <div class="container-logo-title">
-            <div style="display: flex; flex-direction: row; align-items: center; width: auto">
+
+            <div style="display: flex; flex-direction: row; justify-content: left; align-items: center; width: 100%">
                 <div id="here_cube" class="mr-1"></div>            
                 <a href="?route=home" class="navbar-brand"> Menú del Día</a>
-            </div>            
-            <small style="color: #555;">Selecciona tus platos favoritos para hoy.</small>
+            </div>
+
+            <small style="color: #555; width: 100%;">Selecciona tus platos favoritos para hoy.</small>
+
         </div>
         
         <div class="container-control-nav">
+
             <!-- Botón del Carrito -->
-            <button class="btn-icon btn-icon-highlight btn-icon-highlight-blue" onclick="toggleCart()" style="margin-right: 15px;">
+            <button class="btn-std mr-3" onclick="toggleCart()">
                 <i class="fas fa-shopping-cart"></i>
                 <span class="badge-count" id="cart-count" style="display: none;">0</span>
             </button>
 
+            <!-- Botón de Login -->
             <div class="user-menu">
+
                 <?php if(isset($_SESSION['user_id'])): ?>
+                
                     <!-- Botón del usuario -->
-                    <button id="openModal" class="btn-icon btn-icon-highlight btn-icon-highlight-green">
+                    <button id="openModal" class="btn-std">
                         <i class="fas fa-user"></i>
                     </button>
-                    <span>Hola, <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Usuario'); ?></span>                
-                    <a href="?route=logout" class="btn btn-danger">
-                        <i class="fas fa-sign-out-alt mr-1"></i>Cerrar Sesión
+
+                    <span class="span-user">Hola, <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Usuario'); ?></span>                
+                    
+                    <a href="?route=logout" class="btn-logout-solid">
+                        <i class="fa fa-sign-out"></i> Cerrar Sesión
                     </a>
+
                 <?php else: ?>
-                    <a href="?route=login" class="btn btn-primary">Iniciar Sesión</a>
+                    <a href="?route=login" class="">Iniciar Sesión</a>
                 <?php endif; ?>
+
             </div>
+
         </div>
                 
     </nav>

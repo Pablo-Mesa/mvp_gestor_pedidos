@@ -17,6 +17,51 @@ $categories = array_keys($categories);
         padding: 0;
         margin: 0;
     }
+
+    .qty-control {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px; /* Espacio entre botones e input */
+        border: none;
+    }
+
+    .qty-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%; /* Botón circular */
+        border: 1px solid #ddd;
+        background-color: #fff;
+        color: #333;
+        font-size: 20px;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .qty-btn:hover {
+        background-color: #f8f9fa;
+        border-color: #bbb;
+    }
+
+    .qty-btn:active {
+        transform: scale(0.9); /* Efecto de pulsado */
+    }
+
+    .qty-input {
+        width: 40px;
+        border: none;
+        font-size: 1rem;
+        text-align: center;
+        font-weight: bold;
+        background: transparent;
+    }
+
+
 </style>
 
 <!-- Grid de Productos -->

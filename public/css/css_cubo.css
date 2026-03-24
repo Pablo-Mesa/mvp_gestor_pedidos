@@ -71,7 +71,7 @@
 }
 
 #uno{
-    background: rgba(250, 250, 250, 0.6);
+    background: rgba(250, 250, 250, 0.9);
 /*    background: crimson;*/
     transform: translateZ(14px);    
     background-image: url(../assets/icono_solver_nobg.png);
@@ -80,7 +80,7 @@
 }
     
 #dos{
-    background: rgba(250, 250, 250, 0.6);
+    background: rgba(250, 250, 250, 0.9);
 /*    background: darkorange;       */
     transform:  translateX(14px) rotateY(90deg);
 
@@ -90,7 +90,7 @@
 }
     
 #tres{
-    background: rgba(250, 250, 250, 0.6);
+    background: rgba(250, 250, 250, 0.9);
 /*    background: yellow;*/
     transform:  translateZ(-14px) rotateY(180deg);
 
@@ -100,7 +100,7 @@
 }
 
 #cuatro{
-    background: rgba(250, 250, 250, 0.6);
+    background: rgba(250, 250, 250, 0.9);
 /*    background: blue;*/
     transform:  translateX(-14px) rotateY(270deg);       
 
@@ -110,7 +110,7 @@
 }
 
 #cinco{
-    background: rgba(250, 250, 250, 0.6);
+    background: rgba(250, 250, 250, 0.9);
 /*    background: green;*/
     transform:  translateY(-14px) rotateX(90deg);
 
@@ -120,7 +120,7 @@
 }
 
 #seis{
-    background: rgba(250, 250, 250, 0.6); /*white*/
+    background: rgba(250, 250, 250, 0.9); /*white*/
 /*    background: white;*/
     transform: translateY(14px) rotateX(90deg);       
 

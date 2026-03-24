@@ -4,6 +4,7 @@ require_once '../models/Order.php';
 
 class HomeController {
 
+    /*
     public function __construct() {
         // Verificar si el usuario está logueado
         if (!isset($_SESSION['user_id'])) {
@@ -11,6 +12,7 @@ class HomeController {
             exit;
         }
     }
+    */
 
     public function index() {
         // Obtener el menú de la fecha actual

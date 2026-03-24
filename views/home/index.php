@@ -61,6 +61,40 @@ $categories = array_keys($categories);
         background: transparent;
     }
 
+    .btn-primary {
+
+        display: inline-flex;       /* Alinea texto e icono internamente */
+        align-items: center;        /* Centra verticalmente ambos */
+        justify-content: center;    /* Centra horizontalmente */
+        gap: 8px;                   /* Separa el texto del icono sin usar margin */
+        white-space: nowrap;        
+
+        font-family: 'Courier New', Courier, monospace;
+        font: 0.875rem sans-serif;
+        font-weight: bold;
+        color: #444;
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);        
+        padding: 10px 25px;
+        border: 1px solid rgba(20, 20, 255, 0.3);
+        border-radius: 12px;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .btn-primary:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Estilos base para móviles (se activan debajo de 768px) */
+    @media (max-width: 768px) {
+
+        .btn-primary {
+            display: inline;
+        }
+
+    }
 
 </style>
 

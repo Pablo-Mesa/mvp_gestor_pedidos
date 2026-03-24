@@ -11,7 +11,13 @@
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; min-height: 100vh; background-color: #f4f6f9; }
         
         /* Sidebar (Menú Lateral) */
-        .sidebar { width: 250px; background-color: #343a40; color: #fff; display: flex; flex-direction: column; }
+        .sidebar {
+            width: 250px; 
+            background-color: #343a40;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+        }
         .sidebar-header { padding: 1.5rem; background-color: #212529; text-align: center; font-weight: bold; font-size: 1.2rem; }
         .sidebar-menu { list-style: none; padding: 0; margin-top: 1rem; }
         .sidebar-menu li a { display: block; padding: 1rem 1.5rem; color: #c2c7d0; text-decoration: none; border-bottom: 1px solid #4b545c; transition: 0.3s; }

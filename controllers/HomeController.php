@@ -7,7 +7,7 @@ class HomeController {
     /*
     public function __construct() {
         // Verificar si el usuario está logueado
-        if (!isset($_SESSION['user_id'])) {
+        if (!isset($_SESSION['client_id'])) {
             header('Location: ?route=login');
             exit;
         }
@@ -70,7 +70,7 @@ class HomeController {
 
             // 4. Crear el Objeto Orden
             $order = new Order();
-            $order->user_id = $_SESSION['user_id'];
+            $order->client_id = $_SESSION['client_id'];
             $order->total = $total;
             $order->payment_method = $payment_method;
             $order->delivery_type = $delivery_type;

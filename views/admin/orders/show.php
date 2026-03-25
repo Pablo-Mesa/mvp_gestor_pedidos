@@ -1,108 +1,134 @@
-<style>
-    table { width: 100%; border-collapse: collapse; background: white; }
-    th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #dee2e6; }
-    th { background-color: #f8f9fa; font-weight: 600; color: #495057; }
-
-    .contenedor-tabla {
-        max-height: 400px;
-        overflow-y: auto;
-        border-radius: 8px; /* Movemos los bordes aquí para que enmarquen el scroll */
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        background: white;
-    }
-
-        /* El secreto para el encabezado fijo */
-    thead th {
-        position: sticky;
-        top: 0;           /* Se queda pegado arriba */
-        z-index: 10;      /* Asegura que quede por encima del contenido del tbody */
-        background-color: #f8f9fa; /* Usamos el mismo gris claro de tus th originales */
-        box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4); /* Opcional: añade una sombrita para dar profundidad */
-    }
-
-    th, td {
-        padding: 12px;
-        text-align: left;
-        border-bottom: 1px solid #ddd;
-    }
-</style>
-
-<div style="margin-bottom: 1rem;">
-    <a href="?route=orders" style="color: #007bff; text-decoration: none;">&larr; Volver a Pedidos</a>
-</div>
-
-<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+<div style="display: flex; gap: 20px; flex-wrap: wrap;">
     
-    <!-- Columna Izquierda: Detalles del Pedido -->
-    <div class="card">
-        <h3>📋 Detalle del Pedido #<?php echo $order['id']; ?></h3>
-        <p style="color: #666; margin-bottom: 1rem;">Realizado el: <?php echo date('d/m/Y H:i', strtotime($order['created_at'])); ?></p>
+    <!-- Columna Izquierda: Detalles -->
+    <div style="flex: 1; min-width: 300px;">
+        <div class="card" style="border-left: 4px solid #007bff; margin-bottom: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
+                <h3>Pedido #<?php echo $order['id']; ?></h3>
+                <span class="badge" style="background:#eee; color:#333; font-size:0.9rem;">
+                    <?php echo date('d/m/Y H:i', strtotime($order['created_at'])); ?>
+                </span>
+            </div>
+            
+            <p><strong>Cliente:</strong> <?php echo htmlspecialchars($order['user_name']); ?></p>
+            <p><strong>Email:</strong> <?php echo htmlspecialchars($order['user_email']); ?></p>
+            
+            <?php if($order['observation']): ?>
+                <div style="background: #fff3cd; padding: 10px; border-radius: 4px; margin-top: 10px; color: #856404;">
+                    <strong>⚠️ Observación:</strong> <?php echo htmlspecialchars($order['observation']); ?>
+                </div>
+            <?php endif; ?>
+        </div>
 
-        <div class="contenedor-tabla">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Producto</th>
-                        <th>Cant.</th>
-                        <th>Precio Unit.</th>
-                        <th>Subtotal</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach($details as $item): ?>
-                    <tr>
-                        <td><?php echo htmlspecialchars($item['product_name']); ?></td>
-                        <td><?php echo $item['quantity']; ?></td>
-                        <td>Gs. <?php echo number_format($item['price'], 0); ?></td>
-                        <td>Gs. <?php echo number_format($item['price'] * $item['quantity'], 2); ?></td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="3" style="padding: 10px; text-align: right; font-weight: bold;">TOTAL:</td>
-                        <td style="padding: 10px; text-align: right; font-weight: bold; font-size: 1.2rem;">Gs. <?php echo number_format($order['total'], 0); ?></td>
-                    </tr>
-                </tfoot>
+        <!-- Lista de Productos -->
+        <div class="card" style="margin-bottom: 20px;">
+            <h3>Items del Pedido</h3>
+            <table style="width: 100%; margin-top: 10px; border-collapse: collapse;">
+                <tr style="background: #f8f9fa;">
+                    <th style="padding: 8px; text-align: left;">Producto</th>
+                    <th style="padding: 8px; text-align: center;">Cant</th>
+                    <th style="padding: 8px; text-align: right;">Precio</th>
+                    <th style="padding: 8px; text-align: right;">Subtotal</th>
+                </tr>
+                <?php foreach($details as $item): ?>
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 8px;"><?php echo htmlspecialchars($item['product_name']); ?></td>
+                    <td style="padding: 8px; text-align: center;"><?php echo $item['quantity']; ?></td>
+                    <td style="padding: 8px; text-align: right;"><?php echo number_format($item['price'], 0); ?></td>
+                    <td style="padding: 8px; text-align: right; font-weight: bold;"><?php echo number_format($item['price'] * $item['quantity'], 0); ?></td>
+                </tr>
+                <?php endforeach; ?>
+                <tr>
+                    <td colspan="3" style="padding: 15px 8px; text-align: right; font-size: 1.2rem;"><strong>Total:</strong></td>
+                    <td style="padding: 15px 8px; text-align: right; font-size: 1.2rem; color: #28a745; font-weight: bold;">
+                        Gs. <?php echo number_format($order['total'], 0); ?>
+                    </td>
+                </tr>
             </table>
         </div>
-        
     </div>
 
-    <!-- Columna Derecha: Info Cliente y Estado -->
-    <div>
-        <div class="card" style="margin-bottom: 1rem;">
-            <h3>👤 Cliente</h3>
-            <p><strong>Nombre:</strong> <?php echo htmlspecialchars($order['user_name']); ?></p>
-            <p><strong>Email:</strong> <?php echo htmlspecialchars($order['user_email']); ?></p>
-            <hr style="margin: 10px 0; border: 0; border-top: 1px solid #eee;">
-            
-            <h3>🚚 Entrega</h3>
-            <p><strong>Tipo:</strong> <?php echo ($order['delivery_type'] == 'delivery') ? 'Domicilio' : 'Retiro en Local'; ?></p>
-            <?php if($order['delivery_type'] == 'delivery'): ?>
-                <p><strong>Dirección:</strong><br><?php echo nl2br(htmlspecialchars($order['delivery_address'])); ?></p>
-            <?php endif; ?>
-            <p><strong>Pago:</strong> <?php echo ucfirst($order['payment_method']); ?></p>
+    <!-- Columna Derecha: Estado y Entrega -->
+    <div style="width: 350px; flex-shrink: 0;">
+        
+        <!-- Botones Imprimir -->
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <a href="?route=orders_ticket&id=<?php echo $order['id']; ?>&format=80mm" target="_blank" style="flex: 1; padding: 12px; background: #007bff; color: white; text-align: center; border-radius: 8px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 6px rgba(0,123,255,0.2);" title="Impresora Estándar">
+                <i class="fas fa-print"></i> 80mm
+            </a>
+            <a href="?route=orders_ticket&id=<?php echo $order['id']; ?>&format=58mm" target="_blank" style="flex: 1; padding: 12px; background: #6c757d; color: white; text-align: center; border-radius: 8px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 6px rgba(108,117,125,0.2);" title="Impresora Chica">
+                <i class="fas fa-print"></i> 58mm
+            </a>
         </div>
 
-        <div class="card" style="border-left: 4px solid #ffc107;">
-            <h3>⚙️ Gestión</h3>
-            <form action="?route=orders_update_status" method="POST">
+        <!-- Panel de Estado -->
+        <div class="card" style="margin-bottom: 20px; background: #f8f9fa;">
+            <h3>Cambiar Estado</h3>
+            <form action="?route=orders_update_status" method="POST" style="margin-top: 10px;">
                 <input type="hidden" name="id" value="<?php echo $order['id']; ?>">
-                
-                <div style="margin-bottom: 1rem;">
-                    <label style="display: block; margin-bottom: 0.5rem;">Estado del Pedido:</label>
-                    <select name="status" style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc;">
-                        <option value="pending" <?php echo $order['status'] == 'pending' ? 'selected' : ''; ?>>🟡 Pendiente</option>
-                        <option value="completed" <?php echo $order['status'] == 'completed' ? 'selected' : ''; ?>>🟢 Completado / Entregado</option>
-                        <option value="cancelled" <?php echo $order['status'] == 'cancelled' ? 'selected' : ''; ?>>🔴 Cancelado</option>
-                    </select>
-                </div>
-
-                <button type="submit" style="width: 100%; background-color: #007bff; color: white; border: none; padding: 0.7rem; border-radius: 4px; cursor: pointer;">
-                    Actualizar Estado
-                </button>
+                <select name="status" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc; margin-bottom: 10px;">
+                    <option value="pending" <?php echo $order['status']=='pending'?'selected':''; ?>>Pendiente 🟡</option>
+                    <option value="confirmed" <?php echo $order['status']=='confirmed'?'selected':''; ?>>Confirmado / Cocinando 🔵</option>
+                    <option value="completed" <?php echo $order['status']=='completed'?'selected':''; ?>>Entregado / Finalizado 🟢</option>
+                    <option value="cancelled" <?php echo $order['status']=='cancelled'?'selected':''; ?>>Cancelado 🔴</option>
+                </select>
+                <button type="submit" style="width: 100%; padding: 10px; background: #343a40; color: white; border: none; border-radius: 4px; cursor: pointer;">Actualizar Estado</button>
             </form>
         </div>
+
+        <!-- Info de Entrega -->
+        <div class="card">
+            <h3>Datos de Entrega</h3>
+            <p style="margin-top: 10px;">
+                <strong>Tipo:</strong> 
+                <?php echo ucfirst($order['delivery_type']); ?>
+            </p>
+            <p><strong>Pago:</strong> <?php echo ucfirst($order['payment_method']); ?></p>
+
+            <?php if($order['delivery_type'] === 'delivery'): ?>
+                <hr style="margin: 10px 0; border: 0; border-top: 1px solid #eee;">
+                <p><strong>Dirección:</strong><br> <?php echo $order['delivery_address'] ? htmlspecialchars($order['delivery_address']) : 'No especificada'; ?></p>
+                
+                <?php if($order['delivery_lat'] && $order['delivery_lng']): ?>
+                    <div id="map-preview" style="height: 200px; width: 100%; margin-top: 10px; border-radius: 8px;"></div>
+                    
+                    <!-- Botón para abrir en Google Maps externo -->
+                    <a href="https://www.google.com/maps/search/?api=1&query=<?php echo $order['delivery_lat']; ?>,<?php echo $order['delivery_lng']; ?>" 
+                       target="_blank" 
+                       style="display: block; text-align: center; margin-top: 10px; text-decoration: none; color: #007bff; font-size: 0.9rem;">
+                       <i class="fas fa-external-link-alt"></i> Abrir en Google Maps
+                    </a>
+
+                    <!-- Leaflet JS (Reutilizado) -->
+                    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+                    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            var lat = <?php echo $order['delivery_lat']; ?>;
+                            var lng = <?php echo $order['delivery_lng']; ?>;
+                            
+                            var map = L.map('map-preview').setView([lat, lng], 15);
+                            
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                attribution: '© OpenStreetMap'
+                            }).addTo(map);
+                            
+                            L.marker([lat, lng]).addTo(map)
+                                .bindPopup("Ubicación del Cliente")
+                                .openPopup();
+                        });
+                    </script>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <a href="?route=orders" style="color: #666; text-decoration: none;">&larr; Volver al listado</a>
+        </div>
+
     </div>
 </div>
+
+<style>
+    .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+</style>

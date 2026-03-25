@@ -1,14 +1,40 @@
 <?php
-// Obtener categorías únicas del menú del día para los filtros
-$categories = [];
-$menu_items = isset($daily_menus) ? $daily_menus : [];
+// Lógica para determinar qué mostrar (Menú del día o Categoría específica)
+$filter_category_id = $_GET['category_id'] ?? null;
+$view_title = "Menú del Día"; // Título por defecto
 
-foreach ($menu_items as $item) {
-    if (!empty($item['category_name'])) {
-        $categories[$item['category_name']] = true;
+if ($filter_category_id) {
+    // Si hay categoría seleccionada, buscamos todos los productos de esa categoría
+    if (!class_exists('Product')) {
+        $path = 'models/Product.php';
+        if (file_exists($path)) require_once $path;
+        elseif (file_exists('../' . $path)) require_once '../' . $path;
     }
+    
+    $prodModel = new Product();
+    // Usamos readAllActive para traer productos disponibles (fuera del menú del día)
+    $stmt = $prodModel->readAllActive(); 
+    $all_products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    $menu_items = [];
+    foreach($all_products as $p) {
+        if ($p['category_id'] == $filter_category_id) {
+            // Mapeamos al formato que espera la vista
+            $menu_items[] = [
+                'id' => $p['id'], // ID único para inputs
+                'product_id' => $p['id'],
+                'product_name' => $p['name'],
+                'product_price' => $p['price'],
+                'image' => $p['image'],
+                'category_name' => $p['category_name'] ?? 'Cat'
+            ];
+        }
+    }
+    $view_title = "Categoría Seleccionada";
+} else {
+    // Si no hay filtro, usamos la variable $daily_menus que viene del controlador
+    $menu_items = isset($daily_menus) ? $daily_menus : [];
 }
-$categories = array_keys($categories);
 ?>
 
 <style>
@@ -102,7 +128,7 @@ $categories = array_keys($categories);
 <div class="product-grid">
     <?php if(empty($menu_items)): ?>
         <div style="grid-column: 1/-1; text-align: center; padding: 3rem; background: white; border-radius: 8px;">
-            <h3>No hay menú disponible hoy 😔</h3>
+            <h3>No hay productos disponibles aquí 😔</h3>
             <p>Vuelve más tarde para ver las opciones.</p>
         </div>
     <?php else: ?>

@@ -12,10 +12,23 @@ class ProductController {
     }
 
     public function index() {
+        // Obtener categorías para el filtro
+        $categoryModel = new Category();
+        $stmtCat = $categoryModel->readAll();
+        $categories = $stmtCat->fetchAll(PDO::FETCH_ASSOC);
+
         $product = new Product();
         $stmt = $product->readAll();
         $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
+        // Filtrar productos si se seleccionó una categoría
+        if (isset($_GET['category']) && $_GET['category'] !== 'all') {
+            $filterId = $_GET['category'];
+            $products = array_filter($products, function($p) use ($filterId) {
+                return isset($p['category_id']) && $p['category_id'] == $filterId;
+            });
+        }
+
         $content_view = '../views/admin/products/index.php';
         require_once '../views/layouts/admin_layout.php';
     }

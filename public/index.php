@@ -37,6 +37,18 @@ switch ($route) {
         $controller = new AuthController();
         $controller->logout();
         break;
+
+    case 'client_login':
+        require_once '../controllers/AuthController.php';
+        $controller = new AuthController();
+        $controller->clientLogin();
+        break;
+
+    case 'client_register':
+        require_once '../controllers/AuthController.php';
+        $controller = new AuthController();
+        $controller->clientRegister();
+        break;
         
     case 'admin':
         require_once '../controllers/AdminController.php';
@@ -130,6 +142,19 @@ switch ($route) {
         $controller->toggleAvailability();
         break;
 
+    // --- Rutas de Checkout (Cliente) ---
+    case 'checkout':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->checkout();
+        break;
+        
+    case 'order_store':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->store();
+        break;
+
     // --- Rutas de Pedidos (Admin) ---
     case 'orders':
         require_once '../controllers/OrderController.php';
@@ -143,6 +168,12 @@ switch ($route) {
         $controller->show();
         break;
         
+    case 'orders_ticket':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->ticket();
+        break;
+
     case 'orders_update_status':
         require_once '../controllers/OrderController.php';
         $controller = new OrderController();

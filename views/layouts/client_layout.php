@@ -1,4 +1,19 @@
 <!DOCTYPE html>
+<?php
+// Lógica para obtener categorías disponibles para la navegación
+if (!class_exists('Category')) {
+    // Intentar cargar el modelo si no está cargado
+    $path = 'models/Category.php';
+    if (file_exists($path)) require_once $path;
+    elseif (file_exists('../' . $path)) require_once '../' . $path;
+}
+$navCategories = [];
+if (class_exists('Category')) {
+    $catModel = new Category();
+    $stmt = $catModel->readAll();
+    $navCategories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+?>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -13,15 +28,17 @@
 </head>
 <body>
 
+    <!-- Header fijo que agrupa Navbar y Categorías -->
+    <header class="fixed-header">
     <!-- Barra Superior -->
     <nav class="navbar">
+
         <div class="container-logo-title">
             <div style="display: flex; flex-direction: row; justify-content: left; align-items: center; width: 100%">
                 <div id="here_cube" class="mr-1"></div>            
-                <a href="?route=home" class="navbar-brand">Solver delivery</a>
             </div>
-            <small style="color: #555; width: 100%; margin-left: 4px;">En servicio para: ???</small>
         </div>        
+        
         <div class="container-control-nav">
 
             <!-- Botón del Carrito -->
@@ -33,12 +50,12 @@
             <!-- Botón de Login -->
             <div class="user-menu">
 
-                <?php if(isset($_SESSION['user_id'])): ?>
+                <?php if(isset($_SESSION['client_id'])): ?>
                 
-                    <span class="span-user">Hola, <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Usuario'); ?></span>                
+                    <span class="span-user">Hola, <i class="fas fa-user"></i> <?php echo htmlspecialchars($_SESSION['client_name'] ?? 'Cliente'); ?></span>                
                     
-                    <a href="?route=logout" class="btn-logout-solid">
-                        <i class="fa fa-sign-out"></i> Cerrar Sesión
+                    <a href="?route=logout&type=client" class="btn-logout-solid">
+                        <i class="fa fa-sign-out"></i> <span class="logout-text">Cerrar Sesión</span>
                     </a>
 
                 <?php else: ?>
@@ -51,17 +68,31 @@
 
             </div>
 
-        </div>                
+        </div>            
+            
     </nav>
     
     <!-- Lista de Categorías -->
-    <div class="scroll-container mt-4">
-        <button class="category-btn"> 🍽️ Almuerzos</button>
-        <button class="category-btn"> 🥤 Bebidas</button>
-        <button class="category-btn"> ☕ Desayunos</button>
-        <button class="category-btn"> 🍔 Minutas</button>
-        <button class="category-btn"> 🍦 Postres</button>
+    <div class="scroll-container">
+        <a href="?route=home" class="category-btn <?php echo !isset($_GET['category_id']) ? 'active' : ''; ?>">🏠 Menú del Día</a>
+        
+        <?php foreach($navCategories as $cat): ?>
+            <?php 
+                // Emojis simples según nombre (opcional)
+                $emoji = '🍽️';
+                if (stripos($cat['name'], 'bebida') !== false) $emoji = '🥤';
+                if (stripos($cat['name'], 'postre') !== false) $emoji = '🍦';
+                if (stripos($cat['name'], 'desayuno') !== false) $emoji = '☕';
+                if (stripos($cat['name'], 'minuta') !== false || stripos($cat['name'], 'hamburguesa') !== false) $emoji = '🍔';
+                
+                $isActive = (isset($_GET['category_id']) && $_GET['category_id'] == $cat['id']) ? 'active' : '';
+            ?>
+            <a href="?route=home&category_id=<?php echo $cat['id']; ?>" class="category-btn <?php echo $isActive; ?>">
+                <?php echo $emoji . ' ' . htmlspecialchars($cat['name']); ?>
+            </a>
+        <?php endforeach; ?>
     </div>
+    </header>
     
     <!-- Filtros de Categoría 
     <div class="category-filters">
@@ -89,7 +120,7 @@
                 <span id="cart-total-price">Gs. 0</span>
             </div>
             <!-- Aquí podrías enviar a checkout -->
-            <a href="#" onclick="alert('Funcionalidad de Checkout pendiente')" class="btn btn-success" style="display: block; text-align: center; width: 100%;">Finalizar Pedido</a>
+            <a href="#" id="btnCheckout" onclick="proceedToCheckout(event)" class="btn btn-success" style="display: block; text-align: center; width: 100%;">Finalizar Pedido</a>
         </div>
     </div>
     
@@ -116,27 +147,28 @@
             <!-- Pestañas de formulario-->
             <div class="modal-content">
                 <!-- Formulario de Login -->
-                <form id="loginForm" class="auth-form active">
+                <form id="loginForm" class="auth-form active" action="?route=client_login" method="POST">
+                    <div id="loginError" style="display:none; color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem; text-align: center; font-size: 0.9rem;"></div>
                     <div class="input-group">
                         <label>Correo Electrónico</label>
-                        <input type="email" placeholder="tu@email.com" required>
+                        <input type="email" name="email" placeholder="tu@email.com" required>
                     </div>
                     <div class="input-group">
                         <label>Contraseña</label>
-                        <input type="password" placeholder="••••••••" required>
+                        <input type="password" name="password" placeholder="••••••••" required>
                     </div>
                     <button type="submit" class="btn-main">Iniciar Sesión</button>
                 </form>
                 <!-- Formulario de Registro -->
-                <form id="registerForm" class="auth-form">
+                <form id="registerForm" class="auth-form" action="?route=client_register" method="POST">
                     <div class="grid-inputs">
                         <div class="input-group">
                             <label>Nombre Completo</label>
-                            <input type="text" placeholder="Juan Pérez" required>
+                            <input type="text" name="name" placeholder="Juan Pérez" required>
                         </div>
                         <div class="input-group">
                             <label>Teléfono</label>
-                            <input type="tel" placeholder="12345678" required>
+                            <input type="tel" name="phone" placeholder="12345678" required>
                         </div>
                     </div>
                     
@@ -145,7 +177,7 @@
                         <div class="switch-wrapper">
                             <i class="fab fa-whatsapp whatsapp-icon" id="wsIcon"></i>
                             <label class="switch">
-                                <input type="checkbox" id="hasWhatsapp" onchange="toggleWsIcon()">
+                                <input type="checkbox" name="has_whatsapp" id="hasWhatsapp" onchange="toggleWsIcon()">
                                 <span class="slider"></span>
                             </label>
                         </div>
@@ -153,11 +185,11 @@
 
                     <div class="input-group">
                         <label>Correo Electrónico</label>
-                        <input type="email" placeholder="tu@email.com" required>
+                        <input type="email" name="email" placeholder="tu@email.com" required>
                     </div>
                     <div class="input-group">
                         <label>Contraseña</label>
-                        <input type="password" placeholder="Mínimo 8 caracteres" required>
+                        <input type="password" name="password" placeholder="Mínimo 8 caracteres" required>
                     </div>
                     <button type="submit" class="btn-main">Crear mi cuenta</button>
                 </form>
@@ -173,6 +205,8 @@
     <script src="js/tool-kit-v002.js"></script>
     
     <script>
+
+        const isUserLoggedIn = <?php echo isset($_SESSION['client_id']) ? 'true' : 'false'; ?>;
 
         let cart = JSON.parse(localStorage.getItem('comedor_cart')) || [];
 
@@ -272,7 +306,9 @@
         const botonUsuario = document.getElementById('openModal');
 
         // Le asignamos la función de abrir el modal
-        botonUsuario.addEventListener('click', openAuthModal);
+        if (botonUsuario) {
+            botonUsuario.addEventListener('click', openAuthModal);
+        }
         
         function toggleWsIcon() {
             const checkbox = document.getElementById('hasWhatsapp');
@@ -285,10 +321,43 @@
             }
         }
         
-        drawCube("here_cube", false, "28px");
+        function proceedToCheckout(event) {
+            event.preventDefault();
+            
+            // 1. Validar que el carrito no esté vacío
+            if (cart.length === 0) {
+                alert("Tu carrito está vacío. Agrega productos para continuar.");
+                return;
+            }
+
+            // 2. Verificar autenticación
+            if (!isUserLoggedIn) {
+                // Si no está logueado, abrir modal y mostrar login
+                openAuthModal();
+                switchTab('login');
+                return;
+            }
+
+            // 3. Si está logueado, ir al checkout
+            window.location.href = '?route=checkout';
+        }
+
+        drawCube("here_cube", true, "28px");
 
         // Cargar carrito al iniciar
-        document.addEventListener('DOMContentLoaded', updateCartUI);
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCartUI();
+
+            // Detectar errores de login en la URL (ej: credenciales de admin en login de cliente)
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('error') === 'login_failed') {
+                openAuthModal(); // Abrir el modal automáticamente
+                switchTab('login'); // Asegurar que esté en la pestaña de login
+                const errDiv = document.getElementById('loginError');
+                errDiv.innerText = "Credenciales incorrectas";
+                errDiv.style.display = 'block';
+            }
+        });
     </script>
 </body>
 </html>

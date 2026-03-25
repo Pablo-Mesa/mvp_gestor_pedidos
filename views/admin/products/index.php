@@ -1,9 +1,29 @@
-<div class="header-actions" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-    <h1>Gestión de Productos</h1>
-    <a href="?route=products_create" style="background: #28a745; color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 4px;">+ Nuevo Producto</a>
+<div class="header-actions">
+    <h1 class="page-title">Gestión de Productos</h1>
+
+    <div class="filter-scroll-wrapper">
+        <?php 
+        if (isset($categories)) {
+            $current_cat = $_GET['category'] ?? 'all';
+            echo '<div class="filter-group">';
+            
+            echo '<a href="?route=products&category=all" class="filter-pill ' . ($current_cat === 'all' ? 'active' : '') . '">Todos</a>';
+            
+            foreach ($categories as $cat) {
+                $isActive = ($current_cat == $cat['id']) ? 'active' : '';
+                echo '<a href="?route=products&category=' . $cat['id'] . '" class="filter-pill ' . $isActive . '">' . htmlspecialchars($cat['name']) . '</a>';
+            }
+            
+            echo '</div>';
+        }
+        ?>
+    </div>
+
+    <a href="?route=products_create" class="btn-add-product"><i class="fas fa-plus"></i> Nuevo Producto</a>
 </div>
 
 <style>
+    /* Estilos Generales de Tabla */
     table { width: 100%; border-collapse: collapse; background: white; }
     th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #dee2e6; }
     th { background-color: #f8f9fa; font-weight: 600; color: #495057; }
@@ -13,17 +33,73 @@
     .badge { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; }
     .badge-success { background: #d4edda; color: #155724; }
     .badge-danger { background: #f8d7da; color: #721c24; }
-    
 
+    /* Header y Filtros */
+    .header-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        background-color: #fff;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    }
+
+    .page-title { margin: 0; font-size: 1.5rem; color: #333; white-space: nowrap; }
+
+    /* Contenedor central de filtros */
+    .filter-scroll-wrapper {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        min-width: 0; /* Crucial para permitir scroll en flex items */
+        padding: 0 1rem;
+    }
+
+    .filter-group {
+        display: flex;
+        gap: 0.5rem;
+        overflow-x: auto;
+        padding-bottom: 4px; /* Espacio para scrollbar sutil */
+        scrollbar-width: thin;
+        white-space: nowrap;
+        max-width: 100%;
+    }
+
+    /* Estilo de los botones filtro (Píldoras) */
+    .filter-pill {
+        padding: 0.4rem 1rem;
+        border-radius: 50px;
+        text-decoration: none;
+        color: #555;
+        font-size: 0.85rem;
+        background-color: #f1f3f5;
+        border: 1px solid transparent;
+        transition: all 0.2s ease;
+    }
+
+    .filter-pill:hover { background-color: #e9ecef; color: #333; }
+    
+    .filter-pill.active {
+        background-color: #007bff;
+        color: white;
+        box-shadow: 0 2px 5px rgba(0,123,255,0.3);
+    }
+
+    .btn-add-product { background: #28a745; color: white; padding: 0.6rem 1.2rem; text-decoration: none; border-radius: 6px; font-weight: 500; white-space: nowrap; transition: 0.2s; }
+    .btn-add-product:hover { background: #218838; box-shadow: 0 2px 5px rgba(40,167,69,0.3); }
+
+    /* Tabla con Scroll */
     .contenedor-tabla {
         max-height: 400px;
         overflow-y: auto;
-        border-radius: 8px; /* Movemos los bordes aquí para que enmarquen el scroll */
+        border-radius: 8px; 
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         background: white;
     }
-
-        /* El secreto para el encabezado fijo */
     thead th {
         position: sticky;
         top: 0;           /* Se queda pegado arriba */
@@ -36,6 +112,12 @@
         padding: 12px;
         text-align: left;
         border-bottom: 1px solid #ddd;
+    }
+
+    @media (max-width: 768px) {
+        .header-actions { flex-direction: column; align-items: stretch; }
+        .filter-scroll-wrapper { justify-content: flex-start; padding: 0; }
+        .page-title { text-align: center; }
     }
 </style>
 

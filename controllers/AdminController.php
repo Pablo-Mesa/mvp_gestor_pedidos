@@ -10,12 +10,17 @@ class AdminController {
     }
 
     public function dashboard() {
-        // Datos simulados para la vista (luego vendrán de la DB)
+        require_once '../models/Order.php';
+        
+        // Obtener datos reales de la DB
+        $orderModel = new Order();
+        $stats = $orderModel->getDashboardStats();
+
         $data = [
             'title' => 'Resumen del Día',
-            'pedidos_pendientes' => 5,
-            'ingresos_hoy' => 150.00,
-            'platos_vendidos' => 32
+            'pedidos_pendientes' => $stats['pending_orders'],
+            'ingresos_hoy' => $stats['income_today'],
+            'platos_vendidos' => $stats['dishes_sold']
         ];
 
         // Definimos qué vista interna queremos cargar

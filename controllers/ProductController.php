@@ -49,6 +49,16 @@ class ProductController {
             $product->category_id = $_POST['category_id'];
             $product->description = $_POST['description'];
             $product->price = $_POST['price'];
+            // 1. CAPTURAR EL PRECIO MEDIO PLATO
+            // Si viene vacío (porque no se activó el toggle), se asigna null
+            $product->price_half = !empty($_POST['price_half']) ? $_POST['price_half'] : null;
+
+            // VALIDACIÓN: El medio plato no puede ser más caro que el entero
+            if (!is_null($product->price_half) && (float)$product->price_half >= (float)$product->price) {
+                echo "<script>alert('Error: El precio de medio plato no puede ser mayor o igual al plato entero.'); window.history.back();</script>";
+                return;
+            }
+
             $product->is_active = isset($_POST['is_active']) ? 1 : 0;
             
             // Manejo de Imagen
@@ -98,6 +108,15 @@ class ProductController {
             $product->category_id = $_POST['category_id'];
             $product->description = $_POST['description'];
             $product->price = $_POST['price'];
+            // 2. CAPTURAR EL PRECIO MEDIO PLATO TAMBIÉN AQUÍ
+            $product->price_half = !empty($_POST['price_half']) ? $_POST['price_half'] : null;
+
+            // VALIDACIÓN: El medio plato no puede ser más caro que el entero
+            if (!is_null($product->price_half) && (float)$product->price_half >= (float)$product->price) {
+                echo "<script>alert('Error: El precio de medio plato no puede ser mayor o igual al plato entero.'); window.history.back();</script>";
+                return;
+            }
+
             $product->is_active = isset($_POST['is_active']) ? 1 : 0;
             $product->image = $_POST['current_image']; // Mantener imagen anterior si no se sube nueva
 

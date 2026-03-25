@@ -28,6 +28,7 @@ class DailyMenu {
                     dm.menu_date, 
                     p.name as product_name, 
                     p.price as product_price,
+                    p.price_half,
                     p.id as product_id,
                     c.name as category_name,
                     dm.daily_stock,

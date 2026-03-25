@@ -268,7 +268,7 @@ if (class_exists('Category')) {
                         <div style="font-weight: bold; font-size: 0.9rem;">${item.name}</div>
                         <div style="font-size: 0.85rem; color: #666;">${item.quantity} x Gs. ${new Intl.NumberFormat('es-PY').format(item.price)}</div>
                     </div>
-                    <button class="btn-icon" onclick="removeFromCart(${item.id})" style="color: #dc3545;">
+                    <button class="btn-icon" onclick="removeFromCart('${item.id}')" style="color: #dc3545;">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>`;

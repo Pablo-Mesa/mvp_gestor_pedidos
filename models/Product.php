@@ -10,6 +10,7 @@ class Product {
     public $category_id; // Cambiado de $category a $category_id
     public $description;
     public $price;
+    public $price_half;
     public $image;
     public $is_active;
 
@@ -45,7 +46,7 @@ class Product {
     }
 
     public function create() {
-        $query = 'INSERT INTO ' . $this->table . ' (name, category_id, description, price, image, is_active) VALUES (:name, :category_id, :description, :price, :image, :is_active)';
+        $query = 'INSERT INTO ' . $this->table . ' (name, category_id, description, price, price_half, image, is_active) VALUES (:name, :category_id, :description, :price, :price_half, :image, :is_active)';
         $stmt = $this->conn->prepare($query);
 
         // Limpieza básica
@@ -57,6 +58,11 @@ class Product {
         $stmt->bindParam(':category_id', $this->category_id); // Cambiado a category_id
         $stmt->bindParam(':description', $this->description);
         $stmt->bindParam(':price', $this->price);
+
+        // Lógica para guardar NULL si está vacío
+        $price_half_val = !empty($this->price_half) ? $this->price_half : null;
+        $stmt->bindParam(':price_half', $price_half_val);
+
         $stmt->bindParam(':image', $this->image);
         $stmt->bindParam(':is_active', $this->is_active);
 
@@ -64,7 +70,7 @@ class Product {
     }
 
     public function update() {
-        $query = 'UPDATE ' . $this->table . ' SET name = :name, category_id = :category_id, description = :description, price = :price, image = :image, is_active = :is_active WHERE id = :id';
+        $query = 'UPDATE ' . $this->table . ' SET name = :name, category_id = :category_id, description = :description, price = :price, price_half = :price_half, image = :image, is_active = :is_active WHERE id = :id';
         $stmt = $this->conn->prepare($query);
 
         $this->name = htmlspecialchars(strip_tags($this->name));
@@ -75,6 +81,9 @@ class Product {
         $stmt->bindParam(':category_id', $this->category_id); // Cambiado a category_id
         $stmt->bindParam(':description', $this->description);
         $stmt->bindParam(':price', $this->price);
+        // 5. VINCULAR EL PARÁMETRO EN UPDATE TAMBIÉN
+        $price_half_val = !empty($this->price_half) ? $this->price_half : null;
+        $stmt->bindParam(':price_half', $price_half_val);
         $stmt->bindParam(':image', $this->image);
         $stmt->bindParam(':is_active', $this->is_active);
         $stmt->bindParam(':id', $this->id);

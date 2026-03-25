@@ -29,6 +29,7 @@ class HomeController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // 1. Recibir datos del formulario
             $products_input = $_POST['products'] ?? [];
+            $products_half_input = $_POST['products_half'] ?? []; // Nuevo input para medias porciones
             $payment_method = $_POST['payment_method'] ?? 'cash';
             $delivery_type = $_POST['delivery_type'] ?? 'pickup';
             
@@ -57,6 +58,22 @@ class HomeController {
                         'daily_menu_id' => $id,
                         'quantity' => $qty,
                         'price' => $price
+                    ];
+                    $items_found = true;
+                }
+                
+                // Lógica para MEDIO PLATO
+                if (isset($products_half_input[$id]) && $products_half_input[$id] > 0 && !empty($menu_item['price_half'])) {
+                    $qty = (int)$products_half_input[$id];
+                    $price = $menu_item['price_half'];
+                    
+                    $subtotal = $price * $qty;
+                    $total += $subtotal;
+                    
+                    $order_details[] = [
+                        'daily_menu_id' => $id,
+                        'quantity' => $qty,
+                        'price' => $price // Se guarda el precio reducido
                     ];
                     $items_found = true;
                 }

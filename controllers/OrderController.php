@@ -116,7 +116,7 @@ class OrderController {
         foreach ($input['cart'] as $item) {
             $total += $item['price'] * $item['quantity'];
             $order->details[] = [
-                'product_id' => $item['id'], // Usamos product_id para coincidir con la tabla orders_items
+                'product_id' => (int)$item['id'], // Forzamos a entero para limpiar sufijos como "_half"
                 'quantity' => $item['quantity'],
                 'price' => $item['price']
             ];

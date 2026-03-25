@@ -25,6 +25,7 @@ if ($filter_category_id) {
                 'product_id' => $p['id'],
                 'product_name' => $p['name'],
                 'product_price' => $p['price'],
+                'price_half' => $p['price_half'],
                 'image' => $p['image'],
                 'category_name' => $p['category_name'] ?? 'Cat'
             ];
@@ -119,7 +120,17 @@ if ($filter_category_id) {
         .btn-primary {
             display: inline;
         }
+    }
 
+    /* Estilos para el selector de porción */
+    .portion-selector {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+        font-size: 0.85rem;
+    }
+    .portion-label {
+        cursor: pointer; display: flex; align-items: center; gap: 4px; color: #555;
     }
 
 </style>
@@ -140,6 +151,8 @@ if ($filter_category_id) {
                 $physicPath = 'uploads/' . $item['image'];                
                 // 2. Si existe, usamos 'uploads/' como ruta web. Si no, usamos placeholder.
                 $displayImg = (!empty($item['image']) && file_exists($physicPath)) ? 'uploads/' . rawurlencode($item['image']) . '?v=' . time() : 'https://via.placeholder.com/300?text=Sin+Imagen';
+                // Validar si tiene medio plato
+                $hasHalf = !empty($item['price_half']) && $item['price_half'] > 0;
             ?>
             <div class="product-card" data-category="<?php echo htmlspecialchars($item['category_name'] ?? 'all'); ?>">                
                 <img src="<?php echo $displayImg; ?>" alt="<?php echo htmlspecialchars($item['product_name']); ?>" class="product-img">
@@ -147,7 +160,27 @@ if ($filter_category_id) {
                 <div class="product-body">
                     <div class="product-category"><?php echo htmlspecialchars($item['category_name'] ?? 'General'); ?></div>
                     <div class="product-title"><?php echo htmlspecialchars($item['product_name']); ?></div>
-                    <div class="product-price">Gs. <?php echo number_format($item['product_price'], 0, ',', '.'); ?></div>
+                    
+                    <!-- Precio Dinámico -->
+                    <div class="product-price" id="price_display_<?php echo $item['id']; ?>">
+                        Gs. <?php echo number_format($item['product_price'], 0, ',', '.'); ?>
+                    </div>
+                    
+                    <!-- Selector de Porción (Solo si existe precio medio) -->
+                    <?php if($hasHalf): ?>
+                    <div class="portion-selector">
+                        <label class="portion-label">
+                            <input type="radio" name="portion_<?php echo $item['id']; ?>" value="full" checked 
+                                onchange="updatePrice(<?php echo $item['id']; ?>, <?php echo $item['product_price']; ?>, '<?php echo addslashes($item['product_name']); ?>', '<?php echo $item['product_id']; ?>')"> 
+                            Entero
+                        </label>
+                        <label class="portion-label">
+                            <input type="radio" name="portion_<?php echo $item['id']; ?>" value="half"
+                                onchange="updatePrice(<?php echo $item['id']; ?>, <?php echo $item['price_half']; ?>, '<?php echo addslashes($item['product_name']); ?> (Medio)', '<?php echo $item['product_id']; ?>_half')"> 
+                            Medio
+                        </label>
+                    </div>
+                    <?php endif; ?>
                     
                     <div class="product-actions">
                         <div class="qty-control">
@@ -155,11 +188,19 @@ if ($filter_category_id) {
                             <input type="number" id="qty_<?php echo $item['id']; ?>" class="qty-input" value="1" min="1" readonly>
                             <button class="qty-btn" onclick="this.previousElementSibling.value = parseInt(this.previousElementSibling.value) + 1">+</button>
                         </div>
-                        <button class="btn btn-primary" onclick="addToCart(
-                            <?php echo $item['product_id']; ?>, 
-                            '<?php echo addslashes($item['product_name']); ?>', 
-                            <?php echo $item['product_price']; ?>, 
-                            '<?php echo addslashes($item['image']); ?>', 
+                        
+                        <!-- Botón con ID dinámico y data attributes para que JS lea el estado actual -->
+                        <button class="btn btn-primary" 
+                            id="btn_add_<?php echo $item['id']; ?>"
+                            data-id="<?php echo $item['product_id']; ?>"
+                            data-name="<?php echo htmlspecialchars($item['product_name']); ?>"
+                            data-price="<?php echo $item['product_price']; ?>"
+                            data-image="<?php echo htmlspecialchars($item['image']); ?>"
+                            onclick="addToCart(
+                            this.dataset.id, 
+                            this.dataset.name, 
+                            this.dataset.price, 
+                            this.dataset.image, 
                             document.getElementById('qty_<?php echo $item['id']; ?>').value
                         )">
                             Agregar <i class="fas fa-plus"></i>
@@ -172,6 +213,18 @@ if ($filter_category_id) {
 </div>
 
 <script>
+function updatePrice(itemId, newPrice, newName, newId) {
+    // 1. Actualizar texto visual del precio
+    const display = document.getElementById('price_display_' + itemId);
+    display.innerText = 'Gs. ' + new Intl.NumberFormat('es-PY').format(newPrice);
+    
+    // 2. Actualizar datos del botón Agregar
+    const btn = document.getElementById('btn_add_' + itemId);
+    btn.dataset.price = newPrice;
+    btn.dataset.name = newName;
+    btn.dataset.id = newId; // CORRECTO: Actualiza el atributo data-id. NO usar setAttribute('onclick', ...)
+}
+
 function filterCategory(cat, btn) {
     // Lógica visual simple para ocultar/mostrar tarjetas
     document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));

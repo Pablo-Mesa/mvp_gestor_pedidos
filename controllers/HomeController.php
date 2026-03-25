@@ -91,13 +91,17 @@ class HomeController {
             $order->total = $total;
             $order->payment_method = $payment_method;
             $order->delivery_type = $delivery_type;
+            $order->observation = $_POST['observation'] ?? ''; // Aseguramos que no sea null
             
             if ($delivery_type === 'delivery') {
                 $order->delivery_address = $_POST['delivery_address'] ?? '';
                 $order->delivery_lat = !empty($_POST['delivery_lat']) ? $_POST['delivery_lat'] : null;
                 $order->delivery_lng = !empty($_POST['delivery_lng']) ? $_POST['delivery_lng'] : null;
             } else {
-                $order->delivery_address = null;
+                // Cambiamos null por cadena vacía para cumplir con la restricción de la DB
+                $order->delivery_address = ''; 
+                $order->delivery_lat = null;
+                $order->delivery_lng = null;
             }
             
             $order->details = $order_details;

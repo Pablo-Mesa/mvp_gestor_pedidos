@@ -109,6 +109,11 @@ class OrderController {
             $order->delivery_address = $input['delivery_address'] ?? '';
             $order->delivery_lat = $input['delivery_lat'] ?? null;
             $order->delivery_lng = $input['delivery_lng'] ?? null;
+        } else {
+            // Si no es delivery, enviamos cadena vacía para evitar el error de integridad en la DB
+            $order->delivery_address = ''; 
+            $order->delivery_lat = null;
+            $order->delivery_lng = null;
         }
 
         // Procesar Detalle (Carrito)

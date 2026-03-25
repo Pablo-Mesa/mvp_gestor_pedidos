@@ -1,0 +1,94 @@
+/* Contenedor flotante */
+#toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 99999; /* Por encima de todo, incluso modales */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Tarjeta de la alerta */
+.toast-message {
+    min-width: 300px;
+    max-width: 400px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.8);
+    overflow: hidden;
+    animation: slideIn 0.3s ease forwards;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* Contenido interno */
+.toast-content {
+    padding: 15px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.toast-icon {
+    font-size: 1.2rem;
+    padding-top: 2px;
+}
+
+.toast-text {
+    flex: 1;
+    font-size: 0.95rem;
+    color: #333;
+    line-height: 1.4;
+}
+
+/* Botón de cierre */
+.toast-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: #aaa;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    transition: color 0.2s;
+}
+.toast-close:hover { color: #555; }
+
+/* Barra de progreso */
+.toast-progress {
+    height: 4px;
+    width: 100%;
+    transform-origin: left;
+    animation: progress linear forwards;
+}
+
+/* Variantes de color */
+.toast-success .toast-icon { color: #28a745; }
+.toast-success .toast-progress { background-color: #28a745; }
+
+.toast-error .toast-icon { color: #dc3545; }
+.toast-error .toast-progress { background-color: #dc3545; }
+
+.toast-warning .toast-icon { color: #ffc107; }
+.toast-warning .toast-progress { background-color: #ffc107; }
+
+.toast-info .toast-icon { color: #17a2b8; }
+.toast-info .toast-progress { background-color: #17a2b8; }
+
+/* Animaciones */
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOut {
+    to { transform: translateX(100%); opacity: 0; }
+}
+
+@keyframes progress {
+    from { transform: scaleX(1); }
+    to { transform: scaleX(0); }
+}

@@ -7,6 +7,7 @@
     <link rel="icon" type="image/png" href="assets/icono_solver_nobg.png">
     <link rel="stylesheet" href="css/css_cubo.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/toast.css"> <!-- Estilos de Alertas -->
     <style>
         /* Reset y Estilos Base */
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -137,6 +138,7 @@
     </div>
     
     <script src="js/tool-kit-v002.js"></script>
+    <script src="js/toast.js"></script> <!-- JS de Alertas -->
     <script>
         drawCube("here_cube", true, "28px");
     </script>

@@ -23,6 +23,7 @@ if (class_exists('Category')) {
     
     <link rel="stylesheet" href="css/css_cubo.css">
     <link rel="stylesheet" href="css/client_layout.css">   
+    <link rel="stylesheet" href="css/toast.css"> <!-- Estilos de Alertas -->
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -203,6 +204,7 @@ if (class_exists('Category')) {
 
     <!-- Lógica del Carrito (JS Puro) -->
     <script src="js/tool-kit-v002.js"></script>
+    <script src="js/toast.js"></script> <!-- JS de Alertas -->
     
     <script>
 
@@ -223,7 +225,8 @@ if (class_exists('Category')) {
                 cart.push({ id, name, price, image, quantity: parseInt(quantity) });
             }
             updateCartUI();
-            toggleCart(); // Abrir carrito al agregar
+            //toggleCart(); // Abrir carrito al agregar
+            Toast.fire("Producto agregado al carrito", "success");
         }
 
         function removeFromCart(id) {
@@ -326,7 +329,7 @@ if (class_exists('Category')) {
             
             // 1. Validar que el carrito no esté vacío
             if (cart.length === 0) {
-                alert("Tu carrito está vacío. Agrega productos para continuar.");
+                Toast.fire("Tu carrito está vacío. Agrega productos para continuar.", "warning");
                 return;
             }
 

@@ -120,5 +120,69 @@ class HomeController {
         $content_view = '../views/home/success.php';
         require_once '../views/layouts/client_layout.php';
     }
+
+    /**
+     * Muestra el historial de pedidos del cliente logueado
+     */
+    public function myOrders() {
+        // Verificar sesión
+        if (!isset($_SESSION['client_id'])) {
+            header('Location: ?route=home');
+            exit;
+        }
+
+        $orderModel = new Order();
+        // Usamos el filtro client_id que agregamos al modelo
+        $stmt = $orderModel->readAll(['client_id' => $_SESSION['client_id']]);
+        $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $content_view = '../views/home/orders.php';
+        require_once '../views/layouts/client_layout.php';
+    }
+
+    /**
+     * Retorna los detalles de un pedido en JSON (AJAX)
+     */
+    public function orderDetailsApi() {
+        header('Content-Type: application/json');
+        
+        if (!isset($_SESSION['client_id'])) {
+            echo json_encode(['success' => false, 'message' => 'Sesión no válida']);
+            exit;
+        }
+
+        $order_id = $_GET['id'] ?? null;
+        $orderModel = new Order();
+        $orderModel->id = $order_id;
+
+        // Verificación de seguridad: Validar que el pedido pertenezca al cliente
+        $orderData = $orderModel->readOne();
+        if (!$orderData || $orderData['client_id'] != $_SESSION['client_id']) {
+            echo json_encode(['success' => false, 'message' => 'Pedido no encontrado']);
+            exit;
+        }
+
+        $details = $orderModel->readDetails();
+        echo json_encode(['success' => true, 'data' => $details]);
+        exit;
+    }
+
+    /**
+     * Retorna solo los IDs y Estados de los pedidos del cliente para polling
+     */
+    public function myOrdersStatusApi() {
+        header('Content-Type: application/json');
+        if (!isset($_SESSION['client_id'])) {
+            echo json_encode(['success' => false]);
+            exit;
+        }
+
+        $orderModel = new Order();
+        $stmt = $orderModel->readAll(['client_id' => $_SESSION['client_id']]);
+        $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        echo json_encode(['success' => true, 'orders' => $orders]);
+        exit;
+    }
 }
 ?>

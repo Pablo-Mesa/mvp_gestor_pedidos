@@ -18,7 +18,7 @@ if (class_exists('Category')) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>Solver</title>
+    <title>Solver delivery</title>
     <link rel="icon" type="image/png" href="assets/icono_solver_nobg.png">    
     <link rel="stylesheet" href="css/css_cubo.css">
     <link rel="stylesheet" href="css/client_layout.css">   
@@ -54,6 +54,10 @@ if (class_exists('Category')) {
                 
                     <span class="span-user">Hola, <i class="fas fa-user"></i> <?php echo htmlspecialchars($_SESSION['client_name'] ?? 'Cliente'); ?></span>                
                     
+                    <a href="?route=my_orders" class="btn-std mr-1" title="Mis Pedidos">
+                        <i class="fas fa-list-alt"></i>
+                    </a>
+
                     <a href="?route=logout&type=client" class="btn-logout-solid">
                         <i class="fa fa-sign-out"></i> <span class="logout-text">Cerrar Sesión</span>
                     </a>
@@ -68,7 +72,7 @@ if (class_exists('Category')) {
 
             </div>
 
-        </div>            
+        </div>              
             
     </nav>
     

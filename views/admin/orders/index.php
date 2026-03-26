@@ -52,14 +52,35 @@
 
     .page-title { margin: 0; font-size: 1.5rem; color: #333; }
     
-    .contenedor-tabla {
-        max-height: 600px; overflow-y: auto; border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05); background: white;
-    }
-    table { width: 100%; border-collapse: collapse; background: white; }
-    th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #dee2e6; }
-    th { background-color: #f8f9fa; font-weight: 600; color: #495057; position: sticky; top: 0; }
+    /**/
     
+    /* Tabla con Scroll */
+    .contenedor-tabla {
+        max-height: 340px;
+        overflow-y: auto;
+        border-radius: 8px; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        background: white;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse; 
+        background: white;
+    }
+    thead th {
+        position: sticky;
+        top: 0;           /* Se queda pegado arriba */
+        z-index: 10;      /* Asegura que quede por encima del contenido del tbody */
+        background-color: #f8f9fa; /* Usamos el mismo gris claro de tus th originales */
+        box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4); /* Opcional: añade una sombrita para dar profundidad */
+    }
+
+    th, td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }            
+
     .badge { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 500; }
     /* Colores de estado */
     .status-pending { background: #ffc107; color: #333; } /* Amarillo */

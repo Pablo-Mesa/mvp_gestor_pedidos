@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="css/css_cubo.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/toast.css"> <!-- Estilos de Alertas -->
-    <style>
+    <style> 
         /* Reset y Estilos Base */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; min-height: 100vh; background-color: #f4f6f9; }

@@ -155,12 +155,14 @@ body {
         flex-grow: 1!important; /* Permite que el menú ocupe el espacio necesario */
         justify-content: flex-end!important; /* Alinea el contenido del menú a la derecha */
         white-space: nowrap!important; /* Evita que el texto de "Cerrar Sesión" salte de línea */
+        gap: 6px!important; /* Un poco más apretado en móviles para que quepa todo */
     }
 
     /* Ajuste opcional para que el nombre no empuje demasiado */
     .span-user {
         font-size: 14px!important;
-        margin-right: 8px!important;
+        margin-right: 0!important; /* El gap de .user-menu ya se encarga del espacio */
+        padding: 4px 8px!important;
     }
 
     
@@ -511,6 +513,13 @@ input:checked + .slider {
     align-items: center;
     width: 50%;
     background-color: transparent;
+    gap: 10px;
+}
+
+.user-menu {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Espacio uniforme entre Saludo, Historial y Logout */
 }
 
 .btn-std {

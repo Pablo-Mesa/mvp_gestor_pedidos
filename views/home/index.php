@@ -145,7 +145,7 @@ if ($filter_category_id) {
     <?php else: ?>
         <?php foreach($menu_items as $item): ?>
             <?php 
-                // Preparar datos para JS
+                    // Preparar datos para JS
                 $imgUrl = !empty($item['image']) ? $item['image'] : '';                 
                 // 1. Verificamos si el archivo existe físicamente (relativo a public/index.php)
                 $physicPath = 'uploads/' . $item['image'];                

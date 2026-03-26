@@ -105,6 +105,9 @@ class Order {
         if (!empty($filters['client_name']) && trim($filters['client_name']) !== '') {
             $query .= " AND c.name LIKE :client_name";
         }
+        if (!empty($filters['client_id'])) {
+            $query .= " AND o.client_id = :client_id";
+        }
 
         $query .= " ORDER BY o.created_at DESC";
         
@@ -119,6 +122,9 @@ class Order {
         if (!empty($filters['client_name']) && trim($filters['client_name']) !== '') {
             $search = "%" . trim($filters['client_name']) . "%";
             $stmt->bindValue(':client_name', $search);
+        }
+        if (!empty($filters['client_id'])) {
+            $stmt->bindValue(':client_id', $filters['client_id']);
         }
 
         $stmt->execute();

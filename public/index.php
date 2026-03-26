@@ -26,6 +26,24 @@ switch ($route) {
         $controller->orderSuccess();
         break;
 
+    case 'my_orders':
+        require_once '../controllers/HomeController.php';
+        $controller = new HomeController();
+        $controller->myOrders();
+        break;
+
+    case 'my_order_details':
+        require_once '../controllers/HomeController.php';
+        $controller = new HomeController();
+        $controller->orderDetailsApi();
+        break;
+
+    case 'my_orders_status':
+        require_once '../controllers/HomeController.php';
+        $controller = new HomeController();
+        $controller->myOrdersStatusApi();
+        break;
+
     case 'login':
         require_once '../controllers/AuthController.php';
         $controller = new AuthController();

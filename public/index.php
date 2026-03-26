@@ -162,6 +162,12 @@ switch ($route) {
         $controller->index();
         break;
 
+    case 'orders_api':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->apiIndex();
+        break;
+
     case 'orders_show':
         require_once '../controllers/OrderController.php';
         $controller = new OrderController();
@@ -179,6 +185,8 @@ switch ($route) {
         $controller = new OrderController();
         $controller->updateStatus();
         break;
+
+    // ... dentro de tu switch($route) o lógica de enrutamiento ...
 
     case 'install':
         // Script temporal para crear el Admin

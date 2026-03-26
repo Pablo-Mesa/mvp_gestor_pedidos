@@ -68,7 +68,7 @@
             white-space: nowrap;    
             gap: 0.5rem;                     /* Evita que el nombre se parta en dos líneas */
         }
-
+    
         /* Efecto opcional: Resaltar el nombre específicamente si quieres */
         .span-user strong {
             color: #007bff;                              /* El nombre en azul */

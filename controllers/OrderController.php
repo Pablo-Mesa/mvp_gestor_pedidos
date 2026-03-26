@@ -13,11 +13,43 @@ class OrderController {
         }
 
         $orderModel = new Order();
-        $stmt = $orderModel->readAll();
+        
+        /** 
+         * Pasamos $_GET al modelo. 
+         * Este array contiene 'date', 'delivery_type' y 'client_name' capturados 
+         * desde el formulario de filtros en la vista.
+         */
+        $stmt = $orderModel->readAll($_GET);
         $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $content_view = '../views/admin/orders/index.php';
         require_once '../views/layouts/admin_layout.php';
+    }
+
+    /**
+     * Endpoint AJAX que devuelve los pedidos en formato JSON para auto-actualización.
+     */
+    public function apiIndex() {
+        header('Content-Type: application/json');
+        
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            echo json_encode(['error' => 'No autorizado']);
+            exit;
+        }
+
+        $orderModel = new Order();
+        $stmt = $orderModel->readAll($_GET);
+        $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Formatear datos para el frontend (fechas, nombres seguros y moneda)
+        foreach ($orders as &$order) {
+            $order['user_name'] = htmlspecialchars($order['user_name']);
+            $order['formatted_date'] = date('d/m/Y H:i', strtotime($order['created_at']));
+            $order['formatted_total'] = number_format($order['total'], 0, ',', '.');
+        }
+
+        echo json_encode($orders);
+        exit;
     }
 
     public function show() {

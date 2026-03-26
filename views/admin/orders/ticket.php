@@ -10,7 +10,8 @@ $containerPadding = $is58mm ? '2px' : '15px';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ticket #<?php echo $order['id']; ?></title>
+    <title>Solver | Ticket #<?php echo $order['id']; ?></title>
+    <link rel="icon" type="image/png" href="assets/icono_solver_nobg.png">
     <style>
         body {
             font-family: 'Courier New', Courier, monospace;

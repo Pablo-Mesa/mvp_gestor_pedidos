@@ -19,8 +19,7 @@ if (class_exists('Category')) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>Solver</title>
-    <link rel="icon" type="image/png" href="assets/icono_solver_nobg.png">
-    
+    <link rel="icon" type="image/png" href="assets/icono_solver_nobg.png">    
     <link rel="stylesheet" href="css/css_cubo.css">
     <link rel="stylesheet" href="css/client_layout.css">   
     <link rel="stylesheet" href="css/toast.css"> <!-- Estilos de Alertas -->

@@ -84,21 +84,43 @@ class Order {
     /**
      * Obtiene todos los pedidos ordenados por fecha (más reciente primero)
      */
-    public function readAll($date = null) {
+    public function readAll($filters = []) {
+        // Si llega como string (vieja implementación), convertirlo a array de filtros
+        if (!is_array($filters)) {
+            $date = $filters;
+            $filters = ['date' => $date];
+        }
+
         $query = "SELECT o.*, c.name as user_name 
                   FROM " . $this->table . " o
-                  JOIN clients c ON o.client_id = c.id";
+                  LEFT JOIN clients c ON o.client_id = c.id 
+                  WHERE 1=1";
 
-        if ($date) {
-            $query .= " WHERE DATE(o.created_at) = :date";
+        if (!empty($filters['date']) && $filters['date'] !== '') {
+            $query .= " AND DATE(o.created_at) = :date";
+        }
+        if (!empty($filters['delivery_type']) && $filters['delivery_type'] !== '') {
+            $query .= " AND o.delivery_type = :delivery_type";
+        }
+        if (!empty($filters['client_name']) && trim($filters['client_name']) !== '') {
+            $query .= " AND c.name LIKE :client_name";
         }
 
         $query .= " ORDER BY o.created_at DESC";
         
         $stmt = $this->conn->prepare($query);
-        if ($date) {
-            $stmt->bindParam(':date', $date);
+
+        if (!empty($filters['date']) && $filters['date'] !== '') {
+            $stmt->bindValue(':date', $filters['date']);
         }
+        if (!empty($filters['delivery_type']) && $filters['delivery_type'] !== '') {
+            $stmt->bindValue(':delivery_type', $filters['delivery_type']);
+        }
+        if (!empty($filters['client_name']) && trim($filters['client_name']) !== '') {
+            $search = "%" . trim($filters['client_name']) . "%";
+            $stmt->bindValue(':client_name', $search);
+        }
+
         $stmt->execute();
         return $stmt;
     }

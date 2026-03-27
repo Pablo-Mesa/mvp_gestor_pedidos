@@ -74,13 +74,13 @@ class AuthController {
     }
 
     public function resetPassword() {
-        $token = $_GET['token'] ?? '';
+        // Buscamos el token tanto en el enlace (GET) como en el formulario enviado (POST)
+        $token = $_GET['token'] ?? $_POST['token'] ?? '';
+
         if (empty($token)) { header('Location: ?route=login'); exit; }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $newPassword = $_POST['password'];
-            $token = $_POST['token'];
-            
             $user = new User();
             // Validar token y actualizar (requiere implementar resetPasswordWithToken en User.php)
             if ($user->resetPasswordWithToken($token, $newPassword)) {

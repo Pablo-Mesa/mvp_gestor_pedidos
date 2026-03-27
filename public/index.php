@@ -56,6 +56,24 @@ switch ($route) {
         $controller->logout();
         break;
 
+    case 'forgot_password':
+        require_once '../controllers/AuthController.php';
+        $controller = new AuthController();
+        $controller->forgotPassword();
+        break;
+
+    case 'send_reset_link':
+        require_once '../controllers/AuthController.php';
+        $controller = new AuthController();
+        $controller->sendResetLink();
+        break;
+
+    case 'reset_password':
+        require_once '../controllers/AuthController.php';
+        $controller = new AuthController();
+        $controller->resetPassword();
+        break;
+
     case 'client_login':
         require_once '../controllers/AuthController.php';
         $controller = new AuthController();

@@ -39,6 +39,7 @@
             </div>
             
             <button type="submit">Ingresar</button>
+            <div style="margin-top: 10px; text-align: right;"><a href="?route=forgot_password" style="font-size: 0.8rem; color: #666; text-decoration: none;">¿Olvidaste tu contraseña?</a></div>
         </form>
         
         <!-- 

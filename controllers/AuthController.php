@@ -35,6 +35,65 @@ class AuthController {
         }
     }
 
+    public function forgotPassword() {
+        require_once '../views/auth/forgot_password.php';
+    }
+
+    public function sendResetLink() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $email = $_POST['email'] ?? '';
+            $user = new User();
+            
+            // Supongamos que User tiene un método findByEmail
+            $userData = $user->findByEmail($email);
+            
+            if ($userData) {
+                $token = bin2hex(random_bytes(32));
+                $expires = date("Y-m-d H:i:s", strtotime('+1 hour'));
+                
+                // Guardar token en DB (requiere implementar saveResetToken en User.php)
+                $user->id = $userData['id'];
+                $user->saveResetToken($token, $expires);
+                
+                $resetLink = "http://" . $_SERVER['HTTP_HOST'] . "/mvp_gestor_pedidos/comedor-app/public/?route=reset_password&token=" . $token;
+                
+                /**
+                 * NOTA DE DESARROLLO:
+                 * En producción aquí usarías PHPMailer para enviar el $resetLink.
+                 * En local (WAMP), la función mail() no funcionará sin configurar SMTP.
+                 * Para probar el flujo, mostraremos el link en la vista.
+                 */
+                $debug_link = $resetLink; 
+                $success = "Se ha enviado un enlace de recuperación a tu correo.";
+                require_once '../views/auth/forgot_password.php';
+            } else {
+                $error = "El correo no está registrado.";
+                require_once '../views/auth/forgot_password.php';
+            }
+        }
+    }
+
+    public function resetPassword() {
+        $token = $_GET['token'] ?? '';
+        if (empty($token)) { header('Location: ?route=login'); exit; }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $newPassword = $_POST['password'];
+            $token = $_POST['token'];
+            
+            $user = new User();
+            // Validar token y actualizar (requiere implementar resetPasswordWithToken en User.php)
+            if ($user->resetPasswordWithToken($token, $newPassword)) {
+                header('Location: ?route=login&message=password_updated');
+            } else {
+                $error = "El enlace ha expirado o es inválido.";
+                require_once '../views/auth/reset_password.php';
+            }
+        } else {
+            require_once '../views/auth/reset_password.php';
+        }
+    }
+
     // Método exclusivo para Login de Clientes
     public function clientLogin() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {

@@ -99,6 +99,9 @@ class Order {
         if (!empty($filters['date']) && $filters['date'] !== '') {
             $query .= " AND DATE(o.created_at) = :date";
         }
+        if (!empty($filters['status']) && $filters['status'] !== '') {
+            $query .= " AND o.status = :status";
+        }
         if (!empty($filters['delivery_type']) && $filters['delivery_type'] !== '') {
             $query .= " AND o.delivery_type = :delivery_type";
         }
@@ -115,6 +118,9 @@ class Order {
 
         if (!empty($filters['date']) && $filters['date'] !== '') {
             $stmt->bindValue(':date', $filters['date']);
+        }
+        if (!empty($filters['status']) && $filters['status'] !== '') {
+            $stmt->bindValue(':status', $filters['status']);
         }
         if (!empty($filters['delivery_type']) && $filters['delivery_type'] !== '') {
             $stmt->bindValue(':delivery_type', $filters['delivery_type']);

@@ -1,5 +1,6 @@
 <div class="orders-history-container">
-    <h2 class="section-title"><i class="fas fa-history"></i> Mi Historial de Pedidos</h2>
+    
+    <h2 class="section-title"> <i class="fas fa-history"></i> Mi Historial de Pedidos</h2>
 
     <?php if(empty($orders)): ?>
         <div class="empty-state">
@@ -40,6 +41,7 @@
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
+    
 </div>
 
 <!-- Modal para detalles del pedido -->
@@ -168,7 +170,7 @@ function closeDetailsModal() {
 </script>
 
 <style>
-    .orders-history-container { max-width: 800px; margin: 0 auto; padding-bottom: 2rem; }
+    .orders-history-container { max-width: 800px; margin: 0 auto; padding-bottom: 2rem;}
     .section-title { margin-bottom: 1.5rem; color: #333; display: flex; align-items: center; gap: 10px; }
     
     .empty-state { text-align: center; padding: 4rem 2rem; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }

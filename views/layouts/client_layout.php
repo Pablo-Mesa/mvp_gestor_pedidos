@@ -51,13 +51,13 @@ if (class_exists('Category')) {
             <div class="user-menu">
 
                 <?php if(isset($_SESSION['client_id'])): ?>
-                
+                    
                     <span class="span-user">Hola, <i class="fas fa-user"></i> <?php echo htmlspecialchars($_SESSION['client_name'] ?? 'Cliente'); ?></span>                
                     
                     <a href="?route=my_orders" class="btn-std mr-1" title="Mis Pedidos">
                         <i class="fas fa-list-alt"></i>
                     </a>
-
+                    
                     <a href="?route=logout&type=client" class="btn-logout-solid">
                         <i class="fa fa-sign-out"></i> <span class="logout-text">Cerrar Sesión</span>
                     </a>

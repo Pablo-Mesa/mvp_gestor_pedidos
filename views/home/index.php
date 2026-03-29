@@ -150,6 +150,49 @@ if ($filter_category_id) {
         }
     }
 
+    /* Estilos para la Barra de Reacciones */
+    .product-reactions {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        margin-top: 8px;
+        padding: 5px 0;
+        border-bottom: 1px solid rgba(0,0,0,0.03);
+        margin-bottom: 8px;
+    }
+
+    .reaction-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #b2bec3;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        background: none;
+        border: none;
+        padding: 0;
+        position: relative;
+    }
+
+    /* Colores de marca para reacciones */
+    .reaction-item.fav:hover, .reaction-item.fav.active { color: #ff4757; transform: scale(1.25); filter: drop-shadow(0 0 5px rgba(255,71,87,0.3)); }
+    .reaction-item.like:hover, .reaction-item.like.active { color: #1e90ff; transform: scale(1.25); filter: drop-shadow(0 0 5px rgba(30,144,255,0.3)); }
+    .reaction-item.comment:hover { color: #ffa502; transform: scale(1.25); }
+    .reaction-item.share:hover { color: #2ed573; transform: scale(1.2); }
+
+    .reaction-count {
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-left: 4px;
+        color: #636e72;
+    }
+
+    /* Pequeño feedback al hacer clic */
+    .reaction-item:active {
+        transform: scale(0.9);
+    }
+
     /* Estilos para el selector de porción */
     .portion-selector {
         display: flex;
@@ -403,7 +446,24 @@ if ($filter_category_id) {
                 <img src="<?php echo $displayImg; ?>" alt="<?php echo htmlspecialchars($item['product_name']); ?>" class="product-img">
                                
                 <div class="product-body">
-                    <div class="product-category"><?php echo htmlspecialchars($item['category_name'] ?? 'General'); ?></div>
+                    <div class="product-category">
+                        <span><?php echo htmlspecialchars($item['category_name'] ?? 'General'); ?></span>
+                        <div class="product-reactions">
+                            <button class="reaction-item fav" onclick="toggleReaction(this)" title="Añadir a favoritos">
+                                <i class="<?php echo (isset($item['is_favorite']) && $item['is_favorite']) ? 'fas' : 'far'; ?> fa-heart"></i>
+                            </button>
+                            <button class="reaction-item like" onclick="toggleReaction(this)" title="Me gusta">
+                                <i class="far fa-thumbs-up"></i>
+                                <span class="reaction-count">0</span>
+                            </button>
+                            <button class="reaction-item comment" onclick="openReviewModal('<?php echo $item['id']; ?>')" title="Dejar una reseña">
+                                <i class="far fa-comment"></i>
+                            </button>
+                            <button class="reaction-item share" onclick="shareProduct('<?php echo addslashes($item['product_name']); ?>')" title="Recomendar">
+                                <i class="fas fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
                     <div class="product-title"><?php echo htmlspecialchars($item['product_name']); ?></div>
                     
                     <!-- Precio Dinámico -->

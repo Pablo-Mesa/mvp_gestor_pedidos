@@ -40,6 +40,14 @@
         text-align: left;
         border-bottom: 1px solid #ddd;
     }
+    
+    /* El contenedor flex ahora está dentro de un div, no en el td */
+    .actions-wrapper {
+        display: flex;
+        gap: 8px;
+        align-items: center; /* Alinea verticalmente los botones al centro */
+        white-space: nowrap;
+    }
 </style>
 
 <h1>Gestión de Menú del Día</h1>
@@ -86,8 +94,23 @@
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <a href="?route=menus_toggle_availability&id=<?php echo $menu['id']; ?>&date=<?php echo $current_date; ?>&status=<?php echo $menu['is_available']; ?>" class="btn btn-sm" style="background-color: #ffc107; color: #212529;"><?php echo $menu['is_available'] ? 'Agotar' : 'Habilitar'; ?></a>
-                                    <a href="?route=menus_unassign&id=<?php echo $menu['id']; ?>&date=<?php echo $current_date; ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿Quitar este plato del menú del día?')">Quitar</a>
+                                    <div class="actions-wrapper">
+                                        <!-- Se añade un min-width para evitar que el botón cambie de tamaño según el texto -->
+                                        <a href="?route=menus_toggle_availability&id=<?php echo $menu['id']; ?>&date=<?php echo $current_date; ?>&status=<?php echo $menu['is_available']; ?>" 
+                                           class="btn btn-sm" 
+                                           style="background-color: #ffc107; color: #212529; min-width: 85px;">
+                                            <?php echo $menu['is_available'] ? 'Agotar' : 'Habilitar'; ?>
+                                        </a>
+                                        <button type="button" 
+                                                class="btn btn-danger btn-sm" 
+                                                onclick="confirmAction('?route=menus_unassign&id=<?php echo $menu['id']; ?>&date=<?php echo $current_date; ?>', {
+                                                    title: '¿Quitar plato?',
+                                                    message: 'Vas a quitar este plato del menú del día.',
+                                                    btnText: 'Sí, quitar'
+                                                })">
+                                            Quitar
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -108,9 +131,25 @@
                 <select name="product_id" id="product_id" required>
                     <option value="">-- Elige un producto --</option>
                     <?php 
+                    // 1. Obtenemos los IDs de productos ya asignados para esta fecha
                     $assigned_product_ids = array_column($assigned_menus, 'product_id');
+
+                    // 2. Identificamos dinámicamente el ID de la categoría "Almuerzo"
+                    // Usamos stripos para que sea flexible (Almuerzo, Almuerzos, etc.)
+                    $target_category_id = null;
+                    foreach ($available_products as $p) {
+                        if (isset($p['category_name']) && stripos($p['category_name'], 'Almuerzo') !== false) {
+                            $target_category_id = $p['category_id'];
+                            break;
+                        }
+                    }
+
+                    // 3. Generamos las opciones filtrando por ID de categoría y evitando duplicados
                     foreach($available_products as $product): 
-                        if (!in_array($product['id'], $assigned_product_ids)):
+                        $is_assigned = in_array($product['id'], $assigned_product_ids);
+                        $is_lunch_category = ($target_category_id !== null && $product['category_id'] == $target_category_id);
+
+                        if (!$is_assigned && $is_lunch_category):
                     ?>
                         <option value="<?php echo $product['id']; ?>"><?php echo htmlspecialchars($product['name']); ?></option>
                     <?php 

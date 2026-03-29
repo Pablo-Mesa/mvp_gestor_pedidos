@@ -94,6 +94,32 @@
         .btn-filter { padding: 6px 16px; background-color: #fff; border: 1px solid #ced4da; border-radius: 50px; text-decoration: none; color: #495057; font-size: 0.9rem; transition: all 0.2s; }
         .btn-filter:hover { background-color: #e9ecef; border-color: #adb5bd; }
         .btn-filter.active { background-color: #007bff; color: #fff; border-color: #007bff; }
+
+        /* Estilos para el Modal de Confirmación Reutilizable */
+        .modal-confirm-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .modal-confirm-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            animation: modalSlideUp 0.3s ease-out;
+        }
+        @keyframes modalSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -136,11 +162,52 @@
             ?>
         </main>
     </div>
-    
+
+    <!-- Modal de Confirmación Global -->
+    <div id="globalConfirmModal" class="modal-confirm-overlay">
+        <div class="modal-confirm-card">
+            <div id="globalConfirmIcon" style="color: #dc3545; font-size: 3.5rem; margin-bottom: 1rem;">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <h2 id="globalConfirmTitle" style="margin: 0 0 0.5rem 0; color: #212529;">¿Estás seguro?</h2>
+            <p id="globalConfirmMessage" style="color: #6c757d; margin-bottom: 2rem;"></p>
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button onclick="closeConfirmModal()" class="btn" style="background-color: #6c757d; border: none; color: white;">Cancelar</button>
+                <a id="globalConfirmLink" href="#" class="btn">Confirmar</a>
+            </div>
+        </div>
+    </div>
+
     <script src="js/tool-kit-v002.js"></script>
     <script src="js/toast.js"></script> <!-- JS de Alertas -->
     <script>
         drawCube("here_cube", true, "28px");
+
+        /**
+         * Función Global de Confirmación
+         */
+        function confirmAction(url, options = {}) {
+            const modal = document.getElementById('globalConfirmModal');
+            document.getElementById('globalConfirmTitle').innerText = options.title || '¿Estás seguro?';
+            document.getElementById('globalConfirmMessage').innerText = options.message || 'Esta acción no se puede deshacer.';
+            
+            const link = document.getElementById('globalConfirmLink');
+            link.href = url;
+            link.innerText = options.btnText || 'Confirmar';
+            link.className = 'btn ' + (options.btnClass || 'btn-danger');
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('globalConfirmModal').style.display = 'none';
+        }
+
+        // Cerrar modal al hacer clic fuera del card
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('globalConfirmModal');
+            if (e.target === modal) closeConfirmModal();
+        });
     </script>
 </body>
 </html>

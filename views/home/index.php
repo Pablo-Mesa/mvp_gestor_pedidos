@@ -142,14 +142,6 @@ if ($filter_category_id) {
         border-color: #28a745 !important;
     }
 
-    /* Estilos base para móviles (se activan debajo de 768px) */
-    @media (max-width: 768px) {
-
-        .btn-primary {
-            display: inline;
-        }
-    }
-
     /* Estilos para la Barra de Reacciones */
     .product-reactions {
         display: flex;
@@ -221,6 +213,11 @@ if ($filter_category_id) {
         .overlay h3 { font-size: 0.9rem; }
         .overlay p { font-size: 0.75rem; }
         .step-box i { font-size: 1.2rem !important; }
+
+        .btn-primary {
+            display: inline;
+        }
+
     }
 
     .hero-promo {
@@ -232,7 +229,7 @@ if ($filter_category_id) {
     margin-left: -50vw;
     margin-right: -50vw;
     margin-top: -2.1rem; /* Ajuste para eliminar cualquier gap con las categorías */
-    margin-bottom: 2rem;
+    margin-bottom: 0.5rem;
     overflow: hidden;
     background: linear-gradient(135deg, #1a1a1a 0%, #2d3436 100%); /* Fondo oscuro para resaltar el cristal */
     padding: 10px 0;

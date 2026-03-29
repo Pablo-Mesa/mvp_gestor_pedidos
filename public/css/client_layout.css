@@ -4,12 +4,19 @@
     box-sizing: border-box
 }
 
+html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden; /* Asegura que la raíz no desborde horizontalmente */
+}
+
 body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    max-height: fit-content;
     width: 100%;
+    overflow-x: hidden; /* Evita el pequeño gap por desbordamiento de hijos */
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f8f9fa;/**/
     margin: 0;
@@ -19,10 +26,12 @@ body {
 .fixed-header {
     position: sticky;
     top: 0;
+    left: 0;
+    right: 0; /* Forzamos el anclaje a ambos lados */
     z-index: 100;
     background-color: #ffffff;
     box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); /* Sombra suave para todo el bloque */
-    width: 100%;
+    width: auto; /* Permitimos que el navegador lo estire naturalmente entre left y right */
 }
 
 /* Navbar Estilo */
@@ -32,6 +41,7 @@ body {
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
+    width: auto; /* Evita conflictos de cálculo de ancho */
     /* Se eliminó sticky, top, z-index y shadow porque ahora lo maneja .fixed-header */
 }
 .navbar-brand { font-size: 1.5rem; font-weight: bold; color: #333; text-decoration: none; }
@@ -48,7 +58,7 @@ body {
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); 
     width: 100%; 
     gap: 1.5rem;
-    background-color: #f8f9fa; 
+    background-color: #f8f9fa; /*#f8f9fa*/ 
 }
 .product-card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); overflow: hidden; transition: transform 0.2s; display: flex; flex-direction: column; border: #a0a0a0 1px solid;}
 .product-card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }

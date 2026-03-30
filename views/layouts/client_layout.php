@@ -112,7 +112,7 @@ if (class_exists('Category')) {
     <div class="cart-overlay" onclick="toggleCart()"></div>
     <div class="cart-sidebar" id="cart-sidebar">
         <div class="cart-header">
-            <h3>Tu Pedido</h3>
+            <h3> <i class="fas fa-shopping-cart"></i> Tu Pedido</h3>
             <button class="btn-icon" onclick="toggleCart()"><i class="fas fa-times"></i></button>
         </div>
         <div class="cart-items" id="cart-items-container">
@@ -123,8 +123,10 @@ if (class_exists('Category')) {
                 <span>Total:</span>
                 <span id="cart-total-price">Gs. 0</span>
             </div>
-            <!-- Aquí podrías enviar a checkout -->
-            <a href="#" id="btnCheckout" onclick="proceedToCheckout(event)" class="btn btn-success" style="display: block; text-align: center; width: 100%;">Finalizar Pedido</a>
+            <a href="#" id="btnCheckout" onclick="proceedToCheckout(event)" class="btn btn-success" style="display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%;">
+                <i class="fas fa-shopping-bag"></i>
+                <span>Finalizar Pedido</span>
+            </a>
         </div>
     </div>
     
@@ -216,7 +218,16 @@ if (class_exists('Category')) {
         let cart = JSON.parse(localStorage.getItem('comedor_cart')) || [];
 
         function toggleCart() {
-            document.querySelector('.cart-sidebar').classList.toggle('open');
+            const sidebar = document.querySelector('.cart-sidebar');
+            const isOpening = !sidebar.classList.contains('open');
+
+            // Validación: Si intentamos abrir el carrito y está vacío, avisamos sutilmente
+            if (isOpening && cart.length === 0) {
+                Toast.fire("Tu carrito aún está vacío 🛒", "info");
+                return;
+            }
+
+            sidebar.classList.toggle('open');
             document.querySelector('.cart-overlay').classList.toggle('open');
         }
 
@@ -235,6 +246,18 @@ if (class_exists('Category')) {
         function removeFromCart(id) {
             cart = cart.filter(item => item.id !== id);
             updateCartUI();
+        }
+
+        function changeQuantity(id, delta) {
+            const item = cart.find(i => i.id === id);
+            if (item) {
+                item.quantity += delta;
+                if (item.quantity <= 0) {
+                    removeFromCart(id);
+                } else {
+                    updateCartUI();
+                }
+            }
         }
 
         function updateCartUI() {
@@ -268,10 +291,15 @@ if (class_exists('Category')) {
                 <div class="cart-item">
                     <img src="${imgPath}" alt="img">
                     <div class="cart-item-details">
-                        <div style="font-weight: bold; font-size: 0.9rem;">${item.name}</div>
-                        <div style="font-size: 0.85rem; color: #666;">${item.quantity} x Gs. ${new Intl.NumberFormat('es-PY').format(item.price)}</div>
+                        <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 2px;">${item.name}</div>
+                        <div style="font-size: 0.8rem; color: #636e72; margin-bottom: 4px;">Gs. ${new Intl.NumberFormat('es-PY').format(item.price)}</div>
+                        <div class="cart-qty-control">
+                            <button onclick="changeQuantity('${item.id}', -1)"><i class="fas fa-minus"></i></button>
+                            <span>${item.quantity}</span>
+                            <button onclick="changeQuantity('${item.id}', 1)"><i class="fas fa-plus"></i></button>
+                        </div>
                     </div>
-                    <button class="btn-icon" onclick="removeFromCart('${item.id}')" style="color: #dc3545;">
+                    <button class="btn-icon" onclick="removeFromCart('${item.id}')" style="color: #dc3545; margin-left: auto;">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>`;

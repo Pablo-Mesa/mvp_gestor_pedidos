@@ -59,11 +59,29 @@
                 <!-- 3. Método de Pago -->
                 <div class="section-card">
                     <h3><i class="fas fa-wallet"></i> Método de Pago</h3>
-                    <select name="payment_method" class="form-control" required>
-                        <option value="efectivo">💵 Efectivo</option>
-                        <option value="qr">📱 QR / Transferencia</option>
-                        <option value="tarjeta">💳 Tarjeta (POS)</option>
-                    </select>
+                    <div class="payment-options">
+                        <label class="radio-card">
+                            <input type="radio" name="payment_method" value="efectivo" checked>
+                            <div class="card-content">
+                                <i class="fas fa-money-bill-wave"></i>
+                                <span>Efectivo</span>
+                            </div>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="payment_method" value="pos">
+                            <div class="card-content">
+                                <i class="fas fa-credit-card"></i>
+                                <span>Pos</span>
+                            </div>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="payment_method" value="transferencia">
+                            <div class="card-content">
+                                <i class="fas fa-mobile-alt"></i>
+                                <span>Transferencia</span>
+                            </div>
+                        </label>
+                    </div>
                 </div>
 
                 <!-- 4. Observaciones (Nuevo) -->
@@ -78,7 +96,9 @@
         <!-- Columna Derecha: Resumen -->
         <div class="checkout-summary-col">
             <div class="summary-card">
-                <h3>Resumen</h3>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; width: 100%;">
+                    <i class="fas fa-receipt"></i><h3>Resumen</h3>
+                </div>
                 <div id="checkout-items" class="summary-list">
                     <!-- Items inyectados por JS -->
                 </div>
@@ -91,7 +111,9 @@
                 <button type="button" class="btn-confirm" onclick="submitOrder()">
                     Confirmar Pedido <i class="fas fa-check-circle"></i>
                 </button>
-                <a href="?route=home" class="btn-back">Seguir comprando</a>
+                <a href="?route=home" class="btn-back">
+                    <i class="fas fa-arrow-left"></i> Seguir comprando
+                </a>
             </div>
         </div>
     </div>
@@ -115,7 +137,7 @@
     .hint-text { font-size: 0.85rem; color: #666; margin-bottom: 0.5rem; }
 
     /* Radio Buttons Visuales */
-    .delivery-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; }
+    .delivery-options, .payment-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; }
     .radio-card input { display: none; } /* Ocultar radio real */
     .card-content { 
         border: 2px solid #eee; border-radius: 8px; padding: 1rem; 
@@ -125,7 +147,7 @@
     }
     .card-content i { font-size: 1.5rem; }
     /* Estado seleccionado */
-    .radio-card input:checked + .card-content { border-color: #007bff; background-color: #f0f7ff; color: #007bff; font-weight: bold; }
+    .radio-card input:checked + .card-content { border-color: #28a745; background-color: #f0fdf4; color: #28a745; font-weight: bold; }
 
     /* Mapa */
     .map-container { height: 300px; width: 100%; border-radius: 8px; z-index: 1; }
@@ -144,8 +166,21 @@
     .btn-confirm { width: 100%; padding: 14px; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
     .btn-confirm:hover { background: #218838; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(40,167,69,0.3); }
     
-    .btn-back { display: block; text-align: center; margin-top: 1rem; color: #666; text-decoration: none; font-size: 0.9rem; }
-    .btn-back:hover { text-decoration: underline; }
+    .btn-back { 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        gap: 8px; 
+        margin-top: 1.2rem; 
+        color: #636e72; 
+        text-decoration: none; 
+        font-size: 0.95rem; 
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    .btn-back:hover { color: #2d3436; }
+    .btn-back i { transition: transform 0.3s ease; }
+    .btn-back:hover i { transform: translateX(-5px); }
 </style>
 
 <script>

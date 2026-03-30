@@ -48,9 +48,10 @@
 <div id="detailsModal" class="modal-overlay" style="display:none; align-items:center; justify-content:center;">
     <div class="modal-card" style="max-width: 500px;">
         <div class="modal-content">
-            <h3 style="margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
-                Detalles del Pedido #<span id="detailOrderId"></span>
-            </h3>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; background-color: #f0f2f5; padding: 1rem; border-radius: 8px; border: 1px solid #ddd;">
+                <i class="fas fa-receipt" style="font-size: 1.5rem; color: #007bff;"></i>
+                <h3>Detalles del Pedido #<span id="detailOrderId"></span></h3>
+            </div>
             <div id="orderDetailsList" style="margin-bottom: 1.5rem;">
                 <!-- Aquí se cargarán los platos -->
             </div>

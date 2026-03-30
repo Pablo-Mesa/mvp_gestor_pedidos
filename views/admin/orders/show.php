@@ -53,10 +53,10 @@
         
         <!-- Botones Imprimir -->
         <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-            <a href="?route=orders_ticket&id=<?php echo $order['id']; ?>&format=80mm" target="_blank" style="flex: 1; padding: 12px; background: #007bff; color: white; text-align: center; border-radius: 8px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 6px rgba(0,123,255,0.2);" title="Impresora Estándar">
+            <a href="?route=orders_ticket&id=<?php echo $order['id']; ?>&format=80mm" target="_blank" onclick="confirmOrderOnPrint(<?php echo $order['id']; ?>)" style="flex: 1; padding: 12px; background: #007bff; color: white; text-align: center; border-radius: 8px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 6px rgba(0,123,255,0.2);" title="Impresora Estándar">
                 <i class="fas fa-print"></i> 80mm
             </a>
-            <a href="?route=orders_ticket&id=<?php echo $order['id']; ?>&format=58mm" target="_blank" style="flex: 1; padding: 12px; background: #6c757d; color: white; text-align: center; border-radius: 8px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 6px rgba(108,117,125,0.2);" title="Impresora Chica">
+            <a href="?route=orders_ticket&id=<?php echo $order['id']; ?>&format=58mm" target="_blank" onclick="confirmOrderOnPrint(<?php echo $order['id']; ?>)" style="flex: 1; padding: 12px; background: #6c757d; color: white; text-align: center; border-radius: 8px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 6px rgba(108,117,125,0.2);" title="Impresora Chica">
                 <i class="fas fa-print"></i> 58mm
             </a>
         </div>
@@ -117,6 +117,19 @@
                                 .bindPopup("Ubicación del Cliente")
                                 .openPopup();
                         });
+
+                        function confirmOrderOnPrint(orderId) {
+                            const formData = new FormData();
+                            formData.append('id', orderId);
+                            formData.append('status', 'confirmed');
+
+                            fetch('?route=orders_update_status', {
+                                method: 'POST',
+                                body: formData,
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                            })
+                            .then(() => window.location.reload());
+                        }
                     </script>
                 <?php endif; ?>
             <?php endif; ?>

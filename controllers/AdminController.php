@@ -1,4 +1,6 @@
 <?php
+date_default_timezone_set('America/Asuncion');
+
 class AdminController {
 
     public function __construct() {

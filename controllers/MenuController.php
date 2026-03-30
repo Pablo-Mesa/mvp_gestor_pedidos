@@ -1,4 +1,6 @@
 <?php
+date_default_timezone_set('America/Asuncion');
+
 require_once '../models/DailyMenu.php';
 require_once '../models/Product.php';
 

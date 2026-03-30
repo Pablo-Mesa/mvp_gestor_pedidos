@@ -91,6 +91,10 @@
     .btn-view { padding: 5px 10px; background: #007bff; color: white; border-radius: 4px; text-decoration: none; font-size: 0.85rem; }
     .btn-view:hover { background: #0056b3; }
 
+    .btn-print-table { padding: 5px 8px; color: white; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: bold; margin-left: 3px; }
+    .btn-print-80 { background: #17a2b8; }
+    .btn-print-58 { background: #6c757d; }
+
     /* Animación para nuevos pedidos */
     @keyframes highlightNew {
         0% { background-color: #fff3cd; }
@@ -154,7 +158,11 @@
                             </span>
                         </td>
                         <td>
-                            <a href="?route=orders_show&id=<?php echo $order['id']; ?>" class="btn-view">Ver Detalle</a>
+                            <div style="display: flex; gap: 4px;">
+                                <a href="?route=orders_show&id=<?php echo $order['id']; ?>" class="btn-view" title="Ver Detalle"><i class="fas fa-eye"></i></a>
+                                <a href="?route=orders_ticket&id=<?php echo $order['id']; ?>&format=80mm" target="_blank" class="btn-print-table btn-print-80" title="Imprimir 80mm" onclick="confirmOrderOnPrint(<?php echo $order['id']; ?>)"><i class="fas fa-print"></i> 80</a>
+                                <a href="?route=orders_ticket&id=<?php echo $order['id']; ?>&format=58mm" target="_blank" class="btn-print-table btn-print-58" title="Imprimir 58mm" onclick="confirmOrderOnPrint(<?php echo $order['id']; ?>)"><i class="fas fa-print"></i> 58</a>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -181,6 +189,22 @@ if (empty($orders) && $hasFilter):
     // Almacenamos el ID más alto actual para saber cuáles son nuevos
     let lastMaxId = <?php echo !empty($orders) ? max(array_column($orders, 'id')) : 0; ?>;
     const notificationSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+
+    /**
+     * Actualiza el estado a 'confirmed' automáticamente al imprimir
+     */
+    function confirmOrderOnPrint(orderId) {
+        const formData = new FormData();
+        formData.append('id', orderId);
+        formData.append('status', 'confirmed');
+
+        fetch('?route=orders_update_status', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(() => refreshOrders()); // Refrescar la tabla inmediatamente
+    }
 
     /**
      * Función para actualizar la tabla de pedidos vía AJAX
@@ -242,7 +266,13 @@ if (empty($orders) && $hasFilter):
                         <td>${deliveryHtml}</td>
                         <td style="font-weight: bold;">Gs. ${order.formatted_total}</td>
                         <td><span class="badge ${statusClass}">${statusText}</span></td>
-                        <td><a href="?route=orders_show&id=${order.id}" class="btn-view">Ver Detalle</a></td>
+                        <td>
+                            <div style="display: flex; gap: 4px;">
+                                <a href="?route=orders_show&id=${order.id}" class="btn-view" title="Ver Detalle"><i class="fas fa-eye"></i></a>
+                                <a href="?route=orders_ticket&id=${order.id}&format=80mm" target="_blank" class="btn-print-table btn-print-80" title="Imprimir 80mm" onclick="confirmOrderOnPrint(${order.id})"><i class="fas fa-print"></i> 80</a>
+                                <a href="?route=orders_ticket&id=${order.id}&format=58mm" target="_blank" class="btn-print-table btn-print-58" title="Imprimir 58mm" onclick="confirmOrderOnPrint(${order.id})"><i class="fas fa-print"></i> 58</a>
+                            </div>
+                        </td>
                     </tr>`;
             }).join('');
 

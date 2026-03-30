@@ -1,4 +1,7 @@
 <?php
+// Establecer zona horaria de Paraguay (UTC-3 permanente según Ley 7334/24)
+date_default_timezone_set('America/Asuncion');
+
 require_once '../models/Order.php';
 
 class OrderController {
@@ -14,6 +17,11 @@ class OrderController {
 
         $orderModel = new Order();
         
+        // Por defecto, filtrar por la fecha actual si no se envió una búsqueda específica
+        if (!isset($_GET['date'])) {
+            $_GET['date'] = date('Y-m-d');
+        }
+
         /** 
          * Pasamos $_GET al modelo. 
          * Este array contiene 'date', 'delivery_type' y 'client_name' capturados 
@@ -38,6 +46,12 @@ class OrderController {
         }
 
         $orderModel = new Order();
+
+        // Mantener el filtro por defecto de hoy para la sincronización automática
+        if (!isset($_GET['date'])) {
+            $_GET['date'] = date('Y-m-d');
+        }
+
         $stmt = $orderModel->readAll($_GET);
         $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -89,7 +103,15 @@ class OrderController {
             $order = new Order();
             $order->id = $_POST['id'];
             $order->status = $_POST['status'];
-            $order->updateStatus();
+            $success = $order->updateStatus();
+
+            // Si es una petición AJAX (como al imprimir), respondemos JSON
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => $success]);
+                exit;
+            }
+
             header('Location: ?route=orders_show&id=' . $order->id);
         }
     }

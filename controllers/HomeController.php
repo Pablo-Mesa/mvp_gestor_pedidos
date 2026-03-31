@@ -3,6 +3,7 @@ date_default_timezone_set('America/Asuncion');
 
 require_once '../models/DailyMenu.php';
 require_once '../models/Order.php';
+require_once '../models/ProductReaction.php';
 
 class HomeController {
 
@@ -19,8 +20,9 @@ class HomeController {
     public function index() {
         // Obtener el menú de la fecha actual
         $date = date('Y-m-d');
+        $clientId = $_SESSION['client_id'] ?? null;
         $dailyMenuModel = new DailyMenu();
-        $daily_menus = $dailyMenuModel->readForDate($date)->fetchAll(PDO::FETCH_ASSOC);
+        $daily_menus = $dailyMenuModel->readForDate($date, $clientId)->fetchAll(PDO::FETCH_ASSOC);
 
         // Cargar vistas
         $content_view = '../views/home/index.php';
@@ -134,8 +136,18 @@ class HomeController {
         }
 
         $orderModel = new Order();
-        // Usamos el filtro client_id que agregamos al modelo
-        $stmt = $orderModel->readAll(['client_id' => $_SESSION['client_id']]);
+        $clientId = $_SESSION['client_id'];
+
+        // Obtener lista de meses con actividad
+        $availableMonths = $orderModel->getUniqueMonthsByClient($clientId);
+
+        $filters = ['client_id' => $clientId];
+        if (isset($_GET['month']) && isset($_GET['year'])) {
+            $filters['month'] = $_GET['month'];
+            $filters['year'] = $_GET['year'];
+        }
+
+        $stmt = $orderModel->readAll($filters);
         $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $content_view = '../views/home/orders.php';
@@ -184,6 +196,37 @@ class HomeController {
         $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         echo json_encode(['success' => true, 'orders' => $orders]);
+        exit;
+    }
+
+    public function productReactionApi() {
+        header('Content-Type: application/json');
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        if (!isset($_SESSION['client_id'])) {
+            echo json_encode(['success' => false, 'message' => 'Debes iniciar sesión']);
+            exit;
+        }
+
+        $model = new ProductReaction();
+        $result = $model->toggle($data['product_id'], $_SESSION['client_id'], $data['type']);
+        
+        echo json_encode(['success' => true, 'action' => $result['status']]);
+        exit;
+    }
+
+    public function productReviewApi() {
+        header('Content-Type: application/json');
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        if (!isset($_SESSION['client_id'])) {
+            echo json_encode(['success' => false]); exit;
+        }
+
+        $model = new ProductReaction();
+        $success = $model->addReview($data['product_id'], $_SESSION['client_id'], $data['comment']);
+        
+        echo json_encode(['success' => $success]);
         exit;
     }
 }

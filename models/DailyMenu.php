@@ -22,7 +22,8 @@ class DailyMenu {
      * @param string $date 'Y-m-d'
      * @return PDOStatement
      */
-    public function readForDate($date) {
+    
+    /*public function readForDate($date) {
         $query = 'SELECT 
                     dm.id, 
                     dm.menu_date, 
@@ -44,7 +45,30 @@ class DailyMenu {
         $stmt->bindParam(':menu_date', $date);
         $stmt->execute();
         return $stmt;
+    }*/
+
+    public function readForDate($date, $clientId = null) {
+        $query = "SELECT 
+                    dm.*, p.name as product_name, p.price as product_price, p.price_half, p.image, 
+                    c.name as category_name,
+                    (SELECT COUNT(*) FROM product_reactions WHERE product_id = p.id AND type = 'fav') as fav_count,
+                    (SELECT COUNT(*) FROM product_reactions WHERE product_id = p.id AND type = 'like') as likes_count,
+                    (SELECT COUNT(*) FROM product_reactions WHERE product_id = p.id AND type = 'share') as share_count,
+                    (SELECT COUNT(*) FROM product_reviews WHERE product_id = p.id) as reviews_count,
+                    EXISTS(SELECT 1 FROM product_reactions WHERE product_id = p.id AND client_id = :client_id AND type = 'fav') as is_favorite,
+                    EXISTS(SELECT 1 FROM product_reactions WHERE product_id = p.id AND client_id = :client_id AND type = 'like') as is_liked
+                FROM daily_menus dm
+                JOIN products p ON dm.product_id = p.id
+                LEFT JOIN categories c ON p.category_id = c.id
+                WHERE dm.menu_date = :menu_date AND dm.is_available = 1";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindValue(':menu_date', $date);
+        $stmt->bindValue(':client_id', $clientId);
+        $stmt->execute();
+        return $stmt;
     }
+
 
     /**
      * Asigna un producto a una fecha como menú del día.

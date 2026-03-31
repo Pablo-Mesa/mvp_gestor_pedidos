@@ -222,6 +222,18 @@ switch ($route) {
         $controller->updateStatus();
         break;
 
+    // --- Rutas de Reacciones (Cliente) ---
+    case 'product_reaction_api':
+        require_once '../controllers/HomeController.php';
+        $controller = new HomeController();
+        $controller->productReactionApi();
+        break;
+    case 'product_review_api':
+        require_once '../controllers/HomeController.php';
+        $controller = new HomeController();
+        $controller->productReviewApi();
+        break;
+
     // ... dentro de tu switch($route) o lógica de enrutamiento ...
 
     case 'install':

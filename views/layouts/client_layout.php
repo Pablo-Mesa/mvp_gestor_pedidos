@@ -18,7 +18,7 @@ if (class_exists('Category')) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>Solver delivery</title>
+    <title>Solver - Home</title>
     <link rel="icon" type="image/png" href="assets/icono_solver_nobg.png">    
     <link rel="stylesheet" href="css/css_cubo.css">
     <link rel="stylesheet" href="css/client_layout.css">   
@@ -206,9 +206,9 @@ if (class_exists('Category')) {
 
     </div>
 
-
     <!-- Lógica del Carrito (JS Puro) -->
     <script src="js/tool-kit-v002.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="js/toast.js"></script> <!-- JS de Alertas -->
     
     <script>
@@ -245,6 +245,14 @@ if (class_exists('Category')) {
 
         function removeFromCart(id) {
             cart = cart.filter(item => item.id !== id);
+
+            // Si después de eliminar el item el carrito queda vacío, lo ocultamos
+            if (cart.length === 0) {
+                document.querySelector('.cart-sidebar').classList.remove('open');
+                document.querySelector('.cart-overlay').classList.remove('open');
+                Toast.fire("Tu carrito ahora está vacío 🛒", "info");
+            }
+
             updateCartUI();
         }
 

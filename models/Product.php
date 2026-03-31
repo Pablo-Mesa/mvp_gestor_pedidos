@@ -30,12 +30,33 @@ class Product {
      * Lee todos los productos activos.
      * @return PDOStatement
      */
-    public function readAllActive() {
+    
+    /*public function readAllActive() {
         $query = 'SELECT p.*, c.name as category_name FROM ' . $this->table . ' p LEFT JOIN categories c ON p.category_id = c.id WHERE p.is_active = 1 ORDER BY p.name ASC';
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
         return $stmt;
+    }*/
+
+    public function readAllActive($clientId = null) {
+        $query = "SELECT 
+                    p.*, c.name as category_name,
+                    (SELECT COUNT(*) FROM product_reactions WHERE product_id = p.id AND type = 'fav') as fav_count,
+                    (SELECT COUNT(*) FROM product_reactions WHERE product_id = p.id AND type = 'like') as likes_count,
+                    (SELECT COUNT(*) FROM product_reactions WHERE product_id = p.id AND type = 'share') as share_count,
+                    (SELECT COUNT(*) FROM product_reviews WHERE product_id = p.id) as reviews_count,
+                    EXISTS(SELECT 1 FROM product_reactions WHERE product_id = p.id AND client_id = :client_id AND type = 'fav') as is_favorite,
+                    EXISTS(SELECT 1 FROM product_reactions WHERE product_id = p.id AND client_id = :client_id AND type = 'like') as is_liked
+                FROM products p
+                LEFT JOIN categories c ON p.category_id = c.id
+                WHERE p.is_active = 1";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindValue(':client_id', $clientId);
+        $stmt->execute();
+        return $stmt;
     }
+
 
     public function readOne() {
         $query = 'SELECT p.*, c.name as category_name FROM ' . $this->table . ' p LEFT JOIN categories c ON p.category_id = c.id WHERE p.id = ? LIMIT 1';

@@ -113,6 +113,12 @@ class Order {
         if (!empty($filters['client_id'])) {
             $query .= " AND o.client_id = :client_id";
         }
+        if (!empty($filters['month'])) {
+            $query .= " AND MONTH(o.created_at) = :month";
+        }
+        if (!empty($filters['year'])) {
+            $query .= " AND YEAR(o.created_at) = :year";
+        }
 
         $query .= " ORDER BY o.created_at DESC";
         
@@ -133,6 +139,12 @@ class Order {
         }
         if (!empty($filters['client_id'])) {
             $stmt->bindValue(':client_id', $filters['client_id']);
+        }
+        if (!empty($filters['month'])) {
+            $stmt->bindValue(':month', $filters['month']);
+        }
+        if (!empty($filters['year'])) {
+            $stmt->bindValue(':year', $filters['year']);
         }
 
         $stmt->execute();
@@ -168,6 +180,21 @@ class Order {
         $stmt->bindParam(':id', $this->id);
         $stmt->execute();
         
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Obtiene los meses y años únicos en los que el cliente realizó pedidos
+     */
+    public function getUniqueMonthsByClient($client_id) {
+        $query = "SELECT DISTINCT YEAR(created_at) as year, MONTH(created_at) as month 
+                  FROM " . $this->table . " 
+                  WHERE client_id = :client_id 
+                  ORDER BY year DESC, month DESC";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':client_id', $client_id);
+        $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

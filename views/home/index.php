@@ -2,6 +2,7 @@
 // Lógica para determinar qué mostrar (Menú del día o Categoría específica)
 $filter_category_id = $_GET['category_id'] ?? null;
 $view_title = "Menú del Día"; // Título por defecto
+$clientId = $_SESSION['client_id'] ?? null;
 
 if ($filter_category_id) {
     // Si hay categoría seleccionada, buscamos todos los productos de esa categoría
@@ -13,7 +14,7 @@ if ($filter_category_id) {
     
     $prodModel = new Product();
     // Usamos readAllActive para traer productos disponibles (fuera del menú del día)
-    $stmt = $prodModel->readAllActive(); 
+    $stmt = $prodModel->readAllActive($clientId); 
     $all_products = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     $menu_items = [];
@@ -27,7 +28,12 @@ if ($filter_category_id) {
                 'product_price' => $p['price'],
                 'price_half' => $p['price_half'],
                 'image' => $p['image'],
-                'category_name' => $p['category_name'] ?? 'Cat'
+                'category_name' => $p['category_name'] ?? 'Cat',
+                'fav_count' => $p['fav_count'] ?? 0,
+                'likes_count' => $p['likes_count'] ?? 0,
+                'reviews_count' => $p['reviews_count'] ?? 0,
+                'is_favorite' => $p['is_favorite'] ?? false,
+                'is_liked' => $p['is_liked'] ?? false
             ];
         }
     }
@@ -146,8 +152,8 @@ if ($filter_category_id) {
     .product-reactions {
         display: flex;
         align-items: center;
-        gap: 18px;
-        margin-top: 8px;
+        gap: 12px;
+        margin-top: 5px;
         padding: 5px 0;
         border-bottom: 1px solid rgba(0,0,0,0.03);
         margin-bottom: 8px;
@@ -167,17 +173,37 @@ if ($filter_category_id) {
         position: relative;
     }
 
+    /* Animación de Pulso para Reacciones */
+    @keyframes reaction-pop {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.4); }
+        100% { transform: scale(1); }
+    }
+    .animate-pop { animation: reaction-pop 0.4s ease-out; }
+
     /* Colores de marca para reacciones */
     .reaction-item.fav:hover, .reaction-item.fav.active { color: #ff4757; transform: scale(1.25); filter: drop-shadow(0 0 5px rgba(255,71,87,0.3)); }
     .reaction-item.like:hover, .reaction-item.like.active { color: #1e90ff; transform: scale(1.25); filter: drop-shadow(0 0 5px rgba(30,144,255,0.3)); }
     .reaction-item.comment:hover { color: #ffa502; transform: scale(1.25); }
-    .reaction-item.share:hover { color: #2ed573; transform: scale(1.2); }
 
     .reaction-count {
         font-size: 0.7rem;
         font-weight: 600;
         margin-left: 4px;
         color: #636e72;
+    }
+
+    .social-legend {
+        font-size: 0.72rem;
+        color: #7f8c8d;
+        margin-bottom: 10px;
+        min-height: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .product-reactions { gap: 8px; justify-content: space-between; }
+        .portion-selector { flex-direction: column; gap: 4px; margin-bottom: 8px; }
+        .portion-label { font-size: 0.75rem; }
     }
 
     /* Pequeño feedback al hacer clic */
@@ -214,10 +240,6 @@ if ($filter_category_id) {
         .overlay p { font-size: 0.75rem; }
         .step-box i { font-size: 1.2rem !important; }
 
-        .btn-primary {
-            display: inline;
-        }
-
     }
 
     .hero-promo {
@@ -234,6 +256,26 @@ if ($filter_category_id) {
     background: linear-gradient(135deg, #1a1a1a 0%, #2d3436 100%); /* Fondo oscuro para resaltar el cristal */
     padding: 10px 0;
     border-bottom: 1px solid rgba(255,255,255,0.1);
+    
+    /* Efecto de transición para el colapso */
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 400px; 
+    opacity: 1;
+
+    /* Aseguramos que el Hero esté en una capa inferior al Header */
+    position: relative; 
+    z-index: 5; /* Menor que el header (1100) */
+    }
+
+    /* Clase que se activará al hacer scroll */
+    .hero-promo.collapsed {
+        max-height: 0;
+        opacity: 0;
+        margin-top: 0;
+        margin-bottom: 0;
+        padding: 0;
+        pointer-events: none; /* Evita interacciones mientras está oculto */
+        border: none;
     }
 
     .carousel-container {
@@ -420,95 +462,112 @@ if ($filter_category_id) {
     </div>
     <!-- hero -->
 
-<!-- Grid de Productos -->
-<div class="product-grid">
-    <?php if(empty($menu_items)): ?>
-        <div style="grid-column: 1/-1; text-align: center; padding: 3rem; background: white; border-radius: 8px;">
-            <h3>No hay productos disponibles aquí 😔</h3>
-            <p>Vuelve más tarde para ver las opciones.</p>
-        </div>
-    <?php else: ?>
-        <?php $delay = 0; foreach($menu_items as $item): ?>
-            <?php 
-                    // Preparar datos para JS
-                $imgUrl = !empty($item['image']) ? $item['image'] : '';                 
-                // 1. Verificamos si el archivo existe físicamente (relativo a public/index.php)
-                $physicPath = 'uploads/' . $item['image'];                
-                // 2. Si existe, usamos 'uploads/' como ruta web. Si no, usamos placeholder.
-                $displayImg = (!empty($item['image']) && file_exists($physicPath)) ? 'uploads/' . rawurlencode($item['image']) . '?v=' . time() : 'https://via.placeholder.com/300?text=Sin+Imagen';
-                // Validar si tiene medio plato
-                $hasHalf = !empty($item['price_half']) && $item['price_half'] > 0;
-            ?>
-            <div class="product-card" data-category="<?php echo htmlspecialchars($item['category_name'] ?? 'all'); ?>" style="animation-delay: <?php echo $delay; ?>s;">                
-                <img src="<?php echo $displayImg; ?>" alt="<?php echo htmlspecialchars($item['product_name']); ?>" class="product-img">
-                               
-                <div class="product-body">
-                    <div class="product-category">
-                        <span><?php echo htmlspecialchars($item['category_name'] ?? 'General'); ?></span>
-                        <div class="product-reactions">
-                            <button class="reaction-item fav" onclick="toggleReaction(this)" title="Añadir a favoritos">
-                                <i class="<?php echo (isset($item['is_favorite']) && $item['is_favorite']) ? 'fas' : 'far'; ?> fa-heart"></i>
-                            </button>
-                            <button class="reaction-item like" onclick="toggleReaction(this)" title="Me gusta">
-                                <i class="far fa-thumbs-up"></i>
-                                <span class="reaction-count">0</span>
-                            </button>
-                            <button class="reaction-item comment" onclick="openReviewModal('<?php echo $item['id']; ?>')" title="Dejar una reseña">
-                                <i class="far fa-comment"></i>
-                            </button>
-                            <button class="reaction-item share" onclick="shareProduct('<?php echo addslashes($item['product_name']); ?>')" title="Recomendar">
-                                <i class="fas fa-share-alt"></i>
-                            </button>
+    <!-- Grid de Productos -->
+    <div class="product-grid">
+        <?php if(empty($menu_items)): ?>
+            <div style="grid-column: 1/-1; text-align: center; padding: 3rem; background: white; border-radius: 8px;">
+                <h3>No hay productos disponibles aquí 😔</h3>
+                <p>Vuelve más tarde para ver las opciones.</p>
+            </div>
+        <?php else: ?>
+            <?php $delay = 0; foreach($menu_items as $item): ?>
+                <?php 
+                        // Preparar datos para JS
+                    $imgUrl = !empty($item['image']) ? $item['image'] : '';                 
+                    // 1. Verificamos si el archivo existe físicamente (relativo a public/index.php)
+                    $physicPath = 'uploads/' . $item['image'];                
+                    // 2. Si existe, usamos 'uploads/' como ruta web. Si no, usamos placeholder.
+                    $displayImg = (!empty($item['image']) && file_exists($physicPath)) ? 'uploads/' . rawurlencode($item['image']) . '?v=' . time() : 'https://via.placeholder.com/300?text=Sin+Imagen';
+                    // Validar si tiene medio plato
+                    $hasHalf = !empty($item['price_half']) && $item['price_half'] > 0;
+                ?>
+                <div class="product-card" data-category="<?php echo htmlspecialchars($item['category_name'] ?? 'all'); ?>" style="animation-delay: <?php echo $delay; ?>s;">                
+                    <img src="<?php echo $displayImg; ?>" alt="<?php echo htmlspecialchars($item['product_name']); ?>" class="product-img">
+                                
+                    <div class="product-body">
+                        <div class="product-category">
+                            <span><?php echo htmlspecialchars($item['category_name'] ?? 'General'); ?></span>
+                            <div class="product-reactions">
+                                <button class="reaction-item fav <?php echo ($item['is_favorite'] ?? false) ? 'active' : ''; ?>" 
+                                    onclick="toggleReaction(this, 'fav', '<?php echo $item['product_id']; ?>')" title="Añadir a favoritos">
+                                    <i class="<?php echo (isset($item['is_favorite']) && $item['is_favorite']) ? 'fas' : 'far'; ?> fa-heart"></i>
+                                    <span class="reaction-count"><?php echo $item['fav_count'] ?? 0; ?></span>
+                                </button>
+                                <button class="reaction-item like <?php echo ($item['is_liked'] ?? false) ? 'active' : ''; ?>" 
+                                    onclick="toggleReaction(this, 'like', '<?php echo $item['product_id']; ?>')" title="Me gusta">
+                                    <i class="<?php echo ($item['is_liked'] ?? false) ? 'fas' : 'far'; ?> fa-thumbs-up"></i>
+                                    <span class="reaction-count"><?php echo $item['likes_count'] ?? 0; ?></span>
+                                </button>
+                                <button class="reaction-item comment" onclick="openReviewModal(this, '<?php echo $item['product_id']; ?>')" title="Dejar una reseña">
+                                    <i class="far fa-comment"></i>
+                                    <span class="reaction-count"><?php echo $item['reviews_count'] ?? 0; ?></span>
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="product-title"><?php echo htmlspecialchars($item['product_name']); ?></div>
-                    
-                    <!-- Precio Dinámico -->
-                    <div class="product-price" id="price_display_<?php echo $item['id']; ?>">
-                        Gs. <?php echo number_format($item['product_price'], 0, ',', '.'); ?>
-                    </div>
-                    
-                    <!-- Selector de Porción (Solo si existe precio medio) -->
-                    <?php if($hasHalf): ?>
-                    <div class="portion-selector">
-                        <label class="portion-label">
-                            <input type="radio" name="portion_<?php echo $item['id']; ?>" value="full" checked 
-                                onchange="updatePrice(<?php echo $item['id']; ?>, <?php echo $item['product_price']; ?>, '<?php echo addslashes($item['product_name']); ?>', '<?php echo $item['product_id']; ?>')"> 
-                            Entero
-                        </label>
-                        <label class="portion-label">
-                            <input type="radio" name="portion_<?php echo $item['id']; ?>" value="half"
-                                onchange="updatePrice(<?php echo $item['id']; ?>, <?php echo $item['price_half']; ?>, '<?php echo addslashes($item['product_name']); ?> (Medio)', '<?php echo $item['product_id']; ?>_half')"> 
-                            Medio
-                        </label>
-                    </div>
-                    <?php endif; ?>
-                    
-                    <div class="product-actions">
-                        <div class="qty-control">
-                            <button class="qty-btn" onclick="this.nextElementSibling.value = Math.max(1, parseInt(this.nextElementSibling.value) - 1)">-</button>
-                            <input type="number" id="qty_<?php echo $item['id']; ?>" class="qty-input" value="1" min="1" readonly>
-                            <button class="qty-btn" onclick="this.previousElementSibling.value = parseInt(this.previousElementSibling.value) + 1">+</button>
+                        <div class="product-title"><?php echo htmlspecialchars($item['product_name']); ?></div>
+                        
+                        <!-- Leyenda de Prueba Social -->
+                        <div class="social-legend" id="legend-<?php echo $item['product_id']; ?>">
+                            <?php 
+                                $likes = $item['likes_count'] ?? 0;
+                                $isLiked = $item['is_liked'] ?? false;
+                                if ($likes > 0) {
+                                    if ($isLiked) {
+                                        echo ($likes == 1) ? "Tú reaccionaste a esto" : "A ti y a " . ($likes - 1) . " personas les gusta esto";
+                                    } else {
+                                        echo "A " . $likes . ($likes == 1 ? " persona le gusta" : " personas les gusta") . " esto";
+                                    }
+                                }
+                            ?>
                         </div>
                         
-                        <!-- Botón con ID dinámico y data attributes para que JS lea el estado actual -->
-                        <button class="btn btn-primary" 
-                            id="btn_add_<?php echo $item['id']; ?>"
-                            data-id="<?php echo $item['product_id']; ?>"
-                            data-name="<?php echo htmlspecialchars($item['product_name']); ?>"
-                            data-price="<?php echo $item['product_price']; ?>"
-                            data-image="<?php echo htmlspecialchars($item['image']); ?>"
-                            onclick="handleAddToCart(this, this.dataset.id, this.dataset.name, this.dataset.price, this.dataset.image, document.getElementById('qty_<?php echo $item['id']; ?>').value)">
-                            Agregar <i class="fas fa-plus"></i>
-                        </button>
+                        <!-- Precio Dinámico -->
+                        <div class="product-price" id="price_display_<?php echo $item['id']; ?>">
+                            Gs. <?php echo number_format($item['product_price'], 0, ',', '.'); ?>
+                        </div>
+                        
+                        <!-- Selector de Porción (Solo si existe precio medio) -->
+                        <?php if($hasHalf): ?>
+                        <div class="portion-selector">
+                            <label class="portion-label">
+                                <input type="radio" name="portion_<?php echo $item['id']; ?>" value="full" checked 
+                                    onchange="updatePrice(<?php echo $item['id']; ?>, <?php echo $item['product_price']; ?>, '<?php echo addslashes($item['product_name']); ?>', '<?php echo $item['product_id']; ?>')"> 
+                                Entero
+                            </label>
+                            <label class="portion-label">
+                                <input type="radio" name="portion_<?php echo $item['id']; ?>" value="half"
+                                    onchange="updatePrice(<?php echo $item['id']; ?>, <?php echo $item['price_half']; ?>, '<?php echo addslashes($item['product_name']); ?> (Medio)', '<?php echo $item['product_id']; ?>_half')"> 
+                                Medio
+                            </label>
+                        </div>
+                        <?php endif; ?>
+                        
+                        <div class="product-actions">
+                            <div class="qty-control">
+                                <button class="qty-btn" onclick="this.nextElementSibling.value = Math.max(1, parseInt(this.nextElementSibling.value) - 1)">-</button>
+                                <input type="number" id="qty_<?php echo $item['id']; ?>" class="qty-input" value="1" min="1" readonly>
+                                <button class="qty-btn" onclick="this.previousElementSibling.value = parseInt(this.previousElementSibling.value) + 1">+</button>
+                            </div>
+                            
+                            <!-- Botón con ID dinámico y data attributes para que JS lea el estado actual -->
+                            <button class="btn btn-primary" 
+                                id="btn_add_<?php echo $item['id']; ?>"
+                                data-id="<?php echo $item['product_id']; ?>"
+                                data-name="<?php echo htmlspecialchars($item['product_name']); ?>"
+                                data-price="<?php echo $item['product_price']; ?>"
+                                data-image="<?php echo htmlspecialchars($item['image']); ?>"
+                                onclick="handleAddToCart(this, this.dataset.id, this.dataset.name, this.dataset.price, this.dataset.image, document.getElementById('qty_<?php echo $item['id']; ?>').value)">
+                                Agregar <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        <?php $delay += 0.08; endforeach; ?>
-    <?php endif; ?>
-</div>
+            <?php $delay += 0.08; endforeach; ?>
+        <?php endif; ?>
+    </div>
 
 <script>
+    
 function handleAddToCart(btn, id, name, price, image, qty) {
     // 1. Llamar a la función global original (en client_layout.php)
     addToCart(id, name, price, image, qty);
@@ -525,6 +584,117 @@ function handleAddToCart(btn, id, name, price, image, qty) {
         btn.innerHTML = originalHTML;
         btn.disabled = false;
     }, 1200);
+}
+
+// --- Lógica de Reacciones ---
+
+/**
+ * Actualiza el texto de prueba social debajo de los iconos
+ */
+function updateSocialText(productId, type, count, isActive) {
+    const legend = document.getElementById(`legend-${productId}`);
+    if (!legend || type !== 'like') return; // Enfocamos la leyenda principal en los Likes por ahora
+
+    if (count <= 0) {
+        legend.innerText = "";
+        return;
+    }
+
+    let text = "";
+    if (isActive) {
+        text = (count === 1) ? "Tú reaccionaste a esto" : `A ti y a ${count - 1} ${count - 1 === 1 ? 'persona' : 'personas'} les gusta esto`;
+    } else {
+        text = `A ${count} ${count === 1 ? 'persona le gusta' : 'personas les gusta'} esto`;
+    }
+    legend.innerText = text;
+}
+
+async function toggleReaction(btn, type, productId) {
+    if (!isUserLoggedIn) {
+        Toast.fire("Inicia sesión para reaccionar 🧡", "info");
+        openAuthModal();
+        return;
+    }
+
+    const icon = btn.querySelector('i');
+    const countSpan = btn.querySelector('.reaction-count');
+    let currentCount = parseInt(countSpan.innerText) || 0;
+    const isAdding = !btn.classList.contains('active');
+
+    // Interacción Optimista: Actualizamos la interfaz antes de esperar al servidor
+    btn.classList.toggle('active');
+    const newCount = isAdding ? currentCount + 1 : Math.max(0, currentCount - 1);
+    countSpan.innerText = newCount;
+    
+    // Cambiar iconos de FontAwesome (far = regular, fas = solid)
+    icon.classList.toggle('fas');
+    icon.classList.toggle('far');
+
+    // Animación y Leyenda
+    icon.classList.add('animate-pop');
+    setTimeout(() => icon.classList.remove('animate-pop'), 400);
+    
+    updateSocialText(productId, type, newCount, isAdding);
+    if(isAdding) Toast.fire("¡Gracias por tu reacción!", "success");
+
+    try {
+        const response = await fetch('?route=product_reaction_api', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ product_id: productId, type: type })
+        });
+        const result = await response.json();
+        if (!result.success) throw new Error(result.message);
+    } catch (e) {
+        // Revertir cambios si falla la red o el servidor
+        btn.classList.toggle('active');
+        countSpan.innerText = currentCount;
+        icon.classList.toggle('fas');
+        icon.classList.toggle('far');
+        updateSocialText(productId, type, currentCount, !isAdding);
+        Toast.fire(e.message || "Error al conectar con el servidor", "error");
+    }
+}
+
+async function openReviewModal(btn, productId) {
+    if (!isUserLoggedIn) {
+        Toast.fire("Inicia sesión para comentar", "info");
+        openAuthModal();
+        return;
+    }
+
+    const { value: text } = await Swal.fire({
+        title: '¿Qué te pareció este plato?',
+        input: 'textarea',
+        inputPlaceholder: 'Escribe tu reseña aquí...',
+        showCancelButton: true,
+        confirmButtonText: 'Enviar Comentario',
+        cancelButtonText: 'Cancelar'
+    });
+
+    if (text) {
+        const response = await fetch('?route=product_review_api', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ product_id: productId, comment: text })
+        });
+        const result = await response.json();
+        if (result.success) {
+            Toast.fire("¡Gracias por tu reseña!", "success");
+            
+            // Animación en el icono de comentario
+            const icon = btn.querySelector('i');
+            icon.classList.add('animate-pop');
+            setTimeout(() => icon.classList.remove('animate-pop'), 400);
+            
+            // Actualización instantánea del contador
+            const countSpan = btn.querySelector('.reaction-count');
+            if (countSpan) {
+                let currentCount = parseInt(countSpan.innerText) || 0;
+                countSpan.innerText = currentCount + 1;
+            }
+        }
+    }
 }
 
 function updatePrice(itemId, newPrice, newName, newId) {
@@ -552,4 +722,17 @@ function filterCategory(cat, btn) {
         }
     });
 }
+
+// Lógica para colapsar el Hero al hacer scroll
+window.addEventListener('scroll', function() {
+    const hero = document.querySelector('.hero-promo');
+    if (!hero) return;
+
+    // Si el usuario baja más de 120px, ocultamos el hero para priorizar los productos
+    if (window.scrollY > 120) {
+        hero.classList.add('collapsed');
+    } else {
+        hero.classList.remove('collapsed');
+    }
+});
 </script>

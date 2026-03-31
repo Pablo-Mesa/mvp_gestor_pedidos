@@ -1,7 +1,26 @@
 <div class="orders-history-container">
     
-    <h2 class="section-title"> <i class="fas fa-history"></i> Mi Historial de Pedidos</h2>
+    <div class="history-header">
+        <h2 class="section-title"> <i class="fas fa-history"></i> Mi Historial de Pedidos</h2>
+        <div class="list-months">
+            <?php 
+            $monthsES = [1 => 'Ene', 2 => 'Feb', 3 => 'Mar', 4 => 'Abr', 5 => 'May', 6 => 'Jun', 7 => 'Jul', 8 => 'Ago', 9 => 'Sep', 10 => 'Oct', 11 => 'Nov', 12 => 'Dic'];
+            
+            // Botón "Todos"
+            $allActive = (!isset($_GET['month'])) ? 'active' : '';
+            echo "<a href='?route=my_orders' class='month-pill $allActive'>Todos</a>";
 
+            if (!empty($availableMonths)) {
+                foreach ($availableMonths as $m) {
+                    $isCurrent = (isset($_GET['month']) && $_GET['month'] == $m['month'] && $_GET['year'] == $m['year']) ? 'active' : '';
+                    $label = $monthsES[$m['month']] . ' ' . $m['year'];
+                    echo "<a href='?route=my_orders&month={$m['month']}&year={$m['year']}' class='month-pill $isCurrent'>$label</a>";
+                }
+            }
+            ?>
+        </div>
+    </div>
+    
     <?php if(empty($orders)): ?>
         <div class="empty-state">
             <i class="fas fa-utensils"></i>
@@ -171,14 +190,78 @@ function closeDetailsModal() {
 </script>
 
 <style>
-    .orders-history-container { max-width: 800px; margin: 0 auto; padding-bottom: 2rem;}
-    .section-title { margin-bottom: 1.5rem; color: #333; display: flex; align-items: center; gap: 10px; }
+
+    *{
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }            
+
+    .orders-history-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding-bottom: 2rem;
+        background-color: #f9f9f9;
+    }
+
+    .history-header {
+        display: flex; 
+        flex-direction: row; 
+        justify-content: space-between; 
+        align-items: center; 
+        width: 100%;
+    }
+
+    .list-months {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 10px 0;
+        scrollbar-width: none;
+    }
+    .list-months::-webkit-scrollbar { display: none; }
+
+    .month-pill {
+        padding: 6px 14px;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        text-decoration: none;
+        color: #666;
+        font-size: 0.85rem;
+        white-space: nowrap;
+        transition: 0.3s;
+    }
+    .month-pill.active {
+        background: #007bff;
+        color: #fff;
+        border-color: #007bff;
+    }
+
+    .section-title { margin-bottom: 0.5rem; color: #333; display: flex; align-items: center; gap: 10px; }
     
     .empty-state { text-align: center; padding: 4rem 2rem; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
     .empty-state i { font-size: 3rem; color: #ccc; margin-bottom: 1rem; display: block; }
 
-    .orders-list { display: flex; flex-direction: column; gap: 1rem; }
+    .orders-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem; 
+        width: 100% ;
+        max-height: 360px;
+        overflow-y: auto;
+        background-color:  #f9f9f9;
+        padding: 0rem 1rem;
+    }
     
+    /*.contenedor-tabla {
+        max-height: 400px;
+        overflow-y: auto;
+        border-radius: 8px; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        background: white;
+    }*/
+
     .order-card { background: white; border-radius: 12px; border: 1px solid #eee; padding: 1.2rem; box-shadow: 0 2px 5px rgba(0,0,0,0.03); transition: transform 0.2s; }
     .order-card:hover { transform: scale(1.01); border-color: #ddd; }
     
@@ -213,6 +296,25 @@ function closeDetailsModal() {
     .status-preparing { background-color: #d1ecf1; color: #0c5460; }
     .status-delivered { background-color: #d4edda; color: #155724; }
     .status-cancelled { background-color: #f8d7da; color: #721c24; }
+
+    @media (max-width: 768px) {
+        .history-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 2px;
+            width: 90%;
+            margin: 0 auto;
+        }
+        .list-months {
+            width: 100%;
+            padding: 5px 0;
+        }
+        .orders-list {
+            height: 100vh;
+            max-height: none;
+        }
+    }
 
     @media (max-width: 600px) {
         .order-body { flex-direction: column; align-items: flex-start; gap: 1rem; }

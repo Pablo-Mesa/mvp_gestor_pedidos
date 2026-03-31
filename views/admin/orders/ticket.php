@@ -28,7 +28,7 @@ $containerPadding = $is58mm ? '2px' : '0px';
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             font-size: <?php echo $baseFontSize; ?>;
         }
-        h2, h3 { text-align: center; margin: 0px 0; text-transform: uppercase; font-size: 1.2em; }
+        h2, h3 { text-align: left; margin: 0px 0; text-transform: uppercase; font-size: 1.2em; }
         .divider { border-top: 1px dashed #000; margin: 0px 0; }
         .info-row { display: flex; justify-content: left; margin-bottom: 4px; }
         .item-row { display: flex; justify-content: left; margin-bottom: 5px; }
@@ -57,8 +57,8 @@ $containerPadding = $is58mm ? '2px' : '0px';
 <body onload="window.print()">
 
     <div class="ticket">
-        <h2>COMEDOR APP</h2>
-        <p style="text-align: center; font-size: 0.8rem;">Ticket de Cocina</p>
+        <h2>SOLVER - APP</h2>
+        <p style="text-align: left; font-size: 0.8rem;">Ticket de Cocina</p>
         
         <div class="divider"></div>
 
@@ -105,15 +105,8 @@ $containerPadding = $is58mm ? '2px' : '0px';
             </div>
         <?php endif; ?>
 
-        <?php if($order['delivery_type'] == 'delivery'): ?>
-            <p style="margin-top: 10px; font-size: 0.85rem;">
-                <strong>Dirección:</strong><br>
-                <?php echo htmlspecialchars($order['delivery_address']); ?>
-            </p>
-        <?php endif; ?>
-
         <div class="divider"></div>
-        <p style="text-align: center;">*** FIN TICKET ***</p>
+        <p style="text-align: left;">*** FIN TICKET ***</p>
     </div>
 
 </body>

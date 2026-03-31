@@ -11,7 +11,7 @@
                 <option value="">Todas las entregas</option>
                 <option value="delivery" <?php echo ($_GET['delivery_type'] ?? '') == 'delivery' ? 'selected' : ''; ?>>🛵 Delivery</option>
                 <option value="pickup" <?php echo ($_GET['delivery_type'] ?? '') == 'pickup' ? 'selected' : ''; ?>>🛍️ Retiro</option>
-                <option value="table" <?php echo ($_GET['delivery_type'] ?? '') == 'table' ? 'selected' : ''; ?>>🍽️ Mesa</option>
+                <option value="local" <?php echo ($_GET['delivery_type'] ?? '') == 'local' ? 'selected' : ''; ?>>🍽️ Mesa Local</option>
             </select>
 
             <input type="text" name="client_name" placeholder="Buscar cliente..." value="<?php echo htmlspecialchars($_GET['client_name'] ?? ''); ?>">
@@ -79,7 +79,21 @@
         padding: 12px;
         text-align: left;
         border-bottom: 1px solid #ddd;
-    }            
+    }
+    
+    /* 1. Cuando pases el mouse sobre la TABLA, desenfoca TODAS las filas */
+    table tbody:hover tr {
+        filter: blur(1.5px);
+        opacity: 0.5; /* Opcional: ayuda a que el efecto se vea más limpio */
+        transition: filter 0.3s, opacity 0.3s;
+    }
+
+    /* 2. Pero, la fila que tiene el mouse encima se mantiene clara y con tu color */
+    table tbody tr:hover {
+        filter: blur(0);
+        opacity: 1;
+        background-color: #f1f1f1;
+    }
 
     .badge { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 500; }
     /* Colores de estado */

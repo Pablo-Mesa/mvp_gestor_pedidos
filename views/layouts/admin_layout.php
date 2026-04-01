@@ -46,7 +46,7 @@
         .btn-logout { background-color: #dc3545; color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 4px; font-size: 0.9rem; }
         
         /* Área de Contenido */
-        .content-wrapper { padding: 2rem; overflow-y: auto; }
+        .content-wrapper { padding: 1rem; overflow-y: auto; }
         
         /* Utilidades para Dashboard (Cards) */
         .card-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 1rem; }
@@ -131,6 +131,7 @@
         </div>
         <ul class="sidebar-menu">
             <li><a href="?route=admin">📊 Dashboard</a></li>
+            <li><a href="?route=pos">🖥️ Punto de Venta</a></li>
             <li><a href="?route=orders">📦 Pedidos</a></li>
             <li><a href="?route=menus">📅 Menú del Día</a></li>
             <li><a href="?route=products">🍔 Menú / Productos</a></li>
@@ -179,6 +180,7 @@
     </div>
 
     <script src="js/tool-kit-v002.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="js/toast.js"></script> <!-- JS de Alertas -->
     <script>
         drawCube("here_cube", true, "28px");

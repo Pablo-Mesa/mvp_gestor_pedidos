@@ -24,10 +24,6 @@ class AdminController {
         $stmtCompleted = $orderModel->readAll(['date' => $today, 'status' => 'completado']);
         $completed_orders = $stmtCompleted ? count($stmtCompleted->fetchAll(PDO::FETCH_ASSOC)) : 0;
 
-        // Obtener cantidad de pedidos pendientes hoy para el gráfico
-        $stmtPendingToday = $orderModel->readAll(['date' => $today, 'status' => 'pending']);
-        $pending_orders_today = $stmtPendingToday ? count($stmtPendingToday->fetchAll(PDO::FETCH_ASSOC)) : 0;
-
         // Obtener menú de hoy para verificar stock
         $dailyMenuModel = new DailyMenu();
         $menus = $dailyMenuModel->readForDate($today)->fetchAll(PDO::FETCH_ASSOC);
@@ -44,13 +40,30 @@ class AdminController {
             'platos_vendidos' => $stats['dishes_sold'],
             'low_stock_items' => $low_stock_items,
             'pedidos_completados_hoy' => $completed_orders,
-            'pedidos_pendientes_hoy' => $pending_orders_today
+            'pedidos_pendientes_hoy' => $stats['pending_orders']
         ];
 
         // Definimos qué vista interna queremos cargar
         $content_view = '../views/admin/dashboard.php';
         
         // Cargamos el Layout Principal (que incluirá a $content_view)
+        require_once '../views/layouts/admin_layout.php';
+    }
+
+    public function pos() {
+        require_once '../models/Product.php';
+        require_once '../models/Category.php';
+        require_once '../models/Client.php';
+
+        $productModel = new Product();
+        $products = $productModel->readAllActive()->fetchAll(PDO::FETCH_ASSOC);
+
+        $categoryModel = new Category();
+        $categories = $categoryModel->readAll()->fetchAll(PDO::FETCH_ASSOC);
+
+        $data = ['title' => 'Punto de Venta (POS)'];
+        
+        $content_view = '../views/admin/pos/index.php';
         require_once '../views/layouts/admin_layout.php';
     }
 }

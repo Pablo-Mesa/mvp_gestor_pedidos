@@ -30,6 +30,9 @@ class OrderController {
         $stmt = $orderModel->readAll($_GET);
         $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        // Obtener los contadores de estado para la fecha actual del filtro
+        $statusCounts = $orderModel->getStatusCountsByDate($_GET['date']);
+
         $content_view = '../views/admin/orders/index.php';
         require_once '../views/layouts/admin_layout.php';
     }
@@ -58,6 +61,8 @@ class OrderController {
         // Formatear datos para el frontend (fechas, nombres seguros y moneda)
         foreach ($orders as &$order) {
             $order['user_name'] = htmlspecialchars($order['user_name']);
+            $order['channel_name'] = htmlspecialchars($order['channel_name'] ?? 'Web');
+            $order['channel_icon'] = htmlspecialchars($order['channel_icon'] ?? 'fas fa-globe');
             $order['formatted_date'] = date('d/m/Y H:i', strtotime($order['created_at']));
             $order['formatted_total'] = number_format($order['total'], 0, ',', '.');
         }
@@ -154,6 +159,8 @@ class OrderController {
         // Crear Orden
         $order = new Order();
         $order->client_id = $_SESSION['client_id'];
+        $order->channel_id = 1; // 1 = Web
+        $order->status = 'pending';
         $order->payment_method = $input['payment_method'] ?? 'efectivo';
         $order->delivery_type = $input['delivery_type'] ?? 'pickup';
         $order->observation = $input['observation'] ?? ''; // Guardamos la observación
@@ -187,6 +194,58 @@ class OrderController {
             echo json_encode(['success' => true, 'order_id' => $order->id]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Error SQL: ' . $order->error]);
+        }
+    }
+
+    /**
+     * Endpoint para guardar pedidos desde el POS (Admin/Mostrador)
+     */
+    public function posStore() {
+        header('Content-Type: application/json');
+        
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            echo json_encode(['success' => false, 'message' => 'No autorizado']);
+            exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        if (!$input || empty($input['cart'])) {
+            echo json_encode(['success' => false, 'message' => 'El pedido está vacío']);
+            exit;
+        }
+
+        $order = new Order();
+        // Si no se envía client_id, usamos 0 o un ID de sistema para "Cliente Ocasional"
+        $order->client_id = $input['client_id'] ?? 1; 
+        $order->channel_id = 2; // 2 = Mostrador
+        $order->payment_method = $input['payment_method'] ?? 'efectivo';
+        $order->delivery_type = 'local';
+        $order->observation = $input['observation'] ?? '';
+        $order->status = 'confirmed'; // Los pedidos de mostrador suelen estar confirmados de entrada
+        $order->delivery_address = ''; // Evita error de integridad SQL
+        $order->delivery_lat = null;
+        $order->delivery_lng = null;
+
+        $total = 0;
+        foreach ($input['cart'] as $item) {
+            $total += $item['price'] * $item['quantity'];
+            $order->details[] = [
+                'product_id' => (int)$item['id'],
+                'quantity' => $item['quantity'],
+                'price' => $item['price']
+            ];
+        }
+        $order->total = $total;
+
+        if ($order->create()) {
+            echo json_encode([
+                'success' => true, 
+                'order_id' => $order->id,
+                'message' => 'Venta registrada correctamente'
+            ]);
+        } else {
+            echo json_encode(['success' => false, 'message' => $order->error]);
         }
     }
 }

@@ -10,6 +10,7 @@ class Order {
     // Propiedades de la Orden
     public $id;
     public $client_id;
+    public $channel_id;
     public $total;
     public $status;
     public $observation; // Nueva propiedad
@@ -39,14 +40,16 @@ class Order {
 
             // 1. Insertar Cabecera (Order)
             $query = "INSERT INTO " . $this->table . " 
-                      (client_id, total, status, observation, payment_method, delivery_type, delivery_address, delivery_lat, delivery_lng) 
-                      VALUES (:client_id, :total, 'pending', :observation, :payment_method, :delivery_type, :delivery_address, :delivery_lat, :delivery_lng)";
+                      (client_id, channel_id, total, status, observation, payment_method, delivery_type, delivery_address, delivery_lat, delivery_lng) 
+                      VALUES (:client_id, :channel_id, :total, :status, :observation, :payment_method, :delivery_type, :delivery_address, :delivery_lat, :delivery_lng)";
             
             $stmt = $this->conn->prepare($query);
             
             // Bind params
             $stmt->bindParam(':client_id', $this->client_id);
+            $stmt->bindParam(':channel_id', $this->channel_id);
             $stmt->bindParam(':total', $this->total);
+            $stmt->bindParam(':status', $this->status);
             $stmt->bindParam(':observation', $this->observation);
             $stmt->bindParam(':payment_method', $this->payment_method);
             $stmt->bindParam(':delivery_type', $this->delivery_type);
@@ -93,9 +96,10 @@ class Order {
             $filters = ['date' => $date];
         }
 
-        $query = "SELECT o.*, c.name as user_name 
+        $query = "SELECT o.*, c.name as user_name, ch.name as channel_name, ch.icon as channel_icon 
                   FROM " . $this->table . " o
                   LEFT JOIN clients c ON o.client_id = c.id 
+                  LEFT JOIN order_channels ch ON o.channel_id = ch.id
                   WHERE 1=1";
 
         if (!empty($filters['date']) && $filters['date'] !== '') {
@@ -209,6 +213,26 @@ class Order {
     }
 
     /**
+     * Obtiene el conteo de pedidos agrupados por estado para una fecha
+     */
+    public function getStatusCountsByDate($date) {
+        $query = "SELECT status, COUNT(*) as total FROM " . $this->table . " 
+                  WHERE DATE(created_at) = :date GROUP BY status";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':date', $date);
+        $stmt->execute();
+        
+        $counts = ['all' => 0, 'pending' => 0, 'confirmed' => 0, 'completed' => 0, 'cancelled' => 0];
+        $total = 0;
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $counts[$row['status']] = (int)$row['total'];
+            $total += (int)$row['total'];
+        }
+        $counts['all'] = $total;
+        return $counts;
+    }
+
+    /**
      * Obtiene estadísticas reales para el dashboard
      */
     public function getDashboardStats() {
@@ -223,9 +247,10 @@ class Order {
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         $stats['income_today'] = $row['total'] ?? 0;
 
-        // 2. Pedidos Pendientes (Total global)
-        $query = "SELECT COUNT(*) as count FROM " . $this->table . " WHERE status = 'pending'";
+        // 2. Pedidos Pendientes (Solo de Hoy)
+        $query = "SELECT COUNT(*) as count FROM " . $this->table . " WHERE status = 'pending' AND DATE(created_at) = :today";
         $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':today', $today);
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         $stats['pending_orders'] = $row['count'] ?? 0;

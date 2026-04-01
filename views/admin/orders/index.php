@@ -1,6 +1,7 @@
+<!-- titutlo -->
 <div class="header-actions">
     <h1 class="page-title">Gestión de Pedidos</h1>
-    
+    <!-- Filtros -->
     <form action="index.php" method="GET" class="filter-form">
         <input type="hidden" name="route" value="orders">
         
@@ -28,9 +29,14 @@
 <style>
     /* Reutilizamos estilos de products/index.php para consistencia */
     .header-actions {
-        display: flex; justify-content: space-between; align-items: center;
-        margin-bottom: 1.5rem; background-color: #fff; padding: 1rem;
-        border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        background-color: #fff;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.03);
     }
 
     .filter-form { display: flex; align-items: center; }
@@ -95,6 +101,23 @@
         background-color: #f1f1f1;
     }
 
+    /* Estilo para el select de estado en la tabla */
+    .status-select {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        outline: none;
+    }
+
+    /* Corrección estética: Restablecer el fondo de las opciones para que no hereden el color del select */
+    .status-select option {
+        background-color: #fff !important;
+        color: #333 !important;
+    }
+
     .badge { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 500; }
     /* Colores de estado */
     .status-pending { background: #ffc107; color: #333; } /* Amarillo */
@@ -117,7 +140,69 @@
     .row-new {
         animation: highlightNew 5s ease-out;
     }
+    .status-counters{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        padding: 0rem;
+        background: transparent;
+        border-radius: 0px;
+        box-shadow: none;
+    }
+    .stat-card {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-around;
+        padding: 0.2rem;
+        border-radius: 10px;
+        text-align: center;
+        transition: transform 0.2s;
+        width: 150px;
+    }
+    .stat-card:hover { transform: translateY(-3px); }
+    .stat-card i { font-size: 1.2rem; margin-bottom: 5px; display: block; }
+    .stat-card span { font-size: 1.1rem; font-weight: bold; display: block; }
+    .stat-card label { font-size: 0.75rem; text-transform: uppercase; color: #666; font-weight: 600; }
+    
+    .stat-all{ background: #e2e3e5; border-color: #d6d8db; color: #383d41; }
+    .stat-pending { background: #fff9db; border-color: #ffc107; color: #856404; }
+    .stat-confirmed { background: #e3f2fd; border-color: #17a2b8; color: #0c5460; }
+    .stat-completed { background: #e8f5e9; border-color: #28a745; color: #155724; }
+    .stat-cancelled { background: #fce8e8; border-color: #dc3545; color: #721c24; }
 </style>
+
+<!-- contadores de estados -->
+<div class="status-counters">
+
+    <div class="stat-card stat-all">
+        <i class="fas fa-list"></i>
+        <span id="count-all-orders"><?php echo $statusCounts['all'] ?? 0; ?></span>
+        <label>Todos</label>
+    </div>                            
+
+    <div class="stat-card stat-pending">
+        <i class="fas fa-clock"></i>
+        <span id="count-pending"><?php echo $statusCounts['pending'] ?? 0; ?></span>
+        <label>Pendientes</label>
+    </div>
+    <div class="stat-card stat-confirmed">
+        <i class="fas fa-fire"></i>
+        <span id="count-confirmed"><?php echo $statusCounts['confirmed'] ?? 0; ?></span>
+        <label>En Cocina</label>
+    </div>
+    <div class="stat-card stat-completed">
+        <i class="fas fa-check-circle"></i>
+        <span id="count-completed"><?php echo $statusCounts['completed'] ?? 0; ?></span>
+        <label>Entregados</label>
+    </div>
+    <div class="stat-card stat-cancelled">
+        <i class="fas fa-times-circle"></i>
+        <span id="count-cancelled"><?php echo $statusCounts['cancelled'] ?? 0; ?></span>
+        <label>Cancelados</label>
+    </div>
+</div>
 
 <div class="contenedor-tabla">
     <table>
@@ -125,6 +210,7 @@
             <tr>
                 <th>#ID</th>
                 <th>Fecha</th>
+                <th>Origen</th>
                 <th>Cliente</th>
                 <th>Entrega</th>
                 <th>Total</th>
@@ -140,6 +226,10 @@
                     <tr>
                         <td>#<?php echo $order['id']; ?></td>
                         <td><?php echo date('d/m/Y H:i', strtotime($order['created_at'])); ?></td>
+                        <td title="<?php echo $order['channel_name']; ?>">
+                            <i class="<?php echo $order['channel_icon'] ?? 'fas fa-globe'; ?>"></i>
+                            <span style="font-size: 0.75rem; color: #666;"><?php echo $order['channel_name']; ?></span>
+                        </td>
                         <td>
                             <i class="fas fa-user"></i> <?php echo htmlspecialchars($order['user_name']); ?>
                         </td>
@@ -164,12 +254,13 @@
                                     case 'cancelled': $statusClass = 'status-cancelled'; break;
                                 }
                             ?>
-                            <span class="badge <?php echo $statusClass; ?>">
-                                <?php 
-                                    $statusMap = ['pending'=>'Pendiente', 'confirmed'=>'Confirmado', 'completed'=>'Entregado', 'cancelled'=>'Cancelado'];
-                                    echo $statusMap[$order['status']] ?? $order['status']; 
-                                ?>
-                            </span>
+                            <select class="status-select <?php echo $statusClass; ?>" 
+                                    onchange="updateOrderStatus(this, <?php echo $order['id']; ?>)">
+                                <option value="pending" <?php echo $order['status']=='pending'?'selected':''; ?>>Pendiente</option>
+                                <option value="confirmed" <?php echo $order['status']=='confirmed'?'selected':''; ?>>Confirmado</option>
+                                <option value="completed" <?php echo $order['status']=='completed'?'selected':''; ?>>Entregado</option>
+                                <option value="cancelled" <?php echo $order['status']=='cancelled'?'selected':''; ?>>Cancelado</option>
+                            </select>
                         </td>
                         <td>
                             <div style="display: flex; gap: 4px;">
@@ -203,6 +294,34 @@ if (empty($orders) && $hasFilter):
     // Almacenamos el ID más alto actual para saber cuáles son nuevos
     let lastMaxId = <?php echo !empty($orders) ? max(array_column($orders, 'id')) : 0; ?>;
     const notificationSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+
+    /**
+     * Actualiza el estado de un pedido directamente desde la tabla
+     */
+    function updateOrderStatus(selectElement, orderId) {
+        const newStatus = selectElement.value;
+        const formData = new FormData();
+        formData.append('id', orderId);
+        formData.append('status', newStatus);
+
+        // Cambiar color visualmente mientras procesa
+        selectElement.style.opacity = '0.5';
+
+        fetch('?route=orders_update_status', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Error al actualizar');
+            Toast.fire("Estado actualizado", "success");
+            refreshOrders(); // Esto recargará la tabla y actualizará contadores y colores
+        })
+        .catch(err => {
+            Toast.fire("Error al cambiar estado", "error");
+            selectElement.style.opacity = '1';
+        });
+    }
 
     /**
      * Actualiza el estado a 'confirmed' automáticamente al imprimir
@@ -251,11 +370,19 @@ if (empty($orders) && $hasFilter):
             let hasNewOrders = false;
             let currentMaxIdInResponse = lastMaxId;
 
+            // Objeto para recalcular contadores localmente
+            const newCounts = { all: data.length, pending: 0, confirmed: 0, completed: 0, cancelled: 0 };
+
             tbody.innerHTML = data.map(order => {
                 const isNew = order.id > lastMaxId;
                 if (isNew) {
                     hasNewOrders = true;
                     if (order.id > currentMaxIdInResponse) currentMaxIdInResponse = order.id;
+                }
+
+                // Sumar al contador correspondiente
+                if (newCounts.hasOwnProperty(order.status)) {
+                    newCounts[order.status]++;
                 }
 
                 let statusClass = 'status-pending';
@@ -276,10 +403,18 @@ if (empty($orders) && $hasFilter):
                     <tr class="${isNew ? 'row-new' : ''}">
                         <td>#${order.id}</td>
                         <td>${order.formatted_date}</td>
+                        <td title="${order.channel_name}"><i class="${order.channel_icon}"></i> <span style="font-size: 0.75rem; color: #666;">${order.channel_name}</span></td>
                         <td><i class="fas fa-user"></i> ${order.user_name}</td>
                         <td>${deliveryHtml}</td>
                         <td style="font-weight: bold;">Gs. ${order.formatted_total}</td>
-                        <td><span class="badge ${statusClass}">${statusText}</span></td>
+                        <td>
+                            <select class="status-select ${statusClass}" onchange="updateOrderStatus(this, ${order.id})">
+                                <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Pendiente</option>
+                                <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>Confirmado</option>
+                                <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Entregado</option>
+                                <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancelado</option>
+                            </select>
+                        </td>
                         <td>
                             <div style="display: flex; gap: 4px;">
                                 <a href="?route=orders_show&id=${order.id}" class="btn-view" title="Ver Detalle"><i class="fas fa-eye"></i></a>
@@ -289,6 +424,13 @@ if (empty($orders) && $hasFilter):
                         </td>
                     </tr>`;
             }).join('');
+
+            // Actualizar los contadores visuales en el DOM
+            document.getElementById('count-all-orders').innerText = newCounts.all;
+            document.getElementById('count-pending').innerText = newCounts.pending;
+            document.getElementById('count-confirmed').innerText = newCounts.confirmed;
+            document.getElementById('count-completed').innerText = newCounts.completed;
+            document.getElementById('count-cancelled').innerText = newCounts.cancelled;
 
             // Si hay pedidos nuevos, disparamos alertas
             if (hasNewOrders) {

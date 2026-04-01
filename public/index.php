@@ -91,6 +91,12 @@ switch ($route) {
         $controller = new AdminController();
         $controller->dashboard();
         break;
+
+    case 'pos':
+        require_once '../controllers/AdminController.php';
+        $controller = new AdminController();
+        $controller->pos();
+        break;
         
     // --- Rutas de Productos ---
     case 'products':
@@ -220,6 +226,12 @@ switch ($route) {
         require_once '../controllers/OrderController.php';
         $controller = new OrderController();
         $controller->updateStatus();
+        break;
+
+    case 'pos_store':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->posStore();
         break;
 
     // --- Rutas de Reacciones (Cliente) ---

@@ -4,9 +4,21 @@ date_default_timezone_set('America/Asuncion');
 class AdminController {
 
     public function __construct() {
-        // 1. Verificación de Seguridad: Solo Admin
-        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+        // Si es un cliente logueado, lo mandamos a la web pública
+        if (isset($_SESSION['client_id'])) {
+            header('Location: ?route=home');
+            exit;
+        }
+
+        // Si no hay sesión de staff, al login
+        if (!isset($_SESSION['user_role'])) {
             header('Location: ?route=login');
+            exit;
+        }
+
+        // Redirección inteligente: Si es repartidor, enviarlo a logística
+        if ($_SESSION['user_role'] === 'delivery') {
+            header('Location: ?route=delivery');
             exit;
         }
     }
@@ -21,7 +33,8 @@ class AdminController {
         $today = date('Y-m-d');
         
         // Obtener cantidad de pedidos completados hoy para el gráfico
-        $stmtCompleted = $orderModel->readAll(['date' => $today, 'status' => 'completado']);
+        // Sincronizado con el estado 'completed' que usa logística
+        $stmtCompleted = $orderModel->readAll(['date' => $today, 'status' => 'completed']);
         $completed_orders = $stmtCompleted ? count($stmtCompleted->fetchAll(PDO::FETCH_ASSOC)) : 0;
 
         // Obtener menú de hoy para verificar stock

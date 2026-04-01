@@ -5,6 +5,20 @@ require_once '../models/Client.php';
 class AuthController {
     
     public function login() {
+        // Redirección automática si ya existe una sesión activa
+        if (isset($_SESSION['user_role'])) {
+            if ($_SESSION['user_role'] === 'admin') {
+                header('Location: ?route=admin');
+                exit;
+            } elseif ($_SESSION['user_role'] === 'delivery') {
+                header('Location: ?route=delivery');
+                exit;
+            }
+        } elseif (isset($_SESSION['client_id'])) {
+            header('Location: ?route=home');
+            exit;
+        }
+
         // Si la petición es POST, intentamos loguear
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $user = new User();

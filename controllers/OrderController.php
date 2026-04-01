@@ -11,8 +11,18 @@ class OrderController {
 
     public function index() {
         // Verificar seguridad admin
-        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+        if (isset($_SESSION['client_id'])) {
+            header('Location: ?route=home');
+            exit;
+        }
+
+        if (!isset($_SESSION['user_role'])) {
             header('Location: ?route=login');
+            exit;
+        }
+
+        if ($_SESSION['user_role'] === 'delivery') {
+            header('Location: ?route=delivery');
             exit;
         }
 
@@ -110,7 +120,8 @@ class OrderController {
     }
 
     public function updateStatus() {
-        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') { header('Location: ?route=login'); exit; }
+        // Permitir que tanto Admin como Delivery actualicen estados
+        if (!isset($_SESSION['user_role']) || !in_array($_SESSION['user_role'], ['admin', 'delivery'])) { header('Location: ?route=login'); exit; }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $order = new Order();

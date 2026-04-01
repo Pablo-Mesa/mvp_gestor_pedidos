@@ -4,8 +4,18 @@ require_once '../models/Category.php';
 class CategoryController {
 
     public function __construct() {
-        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+        if (isset($_SESSION['client_id'])) {
+            header('Location: ?route=home');
+            exit;
+        }
+
+        if (!isset($_SESSION['user_role'])) {
             header('Location: ?route=login');
+            exit;
+        }
+
+        if ($_SESSION['user_role'] === 'delivery') {
+            header('Location: ?route=delivery');
             exit;
         }
     }

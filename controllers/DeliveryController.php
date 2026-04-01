@@ -4,8 +4,26 @@ require_once '../models/Order.php';
 class DeliveryController {
 
     public function __construct() {
-        // Seguridad: Solo usuarios con rol 'delivery' o 'admin' pueden entrar
-        if (!isset($_SESSION['user_role']) || !in_array($_SESSION['user_role'], ['delivery', 'admin'])) {
+        // Si es un cliente, mandarlo a su home
+        if (isset($_SESSION['client_id'])) {
+            header('Location: ?route=home');
+            exit;
+        }
+
+        // Seguridad: Verificar si hay sesión iniciada
+        if (!isset($_SESSION['user_role'])) {
+            header('Location: ?route=login');
+            exit;
+        }
+
+        // Redirección inteligente: Si es Admin, enviarlo a su Dashboard en lugar de login
+        if ($_SESSION['user_role'] === 'admin') {
+            header('Location: ?route=admin');
+            exit;
+        }
+
+        // Si por alguna razón tiene otro rol que no sea delivery, fuera de aquí
+        if ($_SESSION['user_role'] !== 'delivery') {
             header('Location: ?route=login');
             exit;
         }
@@ -28,6 +46,7 @@ class DeliveryController {
         // Agrupamos por estado para que el repartidor sepa qué tiene pendiente y qué está entregando
         $pendingOrders = array_filter($orders, fn($o) => $o['status'] === 'ready');
         $activeOrders = array_filter($orders, fn($o) => $o['status'] === 'shipped');
+        $completedOrders = array_filter($orders, fn($o) => $o['status'] === 'completed');
 
         $view_title = "Panel de Logística";
         $content_view = '../views/delivery/index.php';

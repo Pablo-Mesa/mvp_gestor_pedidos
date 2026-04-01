@@ -62,7 +62,7 @@
     
     /* Tabla con Scroll */
     .contenedor-tabla {
-        max-height: 340px;
+        max-height: 400px;
         overflow-y: auto;
         border-radius: 8px; 
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
@@ -144,7 +144,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 0.5rem;
+        margin-top: 1rem;
         padding: 0rem;
         background: transparent;
         border-radius: 0px;
@@ -172,37 +172,6 @@
     .stat-completed { background: #e8f5e9; border-color: #28a745; color: #155724; }
     .stat-cancelled { background: #fce8e8; border-color: #dc3545; color: #721c24; }
 </style>
-
-<!-- contadores de estados -->
-<div class="status-counters">
-
-    <div class="stat-card stat-all">
-        <i class="fas fa-list"></i>
-        <span id="count-all-orders"><?php echo $statusCounts['all'] ?? 0; ?></span>
-        <label>Todos</label>
-    </div>                            
-
-    <div class="stat-card stat-pending">
-        <i class="fas fa-clock"></i>
-        <span id="count-pending"><?php echo $statusCounts['pending'] ?? 0; ?></span>
-        <label>Pendientes</label>
-    </div>
-    <div class="stat-card stat-confirmed">
-        <i class="fas fa-fire"></i>
-        <span id="count-confirmed"><?php echo $statusCounts['confirmed'] ?? 0; ?></span>
-        <label>En Cocina</label>
-    </div>
-    <div class="stat-card stat-completed">
-        <i class="fas fa-check-circle"></i>
-        <span id="count-completed"><?php echo $statusCounts['completed'] ?? 0; ?></span>
-        <label>Entregados</label>
-    </div>
-    <div class="stat-card stat-cancelled">
-        <i class="fas fa-times-circle"></i>
-        <span id="count-cancelled"><?php echo $statusCounts['cancelled'] ?? 0; ?></span>
-        <label>Cancelados</label>
-    </div>
-</div>
 
 <div class="contenedor-tabla">
     <table>
@@ -274,6 +243,37 @@
             <?php endif; ?>
         </tbody>
     </table>
+</div>
+
+<!-- contadores de estados -->
+<div class="status-counters">
+
+    <div class="stat-card stat-all">
+        <i class="fas fa-list"></i>
+        <span id="count-all-orders"><?php echo $statusCounts['all'] ?? 0; ?></span>
+        <label>Todos</label>
+    </div>                            
+
+    <div class="stat-card stat-pending">
+        <i class="fas fa-clock"></i>
+        <span id="count-pending"><?php echo $statusCounts['pending'] ?? 0; ?></span>
+        <label>Pendientes</label>
+    </div>
+    <div class="stat-card stat-confirmed">
+        <i class="fas fa-fire"></i>
+        <span id="count-confirmed"><?php echo $statusCounts['confirmed'] ?? 0; ?></span>
+        <label>En Cocina</label>
+    </div>
+    <div class="stat-card stat-completed">
+        <i class="fas fa-check-circle"></i>
+        <span id="count-completed"><?php echo $statusCounts['completed'] ?? 0; ?></span>
+        <label>Entregados</label>
+    </div>
+    <div class="stat-card stat-cancelled">
+        <i class="fas fa-times-circle"></i>
+        <span id="count-cancelled"><?php echo $statusCounts['cancelled'] ?? 0; ?></span>
+        <label>Cancelados</label>
+    </div>
 </div>
 
 <?php 

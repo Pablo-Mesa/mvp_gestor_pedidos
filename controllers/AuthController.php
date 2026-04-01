@@ -17,9 +17,11 @@ class AuthController {
                 $_SESSION['user_name'] = $user->name; // Admin name
                 $_SESSION['user_role'] = $user->role;
                 
-                // Redireccionar según el rol
+                // Redireccionar según el rol específico
                 if ($user->role === 'admin') {
                     header('Location: ?route=admin');
+                } elseif ($user->role === 'delivery') {
+                    header('Location: ?route=delivery');
                 } else {
                     header('Location: ?route=home');
                 }

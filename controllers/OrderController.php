@@ -3,6 +3,7 @@
 date_default_timezone_set('America/Asuncion');
 
 require_once '../models/Order.php';
+require_once '../models/User.php';
 
 class OrderController {
 
@@ -82,6 +83,13 @@ class OrderController {
         $order = $orderModel->readOne();
         $details = $orderModel->readDetails();
 
+        // Si el pedido es delivery, cargamos los repartidores para la asignación
+        $deliveryUsers = [];
+        if ($order['delivery_type'] === 'delivery') {
+            $userModel = new User();
+            $deliveryUsers = $userModel->getDeliveryUsers();
+        }
+
         $content_view = '../views/admin/orders/show.php';
         require_once '../views/layouts/admin_layout.php';
     }
@@ -119,6 +127,23 @@ class OrderController {
 
             header('Location: ?route=orders_show&id=' . $order->id);
         }
+    }
+
+    /**
+     * Procesa la asignación de un repartidor vía AJAX
+     */
+    public function assignDelivery() {
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            echo json_encode(['success' => false, 'message' => 'No autorizado']);
+            exit;
+        }
+
+        $orderId = $_POST['order_id'] ?? null;
+        $deliveryId = $_POST['delivery_id'] ?? null;
+
+        $orderModel = new Order();
+        $success = $orderModel->assignDelivery($orderId, $deliveryId);
+        echo json_encode(['success' => $success]);
     }
 
     // --- Métodos de CLIENTE ---

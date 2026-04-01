@@ -79,4 +79,14 @@ class User {
         }
         return false;
     }
+
+    /**
+     * Obtiene todos los usuarios con rol de repartidor
+     */
+    public function getDeliveryUsers() {
+        $query = "SELECT id, name FROM " . $this->table . " WHERE role = 'delivery'";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

@@ -228,6 +228,12 @@ switch ($route) {
         $controller->updateStatus();
         break;
 
+    case 'orders_assign_delivery':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->assignDelivery();
+        break;
+
     case 'pos_store':
         require_once '../controllers/OrderController.php';
         $controller = new OrderController();
@@ -246,7 +252,32 @@ switch ($route) {
         $controller->productReviewApi();
         break;
 
+    case 'delivery':
+        require_once '../controllers/DeliveryController.php';
+        $controller = new DeliveryController();
+        $controller->index();
+        break;
+
     // ... dentro de tu switch($route) o lógica de enrutamiento ...
+
+    case 'install_delivery':
+        // Script temporal para crear el Repartidor
+        $db = new Database();
+        $conn = $db->getConnection();
+        $password = 'delivery123';
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        
+        try {
+            $sql = "INSERT INTO users (name, email, password, phone, address, role) 
+                    VALUES ('Repartidor de Prueba', 'delivery@comedor.com', :pass, '0981000111', 'Base Central de Reparto', 'delivery')";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(':pass', $hashed_password);
+            $stmt->execute();
+            echo "<h1>Usuario Delivery Creado</h1><p>Email: delivery@comedor.com<br>Pass: delivery123</p><p><a href='?route=login'>Ir al Login</a></p>";
+        } catch (PDOException $e) {
+            echo "<h1>Error</h1><p>" . $e->getMessage() . "</p>";
+        }
+        break;
 
     case 'install':
         // Script temporal para crear el Admin

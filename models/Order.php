@@ -13,6 +13,7 @@ class Order {
     public $channel_id;
     public $total;
     public $status;
+    public $delivery_user_id; // ID del repartidor asignado
     public $observation; // Nueva propiedad
     public $payment_method;
     public $delivery_type;
@@ -96,10 +97,11 @@ class Order {
             $filters = ['date' => $date];
         }
 
-        $query = "SELECT o.*, c.name as user_name, ch.name as channel_name, ch.icon as channel_icon 
+        $query = "SELECT o.*, c.name as user_name, c.phone as user_phone, ch.name as channel_name, ch.icon as channel_icon, d.name as delivery_name
                   FROM " . $this->table . " o
                   LEFT JOIN clients c ON o.client_id = c.id 
                   LEFT JOIN order_channels ch ON o.channel_id = ch.id
+                  LEFT JOIN users d ON o.delivery_user_id = d.id
                   WHERE 1=1";
 
         if (!empty($filters['date']) && $filters['date'] !== '') {
@@ -122,6 +124,9 @@ class Order {
         }
         if (!empty($filters['year'])) {
             $query .= " AND YEAR(o.created_at) = :year";
+        }
+        if (!empty($filters['delivery_user_id'])) {
+            $query .= " AND o.delivery_user_id = :delivery_user_id";
         }
 
         $query .= " ORDER BY o.created_at DESC";
@@ -150,9 +155,26 @@ class Order {
         if (!empty($filters['year'])) {
             $stmt->bindValue(':year', $filters['year']);
         }
+        if (!empty($filters['delivery_user_id'])) {
+            $stmt->bindValue(':delivery_user_id', $filters['delivery_user_id']);
+        }
 
         $stmt->execute();
         return $stmt;
+    }
+
+    /**
+     * Asigna un repartidor a un pedido y actualiza el estado
+     */
+    public function assignDelivery($orderId, $deliveryUserId) {
+        $query = "UPDATE " . $this->table . " 
+                  SET delivery_user_id = :delivery_id, status = 'shipped' 
+                  WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        return $stmt->execute([
+            ':delivery_id' => $deliveryUserId,
+            ':id' => $orderId
+        ]);
     }
 
     /**
@@ -213,57 +235,43 @@ class Order {
     }
 
     /**
-     * Obtiene el conteo de pedidos agrupados por estado para una fecha
+     * Obtiene los contadores de pedidos por estado para una fecha específica
      */
     public function getStatusCountsByDate($date) {
-        $query = "SELECT status, COUNT(*) as total FROM " . $this->table . " 
-                  WHERE DATE(created_at) = :date GROUP BY status";
+        $query = "SELECT status, COUNT(*) as total FROM " . $this->table . " WHERE DATE(created_at) = :date GROUP BY status";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':date', $date);
         $stmt->execute();
-        
-        $counts = ['all' => 0, 'pending' => 0, 'confirmed' => 0, 'completed' => 0, 'cancelled' => 0];
-        $total = 0;
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $counts[$row['status']] = (int)$row['total'];
-            $total += (int)$row['total'];
-        }
-        $counts['all'] = $total;
-        return $counts;
+        return $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
     }
 
     /**
-     * Obtiene estadísticas reales para el dashboard
+     * Obtiene estadísticas resumidas para el dashboard
      */
     public function getDashboardStats() {
-        $stats = [];
         $today = date('Y-m-d');
+        
+        // Pedidos Pendientes totales (no solo de hoy)
+        $q1 = "SELECT COUNT(*) FROM " . $this->table . " WHERE status = 'pending'";
+        $pending = $this->conn->query($q1)->fetchColumn();
 
-        // 1. Ingresos de Hoy (excluyendo cancelados)
-        $query = "SELECT SUM(total) as total FROM " . $this->table . " WHERE DATE(created_at) = :today AND status != 'cancelled'";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':today', $today);
-        $stmt->execute();
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        $stats['income_today'] = $row['total'] ?? 0;
+        // Ingresos de hoy (excluyendo cancelados)
+        $q2 = "SELECT SUM(total) FROM " . $this->table . " WHERE DATE(created_at) = :today AND status != 'cancelled'";
+        $stmt2 = $this->conn->prepare($q2);
+        $stmt2->execute([':today' => $today]);
+        $income = $stmt2->fetchColumn() ?: 0;
 
-        // 2. Pedidos Pendientes (Solo de Hoy)
-        $query = "SELECT COUNT(*) as count FROM " . $this->table . " WHERE status = 'pending' AND DATE(created_at) = :today";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':today', $today);
-        $stmt->execute();
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        $stats['pending_orders'] = $row['count'] ?? 0;
+        // Platos/Items vendidos hoy
+        $q3 = "SELECT SUM(quantity) FROM orders_items oi JOIN orders o ON oi.order_id = o.id WHERE DATE(o.created_at) = :today AND o.status != 'cancelled'";
+        $stmt3 = $this->conn->prepare($q3);
+        $stmt3->execute([':today' => $today]);
+        $sold = $stmt3->fetchColumn() ?: 0;
 
-        // 3. Platos Vendidos Hoy
-        $query = "SELECT SUM(oi.quantity) as count FROM orders_items oi JOIN " . $this->table . " o ON oi.order_id = o.id WHERE DATE(o.created_at) = :today AND o.status != 'cancelled'";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':today', $today);
-        $stmt->execute();
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        $stats['dishes_sold'] = $row['count'] ?? 0;
-
-        return $stats;
+        return [
+            'pending_orders' => $pending,
+            'income_today' => $income,
+            'dishes_sold' => $sold
+        ];
     }
 }
 ?>

@@ -76,6 +76,45 @@
             </form>
         </div>
 
+        <!-- Panel de Asignación de Delivery (Logística) -->
+        <?php if ($order['delivery_type'] === 'delivery' && $order['status'] !== 'completed' && $order['status'] !== 'cancelled'): ?>
+        <div class="card" style="margin-bottom: 20px; border: 2px solid #28a745; background: #f0fff4;">
+            <h3><i class="fas fa-truck"></i> Asignar Logística</h3>
+            <div style="margin-top: 10px;">
+                <select id="delivery_select" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc; margin-bottom: 10px;">
+                    <option value="">-- Seleccionar Repartidor --</option>
+                    <?php foreach($deliveryUsers as $driver): ?>
+                        <option value="<?php echo $driver['id']; ?>" <?php echo ($order['delivery_user_id'] == $driver['id']) ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($driver['name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <button onclick="assignOrder(<?php echo $order['id']; ?>)" style="width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem;">
+                    Asignar y Despachar
+                </button>
+            </div>
+        </div>
+        <script>
+            async function assignOrder(orderId) {
+                const deliveryId = document.getElementById('delivery_select').value;
+                if (!deliveryId) return Toast.fire("Selecciona un repartidor primero", "warning");
+
+                const formData = new FormData();
+                formData.append('order_id', orderId);
+                formData.append('delivery_id', deliveryId);
+
+                try {
+                    const response = await fetch('?route=orders_assign_delivery', { method: 'POST', body: formData });
+                    const result = await response.json();
+                    if (result.success) {
+                        Toast.fire("Pedido asignado y en camino 🚀", "success");
+                        setTimeout(() => location.reload(), 1500);
+                    } else { Toast.fire("Error al asignar", "error"); }
+                } catch (e) { Toast.fire("Error de conexión", "error"); }
+            }
+        </script>
+        <?php endif; ?>
+
         <!-- Info de Entrega -->
         <div class="card">
             <h3>Datos de Entrega</h3>

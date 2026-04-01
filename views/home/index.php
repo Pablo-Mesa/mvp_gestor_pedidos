@@ -201,9 +201,23 @@ if ($filter_category_id) {
     }
 
     @media (max-width: 768px) {
+        :root {
+            --slide-width: 240px;
+            --slide-height: 140px;
+            --gap: 10px;
+        }   
+
         .product-reactions { gap: 8px; justify-content: space-between; }
-        .portion-selector { flex-direction: column; gap: 4px; margin-bottom: 8px; }
-        .portion-label { font-size: 0.75rem; }
+        .portion-selector { gap: 4px; margin-top: 8px; margin-bottom: 12px; }
+        .portion-label { font-size: 0.75rem; }        
+        .qty-control { justify-content: space-between; }
+
+        .info-content h3 { font-size: 0.9rem !important; margin-bottom: 5px !important; }
+        .info-content li { font-size: 0.75rem !important; margin: 2px 0 !important; }
+        .overlay h3 { font-size: 0.9rem; }
+        .overlay p { font-size: 0.75rem; }
+        .step-box i { font-size: 1.2rem !important; }
+
     }
 
     /* Pequeño feedback al hacer clic */
@@ -228,20 +242,6 @@ if ($filter_category_id) {
     --gap: 15px;
     }
 
-    @media (max-width: 768px) {
-        :root {
-            --slide-width: 240px;
-            --slide-height: 140px;
-            --gap: 10px;
-        }
-        .info-content h3 { font-size: 0.9rem !important; margin-bottom: 5px !important; }
-        .info-content li { font-size: 0.75rem !important; margin: 2px 0 !important; }
-        .overlay h3 { font-size: 0.9rem; }
-        .overlay p { font-size: 0.75rem; }
-        .step-box i { font-size: 1.2rem !important; }
-
-    }
-
     .hero-promo {
     /* Break-out para ocupar todo el ancho de la pantalla ignorando el .container */
     width: 100vw;
@@ -250,17 +250,19 @@ if ($filter_category_id) {
     right: 50%;
     margin-left: -50vw;
     margin-right: -50vw;
-    margin-top: -2.1rem; /* Ajuste para eliminar cualquier gap con las categorías */
-    margin-bottom: 0.5rem;
+    margin-top: -2rem; 
+    margin-bottom: 0;    
     overflow: hidden;
     background: linear-gradient(135deg, #1a1a1a 0%, #2d3436 100%); /* Fondo oscuro para resaltar el cristal */
     padding: 10px 0;
     border-bottom: 1px solid rgba(255,255,255,0.1);
     
     /* Efecto de transición para el colapso */
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease, margin 0.5s ease, transform 0.5s ease;
     max-height: 400px; 
     opacity: 1;
+    transform: scaleY(1);
+    transform-origin: top;
 
     /* Aseguramos que el Hero esté en una capa inferior al Header */
     position: relative; 
@@ -269,13 +271,29 @@ if ($filter_category_id) {
 
     /* Clase que se activará al hacer scroll */
     .hero-promo.collapsed {
-        max-height: 0;
+        max-height: 0 !important;
         opacity: 0;
-        margin-top: 0;
+        transform: scaleY(0);
+        margin-top: 0; /* Eliminamos el margen negativo para evitar que succione el grid hacia arriba */
         margin-bottom: 0;
         padding: 0;
         pointer-events: none; /* Evita interacciones mientras está oculto */
         border: none;
+    }
+
+    /* Ajuste para la cuadrícula de productos para que no se pegue al header */
+    .product-grid {
+        margin-top: 2rem; 
+        padding-top: 10px;
+        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Compensación automática: Cuando el hero colapsa, aumentamos el margen del grid 
+       para que la primera fila sea totalmente visible bajo el header fijo */
+    .hero-promo.collapsed + .product-grid {
+        margin-top: 4.5rem;
     }
 
     .carousel-container {
@@ -724,15 +742,22 @@ function filterCategory(cat, btn) {
 }
 
 // Lógica para colapsar el Hero al hacer scroll
-window.addEventListener('scroll', function() {
+let lastScrollY = window.scrollY;
+window.addEventListener('scroll', () => {
     const hero = document.querySelector('.hero-promo');
     if (!hero) return;
 
-    // Si el usuario baja más de 120px, ocultamos el hero para priorizar los productos
-    if (window.scrollY > 120) {
+    const currentScroll = window.scrollY;
+
+    // Umbral de colapso aumentado para dar margen de lectura inicial
+    // Umbral de retorno mucho más bajo (20px) para que el hero no reaparezca 
+    // mientras el usuario intenta ver o interactuar con las primeras tarjetas.
+    if (currentScroll > 150) {
         hero.classList.add('collapsed');
-    } else {
+    } else if (currentScroll < 20) {
         hero.classList.remove('collapsed');
     }
-});
+    
+    lastScrollY = currentScroll;
+}, { passive: true });
 </script>

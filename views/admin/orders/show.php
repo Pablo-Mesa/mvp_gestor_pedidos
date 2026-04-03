@@ -68,8 +68,10 @@
                 <input type="hidden" name="id" value="<?php echo $order['id']; ?>">
                 <select name="status" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc; margin-bottom: 10px;">
                     <option value="pending" <?php echo $order['status']=='pending'?'selected':''; ?>>Pendiente 🟡</option>
-                    <option value="confirmed" <?php echo $order['status']=='confirmed'?'selected':''; ?>>Confirmado / Cocinando 🔵</option>
+                    <option value="confirmed" <?php echo $order['status']=='confirmed'?'selected':''; ?> <?php echo ($order['status']=='pending')?'disabled':''; ?>>Confirmado (Imprimir) 🔵</option>
+                    <option value="shipped" <?php echo $order['status']=='shipped'?'selected':''; ?>>Asignado / Camino 🚚</option>
                     <option value="completed" <?php echo $order['status']=='completed'?'selected':''; ?>>Entregado / Finalizado 🟢</option>
+                    <option value="rejected" <?php echo $order['status']=='rejected'?'selected':''; ?>>Rechazado ⚪</option>
                     <option value="cancelled" <?php echo $order['status']=='cancelled'?'selected':''; ?>>Cancelado 🔴</option>
                 </select>
                 <button type="submit" style="width: 100%; padding: 10px; background: #343a40; color: white; border: none; border-radius: 4px; cursor: pointer;">Actualizar Estado</button>

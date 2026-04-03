@@ -46,6 +46,8 @@
                                 $statusNames = [
                                     'pending' => 'Pendiente',
                                     'preparing' => 'En Cocina',
+                                    'shipped' => 'En Camino',
+                                    'rejected' => 'Rechazado',
                                     'delivered' => 'Entregado',
                                     'cancelled' => 'Cancelado'
                                 ];
@@ -93,7 +95,9 @@
 const statusLabels = {
     'pending': 'Pendiente',
     'preparing': 'En Cocina',
-    'delivered': 'Entregado',
+    'shipped': 'En Camino 🛵',
+    'completed': '¡Entregado! ✅',
+    'rejected': 'Rechazado ❌',
     'cancelled': 'Cancelado'
 };
 
@@ -121,11 +125,17 @@ async function checkStatusUpdates() {
                         badge.innerText = statusLabels[newStatus] || newStatus;
 
                         // Notificación especial si pasa a "Entregado"
-                        if (newStatus === 'delivered') {
+                        if (newStatus === 'completed') {
                             Toast.fire({
                                 icon: 'success',
                                 title: `¡Pedido #${order.id} Entregado!`,
                                 text: '¡Buen provecho! Gracias por elegirnos.'
+                            });
+                        } else if (newStatus === 'rejected') {
+                             Toast.fire({
+                                icon: 'error',
+                                title: `Pedido #${order.id} Rechazado`,
+                                text: 'Hubo un inconveniente con la entrega.'
                             });
                         } else {
                             Toast.fire(`El pedido #${order.id} ahora está: ${statusLabels[newStatus]}`, 'info');
@@ -294,7 +304,9 @@ function closeDetailsModal() {
     /* Colores de estado */
     .status-pending { background-color: #fff3cd; color: #856404; }
     .status-preparing { background-color: #d1ecf1; color: #0c5460; }
-    .status-delivered { background-color: #d4edda; color: #155724; }
+    .status-shipped { background-color: #e3f2fd; color: #1976d2; }
+    .status-completed { background-color: #d4edda; color: #155724; }
+    .status-rejected { background-color: #f5f5f5; color: #616161; }
     .status-cancelled { background-color: #f8d7da; color: #721c24; }
 
     @media (max-width: 768px) {

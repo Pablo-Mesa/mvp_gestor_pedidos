@@ -13,42 +13,91 @@
     }
     .order-card.shipped {
         border: 2px solid var(--delivery-primary);
+        background-color: #e3f2fd;
     }
     /* Estilo para Pedidos Entregados */
     .order-card.completed {
         border: 1px solid #c8e6c9;
         background-color: #f1f8e9;
         box-shadow: none;
+        padding-bottom: 0.5rem; /* Para reducir el tamaño de la tarjeta completada */
         position: relative;
-    }
-    .order-card.completed::after {
-        content: '\f058  ENTREGADO';
-        font-family: "Font Awesome 6 Free";
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        color: var(--delivery-primary);
-        font-size: 0.75rem;
-        font-weight: 900;
     }
     .order-header {
         display: flex;
         justify-content: space-between;
+        align-items: center;
         margin-bottom: 10px;
+        gap: 10px;
+    }
+    .header-left, .header-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
     .order-number {
         font-weight: 900;
-        font-size: 1.3rem;
+        font-size: 1.2rem;
         color: var(--delivery-primary);
+        letter-spacing: -0.5px;
+    }
+    .toggle-section-btn {
+        background: none;
+        border: none;
+        color: var(--delivery-subtext);
+        cursor: pointer;
+        padding: 8px 4px;
+        display: flex;
+        align-items: center;
+    }
+    /* Rotación del icono de la flecha */
+    .toggle-section-btn .fas.fa-chevron-down {
+        transition: transform 0.3s ease;
+    }
+    .order-card.collapsed .toggle-section-btn .fas.fa-chevron-down {
+        transform: rotate(-90deg);
     }
     .order-time {
         font-size: 0.85rem;
         color: var(--delivery-subtext);
+        font-weight: 600;
     }
+    /* Badge de Estado en Header */
+    .status-badge-header {
+        font-size: 0.65rem;
+        font-weight: 800;
+        padding: 3px 8px;
+        border-radius: 12px;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .status-badge-header.completed { background: #c8e6c9; color: #2e7d32; }
+    .status-badge-header.shipped { background: #e3f2fd; color: #1976d2; }
+    .status-badge-header.rejected { background: #e0e0e0; color: #616161; }
+    .status-badge-header.cancelled { background: #ffcdd2; color: #c62828; }
+
     .client-info h3 {
         font-size: 1.4rem;
         margin-bottom: 5px;
         color: var(--delivery-text);
+    }
+
+    /* Estilos para la sección operativa colapsable con animación */
+    .card-operative-section {
+        max-height: 500px; /* Valor suficientemente grande para el contenido expandido */
+        overflow: hidden;
+        transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out;
+        opacity: 1;
+    }
+    .order-card.collapsed .card-operative-section {
+        max-height: 0;
+        opacity: 0;
+        padding-top: 0;    /* Eliminar padding para un colapso más limpio */
+        padding-bottom: 0; /* Eliminar padding para un colapso más limpio */
+        margin-top: 0;     /* Eliminar margen para un colapso más limpio */
+        margin-bottom: 0;  /* Eliminar margen para un colapso más limpio */
     }
 
     /* Información de Cobro */
@@ -159,7 +208,7 @@
     .empty-state { text-align: center; padding: 5rem 2rem; color: var(--delivery-subtext); }
 </style>
 
-<div>
+<div id="delivery-orders-container">
         
     <?php if(empty($orders)): ?>
         <div class="empty-state">
@@ -169,111 +218,315 @@
     <?php endif; ?>
 
     <?php foreach($orders as $order): ?>
-        <?php 
-            $phone = preg_replace('/[^0-9]/', '', $order['user_phone'] ?? '');
-            // Lógica de cobro: Si es efectivo, el repartidor debe cobrar.
-            $mustCollect = (isset($order['payment_method']) && strtolower($order['payment_method']) === 'efectivo');
-        ?>
-        <div class="order-card <?php echo $order['status']; ?>" data-status="<?php echo $order['status']; ?>">
-            <div class="order-header">
-                <span class="order-number">#<?php echo $order['id']; ?></span>
-                <span class="order-time"><?php echo date('H:i', strtotime($order['created_at'])); ?></span>
-            </div>
-            <div class="client-info">
-                <h3><?php echo htmlspecialchars($order['user_name'] ?? 'Cliente'); ?></h3>
-                <div class="address-box">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span><?php echo htmlspecialchars($order['delivery_address'] ?: 'Sin dirección especificada'); ?></span>
-                </div>
-            </div>
-
-            <div class="payment-summary">
-                <div class="payment-row">
-                    <span class="payment-label">Método: <?php echo htmlspecialchars($order['payment_method'] ?? 'No especificado'); ?></span>
-                    <span class="badge-payment <?php echo $mustCollect ? 'bg-collect' : 'bg-paid'; ?>">
-                        <?php echo $mustCollect ? 'A Cobrar' : 'Ya Pagado'; ?>
-                    </span>
-                </div>
-                <div class="payment-row" style="margin-top: 5px;">
-                    <span class="payment-label">Monto Total:</span>
-                    <span class="amount-to-collect">Gs. <?php echo number_format($order['total'], 0, ',', '.'); ?></span>
-                </div>
-            </div>
-
-            <div class="contact-actions">
-                <a href="tel:<?php echo $phone; ?>" class="btn-contact btn-call">
-                    <i class="fas fa-phone-alt"></i> Llamar
-                </a>
-                <button onclick="openWhatsAppMenu('<?php echo $phone; ?>', '<?php echo $order['id']; ?>')" class="btn-contact btn-whatsapp" style="border:none; cursor:pointer;">
-                    <i class="fab fa-whatsapp"></i> WhatsApp
-                </button>
-            </div>
-
-            <?php if($order['delivery_lat'] && $order['delivery_lng']): ?>
-                <div class="map-wrapper">
-                    <div id="map-<?php echo $order['id']; ?>" class="map-preview"></div>
-                    <a href="https://www.google.com/maps/search/?api=1&query=<?php echo $order['delivery_lat']; ?>,<?php echo $order['delivery_lng']; ?>" 
-                       target="_blank" class="map-overlay-btn">
-                        <i class="fas fa-directions"></i> GPS
-                    </a>
-                </div>
-            <?php endif; ?>
-
-            <div class="delivery-actions">
-                <?php if($order['status'] === 'ready'): ?>
-                    <button class="btn-logistics btn-start" onclick="updateOrderStatus(<?php echo $order['id']; ?>, 'shipped')">
-                        <i class="fas fa-play"></i> Iniciar Entrega
-                    </button>
-                <?php elseif($order['status'] === 'shipped'): ?>
-                    <button class="btn-logistics btn-complete" onclick="updateOrderStatus(<?php echo $order['id']; ?>, 'completed')">
-                        <i class="fas fa-check-circle"></i> Marcar como Entregado
-                    </button>
-                <?php elseif($order['status'] === 'completed'): ?>
-                    <div style="text-align: center; color: var(--delivery-primary); font-weight: bold; padding: 10px;">
-                        <i class="fas fa-check-double"></i> ENTREGA FINALIZADA
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
+        <?php echo renderOrderCardHTML($order); ?>
     <?php endforeach; ?>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    <?php foreach($orders as $order): ?>
-        <?php if($order['delivery_lat'] && $order['delivery_lng']): ?>
-            (function() {
-                var lat = <?php echo $order['delivery_lat']; ?>;
-                var lng = <?php echo $order['delivery_lng']; ?>;
-                var mapId = 'map-<?php echo $order['id']; ?>';
-                
-                // Mapa estático para evitar desplazamiento accidental al hacer scroll
-                var map = L.map(mapId, {
-                    zoomControl: false,
-                    attributionControl: false,
-                    dragging: false,
-                    touchZoom: false,
-                    scrollWheelZoom: false,
-                    doubleClickZoom: false
-                }).setView([lat, lng], 16);
-                
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-                
-                var markerIcon = L.divIcon({
-                    className: 'custom-div-icon',
-                    html: "<div style='background-color:#00e676; width:12px; height:12px; border-radius:50%; border:2px solid white;'></div>",
-                    iconSize: [12, 12],
-                    iconAnchor: [6, 6]
-                });
+<?php
+/**
+ * Función auxiliar para renderizar el HTML de una tarjeta (PHP)
+ * Esto asegura que el renderizado inicial y el de JS sean consistentes.
+ */
+function renderOrderCardHTML($order) {
+    $phone = preg_replace('/[^0-9]/', '', $order['user_phone'] ?? '');
+    $mustCollect = (isset($order['payment_method']) && strtolower($order['payment_method']) === 'efectivo');
+    $isCollapsed = ($order['status'] === 'completed' || $order['status'] === 'rejected' || $order['status'] === 'cancelled') ? 'collapsed' : '';
+    
+    ob_start(); ?>
+    <div class="order-card <?php echo $order['status'] . ' ' . $isCollapsed; ?>" data-status="<?php echo $order['status']; ?>" id="card-<?php echo $order['id']; ?>">
+            <!-- Área 1: Información de Cliente y Pago -->
+            <div class="card-info-section">
+                <div class="order-header">
+                    <div class="header-left">
+                        <button class="toggle-section-btn" onclick="toggleCardSection(this.closest('.order-card'))" title="Expandir/Colapsar">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <span class="order-number">#<?php echo $order['id']; ?></span>
+                    </div>
+                    <div class="header-right">
+                        <?php if($order['status'] === 'completed'): ?>
+                            <span class="status-badge-header completed"><i class="fas fa-check-circle"></i> Entregado</span>
+                        <?php elseif($order['status'] === 'rejected'): ?>
+                            <span class="status-badge-header rejected"><i class="fas fa-undo"></i> Rechazado</span>
+                        <?php elseif($order['status'] === 'cancelled'): ?>
+                            <span class="status-badge-header cancelled"><i class="fas fa-times-circle"></i> Cancelado</span>
+                        <?php elseif($order['status'] === 'ready'): ?>
+                            <span class="status-badge-header shipped" style="background:#fff3cd; color:#856404;"><i class="fas fa-clock"></i> Pendiente</span>
+                        <?php elseif($order['status'] === 'shipped'): ?>
+                            <span class="status-badge-header shipped"><i class="fas fa-truck"></i> Asignado</span>
+                        <?php endif; ?>
+                        <span class="order-time"><?php echo date('H:i', strtotime($order['created_at'])); ?></span>
+                    </div>
+                </div>
+                <div class="client-info">
+                    <h3><?php echo htmlspecialchars($order['user_name'] ?? 'Cliente'); ?></h3>
+                    <div class="address-box">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span><?php echo htmlspecialchars($order['delivery_address'] ?: 'Sin dirección especificada'); ?></span>
+                    </div>
+                </div>
 
-                L.marker([lat, lng], {icon: markerIcon}).addTo(map);
-            })();
-        <?php endif; ?>
-    <?php endforeach; ?>
+                <div class="payment-summary">
+                    <div class="payment-row">
+                        <span class="payment-label">Método: <?php echo htmlspecialchars($order['payment_method'] ?? 'No especificado'); ?></span>
+                        <span class="badge-payment <?php echo $mustCollect ? 'bg-collect' : 'bg-paid'; ?>">
+                            <?php echo $mustCollect ? 'A Cobrar' : 'Ya Pagado'; ?>
+                        </span>
+                    </div>
+                    <div class="payment-row" style="margin-top: 5px;">
+                        <span class="payment-label">Monto Total:</span>
+                        <span class="amount-to-collect">Gs. <?php echo number_format($order['total'], 0, ',', '.'); ?></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Área 2: Operaciones y Logística (Se oculta al completar) -->
+            <div class="card-operative-section">
+                <div class="contact-actions">
+                    <a href="tel:<?php echo $phone; ?>" class="btn-contact btn-call">
+                        <i class="fas fa-phone-alt"></i> Llamar
+                    </a>
+                    <button onclick="openWhatsAppMenu('<?php echo $phone; ?>', '<?php echo $order['id']; ?>')" class="btn-contact btn-whatsapp" style="border:none; cursor:pointer;">
+                        <i class="fab fa-whatsapp"></i> WhatsApp
+                    </button>
+                </div>
+                <?php if($order['delivery_lat'] && $order['delivery_lng']): ?>
+                    <div class="map-wrapper">
+                        <div id="map-<?php echo $order['id']; ?>" class="map-preview"></div>
+                        <a href="https://www.google.com/maps/search/?api=1&query=<?php echo $order['delivery_lat']; ?>,<?php echo $order['delivery_lng']; ?>" 
+                           target="_blank" class="map-overlay-btn">
+                            <i class="fas fa-directions"></i> GPS
+                        </a>
+                    </div>
+                <?php endif; ?>
+
+                <div class="delivery-actions">
+                    <?php if($order['status'] === 'ready'): ?>
+                        <!-- El pedido está en el local esperando ser retirado -->
+                        <button class="btn-logistics btn-start" onclick="updateOrderStatus(<?php echo $order['id']; ?>, 'shipped')">
+                            <i class="fas fa-play"></i> Iniciar Entrega
+                        </button>
+                    <?php elseif($order['status'] === 'shipped'): ?>
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <button class="btn-logistics btn-complete" onclick="updateOrderStatus(<?php echo $order['id']; ?>, 'completed')">
+                                <i class="fas fa-check-circle"></i> CONFIRMAR ENTREGA
+                            </button>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <button class="btn-logistics" style="background:#636e72; color:white; padding:12px; font-size:0.8rem;" onclick="updateOrderStatus(<?php echo $order['id']; ?>, 'rejected')">
+                                    <i class="fas fa-undo"></i> RECHAZADO
+                                </button>
+                                <button class="btn-logistics" style="background:#ff7675; color:white; padding:12px; font-size:0.8rem;" onclick="updateOrderStatus(<?php echo $order['id']; ?>, 'cancelled')">
+                                    <i class="fas fa-times"></i> CANCELADO
+                                </button>
+                            </div>
+                        </div>
+                    <?php elseif($order['status'] === 'completed'): ?>
+                        <div style="text-align: center; color: var(--delivery-primary); font-weight: bold; padding: 10px;">
+                            <i class="fas fa-check-double"></i> PEDIDO ENTREGADO
+                        </div>
+                    <?php elseif($order['status'] === 'rejected'): ?>
+                        <div style="text-align: center; color: #636e72; font-weight: bold; padding: 10px;">
+                            <i class="fas fa-undo"></i> ENTREGA RECHAZADA
+                        </div>
+                    <?php elseif($order['status'] === 'cancelled'): ?>
+                        <div style="text-align: center; color: #ff7675; font-weight: bold; padding: 10px;">
+                            <i class="fas fa-times-circle"></i> PEDIDO CANCELADO
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    <?php return ob_get_clean();
+} ?>
+
+<script>
+/**
+ * Estado global del repartidor para evitar recargas innecesarias
+ */
+let currentOrdersData = <?php echo json_encode($orders); ?>;
+const currentUserId = <?php echo $_SESSION['user_id']; ?>;
+
+// Sonido de claxon para nuevos pedidos
+const notificationSound = new Audio('https://assets.mixkit.co/active_storage/sfx/1343/1343-preview.mp3');
+
+/**
+ * Sincroniza pedidos sin recargar la página completa
+ */
+async function refreshDeliveryOrders(forceUpdate = false) {
+    try {
+        const cacheBuster = Date.now();
+        // Eliminamos el parámetro 'date' para que el controlador decida qué pedidos mostrar
+        const url = `index.php?route=orders_api&delivery_user_id=${currentUserId}&_=${cacheBuster}`;
+        const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        const newData = await response.json();
+
+        // 1. Verificar si hay cambios reales (ID o Status)
+        if (!Array.isArray(newData)) return;
+        const currentFingerprint = currentOrdersData.map(o => `${o.id}-${o.status}`).join('|');
+        const newFingerprint = newData.map(o => `${o.id}-${o.status}`).join('|');
+
+        if (currentFingerprint !== newFingerprint || forceUpdate) {
+            console.log("Detectados cambios en pedidos. Actualizando vista...");
+            
+            // Detectar si hay IDs nuevos (pedidos recién asignados)
+            const currentIds = currentOrdersData.map(o => o.id);
+            const hasNewOrders = newData.some(o => !currentIds.includes(o.id));
+
+            if (hasNewOrders) {
+                notificationSound.play().catch(e => console.log("Audio bloqueado: requiere interacción previa"));
+                Toast.fire("¡Nuevo pedido asignado! 🛵", "success");
+            }
+
+            currentOrdersData = newData;
+            updateOrdersUI(newData);
+        }
+    } catch (err) {
+        console.error("Error sincronizando pedidos:", err);
+    }
+}
+
+/**
+ * Reconstruye el listado de pedidos en el DOM
+ */
+function updateOrdersUI(orders) {
+    const container = document.getElementById('delivery-orders-container');
+    if (!container) return;
+
+    if (orders.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-box-open fa-3x"></i><p>No tienes pedidos asignados por ahora.</p></div>`;
+        return;
+    }
+
+    container.innerHTML = orders.map(order => renderOrderCardJS(order)).join('');
+    
+    // Reinicializar mapas para las nuevas tarjetas
+    orders.forEach(order => {
+        if (order.delivery_lat && order.delivery_lng) initMapForOrder(order);
+    });
+
+    // Re-aplicar filtros si el usuario tiene alguno seleccionado
+    const activeFilter = document.getElementById('statusFilter').value;
+    if (activeFilter !== 'all') {
+        document.getElementById('statusFilter').dispatchEvent(new Event('change'));
+    }
+}
+
+/**
+ * Template Literal para renderizar la tarjeta en JS (espejo del PHP)
+ */
+function renderOrderCardJS(order) {
+    const phone = (order.user_phone || '').replace(/\D/g, '');
+    const mustCollect = (order.payment_method || '').toLowerCase() === 'efectivo';
+    const isCollapsed = ['completed', 'rejected', 'cancelled'].includes(order.status) ? 'collapsed' : '';
+    const formattedTotal = new Intl.NumberFormat('es-PY').format(order.total);
+    const time = (order.created_at.split(' ')[1] || '').substring(0, 5);
+    
+    let statusBadge = '';
+    if (order.status === 'completed') statusBadge = '<span class="status-badge-header completed"><i class="fas fa-check-circle"></i> Entregado</span>';
+    else if (order.status === 'rejected') statusBadge = '<span class="status-badge-header rejected"><i class="fas fa-undo"></i> Rechazado</span>';
+    else if (order.status === 'cancelled') statusBadge = '<span class="status-badge-header cancelled"><i class="fas fa-times-circle"></i> Cancelado</span>';
+    else if (order.status === 'ready') statusBadge = '<span class="status-badge-header shipped" style="background:#fff3cd; color:#856404;"><i class="fas fa-clock"></i> Pendiente</span>';
+    else if (order.status === 'shipped') statusBadge = '<span class="status-badge-header shipped"><i class="fas fa-truck"></i> Asignado</span>';
+
+    return `
+        <div class="order-card ${order.status} ${isCollapsed}" data-status="${order.status}" id="card-${order.id}">
+            <div class="card-info-section">
+                <div class="order-header">
+                    <div class="header-left">
+                        <button class="toggle-section-btn" onclick="toggleCardSection(this.closest('.order-card'))">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <span class="order-number">#${order.id}</span>
+                    </div>
+                    <div class="header-right">
+                        ${statusBadge}
+                        <span class="order-time">${time}</span>
+                    </div>
+                </div>
+                <div class="client-info">
+                    <h3>${order.user_name || 'Cliente'}</h3>
+                    <div class="address-box"><i class="fas fa-map-marker-alt"></i><span>${order.delivery_address || 'Sin dirección'}</span></div>
+                </div>
+                <div class="payment-summary">
+                    <div class="payment-row">
+                        <span class="payment-label">Método: ${order.payment_method}</span>
+                        <span class="badge-payment ${mustCollect ? 'bg-collect' : 'bg-paid'}">${mustCollect ? 'A Cobrar' : 'Ya Pagado'}</span>
+                    </div>
+                    <div class="payment-row" style="margin-top: 5px;">
+                        <span class="payment-label">Monto Total:</span>
+                        <span class="amount-to-collect">Gs. ${formattedTotal}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-operative-section">
+                <div class="contact-actions">
+                    <a href="tel:${phone}" class="btn-contact btn-call"><i class="fas fa-phone-alt"></i> Llamar</a>
+                    <button onclick="openWhatsAppMenu('${phone}', '${order.id}')" class="btn-contact btn-whatsapp"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+                </div>
+                ${order.delivery_lat ? `<div class="map-wrapper"><div id="map-${order.id}" class="map-preview"></div><a href="https://www.google.com/maps/search/?api=1&query=${order.delivery_lat},${order.delivery_lng}" target="_blank" class="map-overlay-btn"><i class="fas fa-directions"></i> GPS</a></div>` : ''}
+                <div class="delivery-actions">
+                    ${order.status === 'ready' ? `<button class="btn-logistics btn-start" onclick="updateOrderStatus(${order.id}, 'shipped')"><i class="fas fa-play"></i> Iniciar Entrega</button>` : ''}
+                    ${order.status === 'shipped' ? `
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <button class="btn-logistics btn-complete" onclick="updateOrderStatus(${order.id}, 'completed')"><i class="fas fa-check-circle"></i> CONFIRMAR ENTREGA</button>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <button class="btn-logistics" style="background:#636e72; color:white; padding:12px; font-size:0.8rem;" onclick="updateOrderStatus(${order.id}, 'rejected')"><i class="fas fa-undo"></i> RECHAZADO</button>
+                                <button class="btn-logistics" style="background:#ff7675; color:white; padding:12px; font-size:0.8rem;" onclick="updateOrderStatus(${order.id}, 'cancelled')"><i class="fas fa-times"></i> CANCELADO</button>
+                            </div>
+                        </div>` : ''}
+                    ${order.status === 'completed' ? `
+                        <div style="text-align: center; color: var(--delivery-primary); font-weight: bold; padding: 10px;">
+                            <i class="fas fa-check-double"></i> PEDIDO ENTREGADO
+                        </div>` : ''}
+                    ${order.status === 'rejected' ? `
+                        <div style="text-align: center; color: #636e72; font-weight: bold; padding: 10px;">
+                            <i class="fas fa-undo"></i> ENTREGA RECHAZADA
+                        </div>` : ''}
+                    ${order.status === 'cancelled' ? `
+                        <div style="text-align: center; color: #ff7675; font-weight: bold; padding: 10px;">
+                            <i class="fas fa-times-circle"></i> PEDIDO CANCELADO
+                        </div>` : ''}
+                </div>
+            </div>
+        </div>`;
+}
+
+/**
+ * Inicializa un mapa de Leaflet para un pedido específico
+ */
+function initMapForOrder(order) {
+    const mapId = `map-${order.id}`;
+    const container = document.getElementById(mapId);
+    if (!container || container._leaflet_id) return; // Evitar reinicializar si ya existe
+
+    const map = L.map(mapId, { zoomControl: false, dragging: false, touchZoom: false, scrollWheelZoom: false }).setView([order.delivery_lat, order.delivery_lng], 16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    const markerIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: "<div style='background-color:#00e676; width:12px; height:12px; border-radius:50%; border:2px solid white;'></div>",
+        iconSize: [12, 12],
+        iconAnchor: [6, 6]
+    });
+    L.marker([order.delivery_lat, order.delivery_lng], {icon: markerIcon}).addTo(map);
+}
+
+// Iniciar polling inteligente cada 15 segundos
+setInterval(refreshDeliveryOrders, 15000);
+
+// Carga inicial de mapas
+document.addEventListener('DOMContentLoaded', () => {
+    currentOrdersData.forEach(order => {
+        if (order.delivery_lat && order.delivery_lng) initMapForOrder(order);
+    });
 });
-</script>
 
-<script>
+/**
+ * Expande o colapsa la sección operativa de la tarjeta
+ */
+function toggleCardSection(cardElement) {
+    cardElement.classList.toggle('collapsed');
+}
+
 /**
  * Abre un menú táctil para seleccionar mensajes predeterminados de WhatsApp
  */
@@ -313,14 +566,17 @@ function sendWA(phone, text) {
  * Actualiza el estado del pedido vía AJAX
  */
 function updateOrderStatus(orderId, newStatus) {
-    const confirmText = newStatus === 'shipped' ? '¿Deseas iniciar esta entrega?' : '¿Confirmas que el pedido fue entregado?';
+    let confirmText = '¿Confirmas esta acción?';
+    if (newStatus === 'completed') confirmText = '¿Confirmas que el pedido fue ENTREGADO con éxito?';
+    if (newStatus === 'rejected') confirmText = '¿El cliente rechazó el pedido?';
+    if (newStatus === 'cancelled') confirmText = '¿Deseas CANCELAR esta entrega por algún inconveniente?';
     
     Swal.fire({
-        title: 'Confirmar Acción',
+        title: 'Gestión de Pedido',
         text: confirmText,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonColor: '#00e676',
+        confirmButtonColor: newStatus === 'completed' ? '#00e676' : '#636e72',
         cancelButtonColor: '#d33',
         confirmButtonText: 'Sí, proceder',
         background: '#1e1e1e',
@@ -339,8 +595,12 @@ function updateOrderStatus(orderId, newStatus) {
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    Toast.fire("Estado actualizado", "success");
-                    setTimeout(() => location.reload(), 1000);
+                    Toast.fire("Estado actualizado con éxito", "success");
+                    // Forzamos la actualización inmediata ignorando el fingerprint
+                    // para asegurar que el DOM refleje el cambio de estado enviado
+                    setTimeout(() => {
+                        refreshDeliveryOrders(true);
+                    }, 500); 
                 }
             });
         }

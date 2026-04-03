@@ -32,16 +32,24 @@ class DeliveryController {
     public function index() {
         $orderModel = new Order();
         
-        // Filtramos pedidos que sean para delivery y que estén 'listos' o 'en camino'
-        // Nota: Asumimos que el modelo Order soporta estos filtros en su método readAll
         $filters = [
             'delivery_type' => 'delivery',
-            'date' => date('Y-m-d'),
             'delivery_user_id' => $_SESSION['user_id'] // Filtro crucial: solo lo asignado a MI
         ];
         
         $stmt = $orderModel->readAll($filters);
-        $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $allOrders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Lógica de visibilidad inteligente:
+        // 1. Mostrar SIEMPRE lo que no está terminado (independiente de la fecha)
+        // 2. Mostrar lo terminado SOLO si es de hoy (para limpiar la lista)
+        $today = date('Y-m-d');
+        $orders = array_filter($allOrders, function($o) use ($today) {
+            $isFinished = in_array($o['status'], ['completed', 'rejected', 'cancelled']);
+            $isFromToday = date('Y-m-d', strtotime($o['created_at'])) === $today;
+            
+            return !$isFinished || $isFromToday;
+        });
 
         // Agrupamos por estado para que el repartidor sepa qué tiene pendiente y qué está entregando
         $pendingOrders = array_filter($orders, fn($o) => $o['status'] === 'ready');

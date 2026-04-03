@@ -122,6 +122,8 @@
     /* Colores de estado */
     .status-pending { background: #ffc107; color: #333; } /* Amarillo */
     .status-confirmed { background: #17a2b8; color: #fff; } /* Azul Info */
+    .status-shipped { background: #1976d2; color: #fff; } /* Azul oscuro */
+    .status-rejected { background: #6c757d; color: #fff; } /* Gris */
     .status-completed { background: #28a745; color: #fff; } /* Verde */
     .status-cancelled { background: #dc3545; color: #fff; } /* Rojo */
 
@@ -219,15 +221,20 @@
                                 $statusClass = 'status-pending';
                                 switch($order['status']) {
                                     case 'confirmed': $statusClass = 'status-confirmed'; break;
+                                    case 'shipped': $statusClass = 'status-shipped'; break;
                                     case 'completed': $statusClass = 'status-completed'; break;
+                                    case 'rejected': $statusClass = 'status-rejected'; break;
                                     case 'cancelled': $statusClass = 'status-cancelled'; break;
                                 }
                             ?>
                             <select class="status-select <?php echo $statusClass; ?>" 
-                                    onchange="updateOrderStatus(this, <?php echo $order['id']; ?>)">
+                                    onchange="updateOrderStatus(this, <?php echo $order['id']; ?>)"
+                                    data-current-status="<?php echo $order['status']; ?>">
                                 <option value="pending" <?php echo $order['status']=='pending'?'selected':''; ?>>Pendiente</option>
-                                <option value="confirmed" <?php echo $order['status']=='confirmed'?'selected':''; ?>>Confirmado</option>
+                                <option value="confirmed" <?php echo $order['status']=='confirmed'?'selected':''; ?> <?php echo $order['status']=='pending'?'disabled':''; ?>>Confirmado (Imprimir)</option>
+                                <option value="shipped" <?php echo $order['status']=='shipped'?'selected':''; ?>>Asignado / Camino</option>
                                 <option value="completed" <?php echo $order['status']=='completed'?'selected':''; ?>>Entregado</option>
+                                <option value="rejected" <?php echo $order['status']=='rejected'?'selected':''; ?>>Rechazado</option>
                                 <option value="cancelled" <?php echo $order['status']=='cancelled'?'selected':''; ?>>Cancelado</option>
                             </select>
                         </td>
@@ -259,21 +266,31 @@
         <span id="count-pending"><?php echo $statusCounts['pending'] ?? 0; ?></span>
         <label>Pendientes</label>
     </div>
+
     <div class="stat-card stat-confirmed">
         <i class="fas fa-fire"></i>
         <span id="count-confirmed"><?php echo $statusCounts['confirmed'] ?? 0; ?></span>
         <label>En Cocina</label>
     </div>
+
+    <div class="stat-card stat-confirmed" style="background: #e3f2fd; border-color: #1976d2;">
+        <i class="fas fa-truck"></i>
+        <span id="count-shipped"><?php echo $statusCounts['shipped'] ?? 0; ?></span>
+        <label>En Camino</label>
+    </div>
+
     <div class="stat-card stat-completed">
         <i class="fas fa-check-circle"></i>
         <span id="count-completed"><?php echo $statusCounts['completed'] ?? 0; ?></span>
         <label>Entregados</label>
     </div>
+
     <div class="stat-card stat-cancelled">
         <i class="fas fa-times-circle"></i>
         <span id="count-cancelled"><?php echo $statusCounts['cancelled'] ?? 0; ?></span>
         <label>Cancelados</label>
     </div>
+    
 </div>
 
 <?php 
@@ -293,6 +310,10 @@ if (empty($orders) && $hasFilter):
 <script>
     // Almacenamos el ID más alto actual para saber cuáles son nuevos
     let lastMaxId = <?php echo !empty($orders) ? max(array_column($orders, 'id')) : 0; ?>;
+    // Mapa para rastrear cambios de estado de pedidos visibles
+    let orderStatusMap = {};
+    // Huella digital de los datos para evitar re-renderizados (parpadeo) innecesarios
+    let lastOrdersFingerprint = '';
     const notificationSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
 
     /**
@@ -362,16 +383,23 @@ if (empty($orders) && $hasFilter):
             const tbody = document.getElementById('orders-tbody');
             if (!tbody || data.error) return;
 
+            // Crear huella combinando ID y Estado de todos los pedidos
+            const newFingerprint = data.map(o => `${o.id}-${o.status}`).join('|');
+            // Si la huella es idéntica a la anterior, no hacemos nada (evita el parpadeo)
+            if (newFingerprint === lastOrdersFingerprint) return;
+            lastOrdersFingerprint = newFingerprint;
+
             if (data.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 2rem;">No hay pedidos registrados.</td></tr>';
                 return;
             }
             
             let hasNewOrders = false;
+            let hasDeliveriesCompleted = false;
             let currentMaxIdInResponse = lastMaxId;
 
             // Objeto para recalcular contadores localmente
-            const newCounts = { all: data.length, pending: 0, confirmed: 0, completed: 0, cancelled: 0 };
+            const newCounts = { all: data.length, pending: 0, confirmed: 0, shipped: 0, completed: 0, rejected: 0, cancelled: 0 };
 
             tbody.innerHTML = data.map(order => {
                 const isNew = order.id > lastMaxId;
@@ -380,18 +408,23 @@ if (empty($orders) && $hasFilter):
                     if (order.id > currentMaxIdInResponse) currentMaxIdInResponse = order.id;
                 }
 
-                // Sumar al contador correspondiente
-                if (newCounts.hasOwnProperty(order.status)) {
-                    newCounts[order.status]++;
+                // Detectar si un repartidor cambió el estado a 'completed' (Entregado)
+                if (orderStatusMap[order.id] && orderStatusMap[order.id] !== order.status && order.status === 'completed') {
+                    hasDeliveriesCompleted = true;
                 }
+                orderStatusMap[order.id] = order.status;
+
+                // Sumar al contador correspondiente
+                if (!newCounts[order.status]) newCounts[order.status] = 0;
+                newCounts[order.status]++;
 
                 let statusClass = 'status-pending';
-                let statusText = 'Pendiente';
-                
                 // Lógica de clases y estados
-                if (order.status === 'confirmed') { statusClass = 'status-confirmed'; statusText = 'Confirmado'; }
-                else if (order.status === 'completed') { statusClass = 'status-completed'; statusText = 'Entregado'; }
-                else if (order.status === 'cancelled') { statusClass = 'status-cancelled'; statusText = 'Cancelado'; }
+                if (order.status === 'confirmed') { statusClass = 'status-confirmed'; }
+                else if (order.status === 'shipped') { statusClass = 'status-shipped'; }
+                else if (order.status === 'completed') { statusClass = 'status-completed'; }
+                else if (order.status === 'rejected') { statusClass = 'status-rejected'; }
+                else if (order.status === 'cancelled') { statusClass = 'status-cancelled'; }
 
                 let deliveryHtml = order.delivery_type === 'delivery' 
                     ? '<span style="color:#d63384;"><i class="fas fa-motorcycle"></i> Delivery</span>'
@@ -408,10 +441,12 @@ if (empty($orders) && $hasFilter):
                         <td>${deliveryHtml}</td>
                         <td style="font-weight: bold;">Gs. ${order.formatted_total}</td>
                         <td>
-                            <select class="status-select ${statusClass}" onchange="updateOrderStatus(this, ${order.id})">
+                            <select class="status-select ${statusClass}" onchange="updateOrderStatus(this, ${order.id})" data-current-status="${order.status}">
                                 <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Pendiente</option>
-                                <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>Confirmado</option>
+                                <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''} ${order.status === 'pending' ? 'disabled' : ''}>Confirmado (Imprimir)</option>
+                                <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>Asignado / Camino</option>
                                 <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Entregado</option>
+                                <option value="rejected" ${order.status === 'rejected' ? 'selected' : ''}>Rechazado</option>
                                 <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancelado</option>
                             </select>
                         </td>
@@ -429,7 +464,9 @@ if (empty($orders) && $hasFilter):
             document.getElementById('count-all-orders').innerText = newCounts.all;
             document.getElementById('count-pending').innerText = newCounts.pending;
             document.getElementById('count-confirmed').innerText = newCounts.confirmed;
+            document.getElementById('count-shipped').innerText = newCounts.shipped || 0;
             document.getElementById('count-completed').innerText = newCounts.completed;
+            document.getElementById('count-cancelled').innerText = newCounts.cancelled;
             document.getElementById('count-cancelled').innerText = newCounts.cancelled;
 
             // Si hay pedidos nuevos, disparamos alertas
@@ -440,6 +477,12 @@ if (empty($orders) && $hasFilter):
                 
                 // Restaurar título después de 5 segundos
                 setTimeout(() => { document.title = "Admin - Comedor App"; }, 5000);
+            }
+
+            // Alerta si un repartidor entregó un pedido
+            if (hasDeliveriesCompleted) {
+                notificationSound.play().catch(e => {});
+                Toast.fire("¡Un repartidor ha entregado un pedido!", "success");
             }
         })
         .catch(err => console.error('Error en la auto-actualización:', err));

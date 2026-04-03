@@ -14,12 +14,18 @@
             --delivery-text: #2d3436;
             --delivery-subtext: #636e72;
         }
-        body {
+        html, body {
+            height: 100%;
             margin: 0;
             padding: 0;
+            overflow: hidden; /* Evita el scroll en el cuerpo principal */
+        }
+        body {
             font-family: 'Segoe UI', Roboto, sans-serif;
             background-color: var(--delivery-bg);
             color: var(--delivery-text);
+            display: flex;
+            flex-direction: column;
         }
         .delivery-header {
             background-color: #ffffff;
@@ -29,13 +35,19 @@
             align-items: center;
             border-bottom: 1px solid #e0e0e0;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            position: sticky;
-            top: 0;
             z-index: 100;
+            flex-shrink: 0; /* No permite que el header se encoja */
         }
         .delivery-header h1 { font-size: 1.2rem; margin: 0; font-weight: 800; color: var(--delivery-primary); }
         .logout-link { color: #ff5252; text-decoration: none; font-size: 1.2rem; }
-        .delivery-main { padding: 15px; }
+        
+        .delivery-main { 
+            flex: 1; /* Ocupa todo el espacio restante */
+            overflow-y: auto; /* Único contenedor scrolleable */
+            padding: 15px;
+            -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
+            background: var(--delivery-bg);
+        }
 
         /* Estilos del Filtro */
         .filter-container {
@@ -68,17 +80,7 @@
         .delivery-select:focus {
             border-color: var(--delivery-primary);
         }
-        .delivery-section-title {
-            font-size: 1rem;
-            font-weight: bold;
-            color: var(--delivery-subtext);
-            margin: auto 0;
-            display: flex;
-            align-items: center;
-            width: 100%;
-            gap: 10px;
-            text-transform: uppercase;
-        }
+        
     </style>
 </head>
 <body>
@@ -91,16 +93,15 @@
         </div>
     </header>
 
-    <h2 class="delivery-section-title"><i class="fas fa-truck"></i> Mis Entregas Activas</h2>
-
     <div class="filter-container">
         <div class="delivery-select-wrapper">
             <i class="fas fa-filter"></i>
             <select id="statusFilter" class="delivery-select">
-                <option value="all">Ver todos los pedidos</option>
-                <option value="ready">Pendientes (Para retirar)</option>
-                <option value="shipped">En curso (En camino)</option>
-                <option value="completed">Finalizados (Entregados)</option>
+                <option value="all">1. Todos los pedidos</option>
+                <option value="pending_group">2. Pendientes</option>
+                <option value="completed">3. Entregados</option>
+                <option value="cancelled">4. Cancelados</option>
+                <option value="rejected">5. Rechazados</option>
             </select>
         </div>
     </div>
@@ -119,11 +120,14 @@
             const cards = document.querySelectorAll('.order-card');
             
             cards.forEach(card => {
+                const cardStatus = card.getAttribute('data-status');
                 if (status === 'all') {
                     card.style.display = ''; // Restablece al estilo original (flex/block)
+                } else if (status === 'pending_group') {
+                    // Muestra 'ready' (por retirar) y 'shipped' (en camino)
+                    card.style.display = (cardStatus === 'ready' || cardStatus === 'shipped') ? '' : 'none';
                 } else {
-                    // Comparación estricta con el atributo data-status
-                    card.style.display = (card.getAttribute('data-status') === status) ? '' : 'none';
+                    card.style.display = (cardStatus === status) ? '' : 'none';
                 }
             });
         });

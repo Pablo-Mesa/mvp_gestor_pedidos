@@ -1,6 +1,6 @@
 *{
-    margin: 0;
-    padding: 0;
+    margin: 0px;
+    padding: 0px;
     box-sizing: border-box
 }
 
@@ -237,11 +237,14 @@ body {
 @media (max-width: 768px) {
     
     body {
-        padding-top: 160px; /* Ajuste para el header más alto en móviles */
+        padding-top: 130px; /* Un poco más de espacio para el header en móviles */
     }
 
     .cart-sidebar { width: 100%; }
-    .container { padding: 0 0.2rem; }
+    .container {
+        padding: 0 0.2rem;
+        
+    }
     .container-logo-title{
         width: 100% !important;
         background-color: transparent !important;

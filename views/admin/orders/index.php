@@ -226,17 +226,29 @@
                                     case 'rejected': $statusClass = 'status-rejected'; break;
                                     case 'cancelled': $statusClass = 'status-cancelled'; break;
                                 }
+
+                                $isLocked = ($order['status'] == 'completed');
+                                $isErrorState = in_array($order['status'], ['rejected', 'cancelled']);
                             ?>
-                            <select class="status-select <?php echo $statusClass; ?>" 
+                            <select class="status-select <?php echo $statusClass; ?>"
                                     onchange="updateOrderStatus(this, <?php echo $order['id']; ?>)"
-                                    data-current-status="<?php echo $order['status']; ?>">
-                                <option value="pending" <?php echo $order['status']=='pending'?'selected':''; ?>>Pendiente</option>
-                                <option value="confirmed" <?php echo $order['status']=='confirmed'?'selected':''; ?> <?php echo $order['status']=='pending'?'disabled':''; ?>>Confirmado (Imprimir)</option>
-                                <option value="shipped" <?php echo $order['status']=='shipped'?'selected':''; ?>>Asignado / Camino</option>
-                                <option value="completed" <?php echo $order['status']=='completed'?'selected':''; ?>>Entregado</option>
+                                    data-current-status="<?php echo $order['status']; ?>"
+                                    <?php echo $isLocked ? 'disabled' : ''; ?>
+                            >
+                                <option value="pending" <?php echo $order['status']=='pending'?'selected':''; ?> <?php echo (!$isErrorState && $order['status'] != 'pending') ? 'disabled' : ''; ?>>
+                                    <?php echo $isErrorState ? '🔄 Reabrir (Pendiente)' : 'Pendiente'; ?>
+                                </option>
+                                <option value="confirmed" <?php echo $order['status']=='confirmed'?'selected':''; ?> disabled>Confirmado (Imprimir)</option>
+                                <option value="shipped" <?php echo $order['status']=='shipped'?'selected':''; ?> disabled>En Camino</option>
+                                <option value="completed" <?php echo $order['status']=='completed'?'selected':''; ?> disabled>Entregado</option>
                                 <option value="rejected" <?php echo $order['status']=='rejected'?'selected':''; ?>>Rechazado</option>
                                 <option value="cancelled" <?php echo $order['status']=='cancelled'?'selected':''; ?>>Cancelado</option>
                             </select>
+                            <?php if ($order['status'] === 'confirmed' && $order['delivery_user_id']): ?>
+                                <div style="font-size: 0.7rem; color: #28a745; font-weight: bold; margin-top: 4px;">
+                                    <i class="fas fa-user-check"></i> DELIVERY ASIGNADO
+                                </div>
+                            <?php endif; ?>
                         </td>
                         <td>
                             <div style="display: flex; gap: 4px;">
@@ -319,14 +331,36 @@ if (empty($orders) && $hasFilter):
     /**
      * Actualiza el estado de un pedido directamente desde la tabla
      */
-    function updateOrderStatus(selectElement, orderId) {
+    async function updateOrderStatus(selectElement, orderId) {
         const newStatus = selectElement.value;
-        const formData = new FormData();
-        formData.append('id', orderId);
-        formData.append('status', newStatus);
+        const currentStatus = selectElement.getAttribute('data-current-status');
+
+        // Si intenta marcar como rechazado o cancelado, pedimos confirmación
+        if (newStatus === 'rejected' || newStatus === 'cancelled') {
+            const actionName = newStatus === 'rejected' ? 'RECHAZAR' : 'CANCELAR';
+            const result = await Swal.fire({
+                title: `¿Confirmar ${actionName}?`,
+                text: `¿Estás seguro de que deseas marcar el pedido #${orderId} como ${newStatus}?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, confirmar',
+                cancelButtonText: 'No, volver'
+            });
+
+            if (!result.isConfirmed) {
+                selectElement.value = currentStatus; // Revertimos el select visualmente
+                return;
+            }
+        }
 
         // Cambiar color visualmente mientras procesa
         selectElement.style.opacity = '0.5';
+
+        const formData = new FormData();
+        formData.append('id', orderId);
+        formData.append('status', newStatus);
 
         fetch('?route=orders_update_status', {
             method: 'POST',
@@ -395,7 +429,7 @@ if (empty($orders) && $hasFilter):
             }
             
             let hasNewOrders = false;
-            let hasDeliveriesCompleted = false;
+            let deliveryUpdateInfo = null;
             let currentMaxIdInResponse = lastMaxId;
 
             // Objeto para recalcular contadores localmente
@@ -409,8 +443,14 @@ if (empty($orders) && $hasFilter):
                 }
 
                 // Detectar si un repartidor cambió el estado a 'completed' (Entregado)
-                if (orderStatusMap[order.id] && orderStatusMap[order.id] !== order.status && order.status === 'completed') {
-                    hasDeliveriesCompleted = true;
+                if (orderStatusMap[order.id] && orderStatusMap[order.id] !== order.status) {
+                    if (['completed', 'rejected', 'cancelled'].includes(order.status)) {
+                        deliveryUpdateInfo = {
+                            id: order.id,
+                            status: order.status,
+                            label: order.status === 'completed' ? 'ENTREGADO' : (order.status === 'rejected' ? 'RECHAZADO' : 'CANCELADO')
+                        };
+                    }
                 }
                 orderStatusMap[order.id] = order.status;
 
@@ -418,19 +458,25 @@ if (empty($orders) && $hasFilter):
                 if (!newCounts[order.status]) newCounts[order.status] = 0;
                 newCounts[order.status]++;
 
-                let statusClass = 'status-pending';
-                // Lógica de clases y estados
-                if (order.status === 'confirmed') { statusClass = 'status-confirmed'; }
-                else if (order.status === 'shipped') { statusClass = 'status-shipped'; }
-                else if (order.status === 'completed') { statusClass = 'status-completed'; }
-                else if (order.status === 'rejected') { statusClass = 'status-rejected'; }
-                else if (order.status === 'cancelled') { statusClass = 'status-cancelled'; }
-
                 let deliveryHtml = order.delivery_type === 'delivery' 
                     ? '<span style="color:#d63384;"><i class="fas fa-motorcycle"></i> Delivery</span>'
                     : (order.delivery_type === 'pickup' 
                         ? '<span style="color:#0d6efd;"><i class="fas fa-walking"></i> Retiro</span>'
                         : '<span style="color:#fd7e14;"><i class="fas fa-utensils"></i> Local</span>');
+
+                // Variables de control de estado para JS
+                const isErrorState = (order.status === 'rejected' || order.status === 'cancelled');
+                const isLocked = (order.status === 'completed');
+                const deliveryAssignedBadge = (order.status === 'confirmed' && order.delivery_user_id) 
+                    ? `<div style="font-size: 0.7rem; color: #28a745; font-weight: bold; margin-top: 4px;"><i class="fas fa-user-check"></i> DELIVERY ASIGNADO</div>` 
+                    : '';
+
+                let statusClass = 'status-pending';
+                if (order.status === 'confirmed') statusClass = 'status-confirmed';
+                else if (order.status === 'shipped') statusClass = 'status-shipped';
+                else if (order.status === 'completed') statusClass = 'status-completed';
+                else if (order.status === 'rejected') statusClass = 'status-rejected';
+                else if (order.status === 'cancelled') statusClass = 'status-cancelled';
 
                 return `
                     <tr class="${isNew ? 'row-new' : ''}">
@@ -441,14 +487,15 @@ if (empty($orders) && $hasFilter):
                         <td>${deliveryHtml}</td>
                         <td style="font-weight: bold;">Gs. ${order.formatted_total}</td>
                         <td>
-                            <select class="status-select ${statusClass}" onchange="updateOrderStatus(this, ${order.id})" data-current-status="${order.status}">
-                                <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Pendiente</option>
-                                <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''} ${order.status === 'pending' ? 'disabled' : ''}>Confirmado (Imprimir)</option>
-                                <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>Asignado / Camino</option>
-                                <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Entregado</option>
+                            <select class="status-select ${statusClass}" onchange="updateOrderStatus(this, ${order.id})" data-current-status="${order.status}" ${isLocked ? 'disabled' : ''}>
+                                <option value="pending" ${order.status === 'pending' ? 'selected' : ''} ${(!isErrorState && order.status !== 'pending') ? 'disabled' : ''}>${isErrorState ? '🔄 Reabrir (Pendiente)' : 'Pendiente'}</option>
+                                <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''} disabled>Confirmado (Imprimir)</option>
+                                <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''} disabled>En Camino</option>
+                                <option value="completed" ${order.status === 'completed' ? 'selected' : ''} disabled>Entregado</option>
                                 <option value="rejected" ${order.status === 'rejected' ? 'selected' : ''}>Rechazado</option>
                                 <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancelado</option>
                             </select>
+                            ${deliveryAssignedBadge}
                         </td>
                         <td>
                             <div style="display: flex; gap: 4px;">
@@ -479,10 +526,11 @@ if (empty($orders) && $hasFilter):
                 setTimeout(() => { document.title = "Admin - Comedor App"; }, 5000);
             }
 
-            // Alerta si un repartidor entregó un pedido
-            if (hasDeliveriesCompleted) {
+            // Alerta si un repartidor actualizó un pedido desde la calle
+            if (deliveryUpdateInfo) {
                 notificationSound.play().catch(e => {});
-                Toast.fire("¡Un repartidor ha entregado un pedido!", "success");
+                const icon = deliveryUpdateInfo.status === 'completed' ? 'success' : 'warning';
+                Toast.fire(`Pedido #${deliveryUpdateInfo.id}: ${deliveryUpdateInfo.label}`, icon);
             }
         })
         .catch(err => console.error('Error en la auto-actualización:', err));

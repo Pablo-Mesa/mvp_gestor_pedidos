@@ -65,12 +65,19 @@
         <div class="card" style="margin-bottom: 20px; background: #f8f9fa;">
             <h3>Cambiar Estado</h3>
             <form action="?route=orders_update_status" method="POST" style="margin-top: 10px;">
+                <?php 
+                    $isErrorState = in_array($order['status'], ['rejected', 'cancelled']);
+                    $isLocked = ($order['status'] == 'completed');
+                ?>
                 <input type="hidden" name="id" value="<?php echo $order['id']; ?>">
-                <select name="status" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc; margin-bottom: 10px;">
-                    <option value="pending" <?php echo $order['status']=='pending'?'selected':''; ?>>Pendiente 🟡</option>
-                    <option value="confirmed" <?php echo $order['status']=='confirmed'?'selected':''; ?> <?php echo ($order['status']=='pending')?'disabled':''; ?>>Confirmado (Imprimir) 🔵</option>
-                    <option value="shipped" <?php echo $order['status']=='shipped'?'selected':''; ?>>Asignado / Camino 🚚</option>
-                    <option value="completed" <?php echo $order['status']=='completed'?'selected':''; ?>>Entregado / Finalizado 🟢</option>
+                <select name="status" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc; margin-bottom: 10px;" <?php echo $isLocked ? 'disabled' : ''; ?>>
+                    <option value="pending" <?php echo $order['status']=='pending'?'selected':''; ?> 
+                        <?php echo (!$isErrorState && $order['status'] != 'pending') ? 'disabled' : ''; ?>>
+                        <?php echo $isErrorState ? '🔄 Reabrir (Pendiente)' : 'Pendiente 🟡'; ?>
+                    </option>
+                    <option value="confirmed" <?php echo $order['status']=='confirmed'?'selected':''; ?> disabled>Confirmado (Imprimir) 🔵</option>
+                    <option value="shipped" <?php echo $order['status']=='shipped'?'selected':''; ?> disabled>En Camino 🚚</option>
+                    <option value="completed" <?php echo $order['status']=='completed'?'selected':''; ?> disabled>Entregado / Finalizado 🟢</option>
                     <option value="rejected" <?php echo $order['status']=='rejected'?'selected':''; ?>>Rechazado ⚪</option>
                     <option value="cancelled" <?php echo $order['status']=='cancelled'?'selected':''; ?>>Cancelado 🔴</option>
                 </select>
@@ -109,7 +116,7 @@
                     const response = await fetch('?route=orders_assign_delivery', { method: 'POST', body: formData });
                     const result = await response.json();
                     if (result.success) {
-                        Toast.fire("Pedido asignado y en camino 🚀", "success");
+                        Toast.fire("Logística actualizada", "success");
                         setTimeout(() => location.reload(), 1500);
                     } else { Toast.fire("Error al asignar", "error"); }
                 } catch (e) { Toast.fire("Error de conexión", "error"); }

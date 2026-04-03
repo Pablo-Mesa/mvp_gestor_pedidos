@@ -250,10 +250,10 @@ function renderOrderCardHTML($order) {
                             <span class="status-badge-header rejected"><i class="fas fa-undo"></i> Rechazado</span>
                         <?php elseif($order['status'] === 'cancelled'): ?>
                             <span class="status-badge-header cancelled"><i class="fas fa-times-circle"></i> Cancelado</span>
-                        <?php elseif($order['status'] === 'ready'): ?>
-                            <span class="status-badge-header shipped" style="background:#fff3cd; color:#856404;"><i class="fas fa-clock"></i> Pendiente</span>
+                        <?php elseif($order['status'] === 'confirmed'): ?>
+                            <span class="status-badge-header shipped" style="background:#fff3cd; color:#856404;"><i class="fas fa-clock"></i> Asignado</span>
                         <?php elseif($order['status'] === 'shipped'): ?>
-                            <span class="status-badge-header shipped"><i class="fas fa-truck"></i> Asignado</span>
+                            <span class="status-badge-header shipped"><i class="fas fa-truck"></i> En Camino</span>
                         <?php endif; ?>
                         <span class="order-time"><?php echo date('H:i', strtotime($order['created_at'])); ?></span>
                     </div>
@@ -301,9 +301,9 @@ function renderOrderCardHTML($order) {
                 <?php endif; ?>
 
                 <div class="delivery-actions">
-                    <?php if($order['status'] === 'ready'): ?>
-                        <!-- El pedido está en el local esperando ser retirado -->
-                        <button class="btn-logistics btn-start" onclick="updateOrderStatus(<?php echo $order['id']; ?>, 'shipped')">
+                    <?php if($order['status'] === 'confirmed'): ?>
+                        <!-- El pedido está asignado y listo para que el repartidor inicie el viaje -->
+                        <button class="btn-logistics btn-start" style="background: #ffc107; color: #000;" onclick="updateOrderStatus(<?php echo $order['id']; ?>, 'shipped')">
                             <i class="fas fa-play"></i> Iniciar Entrega
                         </button>
                     <?php elseif($order['status'] === 'shipped'): ?>
@@ -374,7 +374,7 @@ async function refreshDeliveryOrders(forceUpdate = false) {
 
             if (hasNewOrders) {
                 notificationSound.play().catch(e => console.log("Audio bloqueado: requiere interacción previa"));
-                Toast.fire("¡Nuevo pedido asignado! 🛵", "success");
+                Swal.fire("¡Nuevo pedido asignado! 🛵", "success");
             }
 
             currentOrdersData = newData;
@@ -425,8 +425,8 @@ function renderOrderCardJS(order) {
     if (order.status === 'completed') statusBadge = '<span class="status-badge-header completed"><i class="fas fa-check-circle"></i> Entregado</span>';
     else if (order.status === 'rejected') statusBadge = '<span class="status-badge-header rejected"><i class="fas fa-undo"></i> Rechazado</span>';
     else if (order.status === 'cancelled') statusBadge = '<span class="status-badge-header cancelled"><i class="fas fa-times-circle"></i> Cancelado</span>';
-    else if (order.status === 'ready') statusBadge = '<span class="status-badge-header shipped" style="background:#fff3cd; color:#856404;"><i class="fas fa-clock"></i> Pendiente</span>';
-    else if (order.status === 'shipped') statusBadge = '<span class="status-badge-header shipped"><i class="fas fa-truck"></i> Asignado</span>';
+    else if (order.status === 'confirmed') statusBadge = '<span class="status-badge-header shipped" style="background:#fff3cd; color:#856404;"><i class="fas fa-clock"></i> Asignado</span>';
+    else if (order.status === 'shipped') statusBadge = '<span class="status-badge-header shipped"><i class="fas fa-truck"></i> En Camino</span>';
 
     return `
         <div class="order-card ${order.status} ${isCollapsed}" data-status="${order.status}" id="card-${order.id}">
@@ -465,13 +465,13 @@ function renderOrderCardJS(order) {
                 </div>
                 ${order.delivery_lat ? `<div class="map-wrapper"><div id="map-${order.id}" class="map-preview"></div><a href="https://www.google.com/maps/search/?api=1&query=${order.delivery_lat},${order.delivery_lng}" target="_blank" class="map-overlay-btn"><i class="fas fa-directions"></i> GPS</a></div>` : ''}
                 <div class="delivery-actions">
-                    ${order.status === 'ready' ? `<button class="btn-logistics btn-start" onclick="updateOrderStatus(${order.id}, 'shipped')"><i class="fas fa-play"></i> Iniciar Entrega</button>` : ''}
+                    ${order.status === 'confirmed' ? `<button class="btn-logistics btn-start" style="background: #ffc107; color: #000; cursor: pointer;" onclick="updateOrderStatus(${order.id}, 'shipped')"><i class="fas fa-play"></i> Iniciar Entrega</button>` : ''}
                     ${order.status === 'shipped' ? `
                         <div style="display: flex; flex-direction: column; gap: 10px;">
-                            <button class="btn-logistics btn-complete" onclick="updateOrderStatus(${order.id}, 'completed')"><i class="fas fa-check-circle"></i> CONFIRMAR ENTREGA</button>
+                            <button class="btn-logistics btn-complete" style="cursor: pointer;" onclick="updateOrderStatus(${order.id}, 'completed')"><i class="fas fa-check-circle"></i> CONFIRMAR ENTREGA</button>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                                <button class="btn-logistics" style="background:#636e72; color:white; padding:12px; font-size:0.8rem;" onclick="updateOrderStatus(${order.id}, 'rejected')"><i class="fas fa-undo"></i> RECHAZADO</button>
-                                <button class="btn-logistics" style="background:#ff7675; color:white; padding:12px; font-size:0.8rem;" onclick="updateOrderStatus(${order.id}, 'cancelled')"><i class="fas fa-times"></i> CANCELADO</button>
+                                <button class="btn-logistics" style="background:#636e72; color:white; padding:12px; font-size:0.8rem; cursor: pointer;" onclick="updateOrderStatus(${order.id}, 'rejected')"><i class="fas fa-undo"></i> RECHAZADO</button>
+                                <button class="btn-logistics" style="background:#ff7675; color:white; padding:12px; font-size:0.8rem; cursor: pointer;" onclick="updateOrderStatus(${order.id}, 'cancelled')"><i class="fas fa-times"></i> CANCELADO</button>
                             </div>
                         </div>` : ''}
                     ${order.status === 'completed' ? `

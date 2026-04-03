@@ -167,8 +167,9 @@ class Order {
      * Asigna un repartidor a un pedido y actualiza el estado
      */
     public function assignDelivery($orderId, $deliveryUserId) {
-        $query = "UPDATE " . $this->table . " 
-                  SET delivery_user_id = :delivery_id, status = 'shipped' 
+        // Mantenemos el estado actual (confirmed), solo vinculamos al repartidor
+        $query = "UPDATE " . $this->table . "
+                  SET delivery_user_id = :delivery_id
                   WHERE id = :id";
         $stmt = $this->conn->prepare($query);
         return $stmt->execute([

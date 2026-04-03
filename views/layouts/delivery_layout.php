@@ -39,7 +39,81 @@
             flex-shrink: 0; /* No permite que el header se encoja */
         }
         .delivery-header h1 { font-size: 1.2rem; margin: 0; font-weight: 800; color: var(--delivery-primary); }
-        .logout-link { color: #ff5252; text-decoration: none; font-size: 1.2rem; }
+        
+        /* Botón de Menú */
+        .menu-trigger {
+            background: none;
+            border: none;
+            color: var(--delivery-text);
+            font-size: 1.4rem;
+            cursor: pointer;
+            padding: 5px;
+            transition: color 0.3s;
+        }
+
+        /* Sidebar Lateral */
+        .menu-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: none;
+            backdrop-filter: blur(2px);
+        }
+        .side-menu {
+            position: fixed;
+            top: 0;
+            right: -280px;
+            width: 280px;
+            height: 100%;
+            background: white;
+            z-index: 1001;
+            transition: right 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+        }
+        .side-menu.open { right: 0; }
+        .menu-overlay.open { display: block; }
+
+        .side-menu-header {
+            padding: 30px 20px;
+            background: var(--delivery-bg);
+            border-bottom: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .side-menu-header i { font-size: 2.5rem; color: var(--delivery-primary); }
+        .side-menu-header span { font-weight: 700; color: var(--delivery-text); }
+
+        .menu-nav { flex: 1; padding: 20px 0; }
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 25px;
+            text-decoration: none;
+            color: var(--delivery-text);
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .menu-item:hover { background: #f8f9fa; }
+        .menu-item i { width: 20px; color: var(--delivery-subtext); }
+        
+        .menu-footer {
+            padding: 20px;
+            border-top: 1px solid #eee;
+        }
+        .logout-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: #ff5252;
+            text-decoration: none;
+            font-weight: 700;
+            padding: 10px;
+        }
         
         .delivery-main { 
             flex: 1; /* Ocupa todo el espacio restante */
@@ -84,14 +158,34 @@
     </style>
 </head>
 <body>
+
     <header class="delivery-header">
         <h1><i class="fas fa-route"></i> SOLVER LOGÍSTICA</h1>
-        <div style="display: flex; gap: 20px; align-items: center;">
-            <span style="font-size: 0.8rem; color: var(--delivery-subtext);"><?php echo htmlspecialchars($_SESSION['user_name']); ?> (Repartidor)</span>
-            <!-- Usamos type=admin porque ambos pertenecen a la tabla 'users' de administración -->
-            <a href="?route=logout&type=admin" class="logout-link" title="Cerrar Sesión"><i class="fas fa-power-off"></i></a>
+        <div>
+            <button class="menu-trigger" onclick="toggleMenu()" title="Menú">
+                <i class="fas fa-bars"></i>
+            </button>
         </div>
     </header>
+
+    <!-- Menú Lateral -->
+    <div id="menuOverlay" class="menu-overlay" onclick="toggleMenu()"></div>
+    <div id="sideMenu" class="side-menu">
+        <div class="side-menu-header">
+            <i class="fas fa-user-circle"></i>
+            <span><?php echo htmlspecialchars($_SESSION['user_name']); ?></span>
+            <small style="color: var(--delivery-subtext);">Repartidor</small>
+        </div>
+        <nav class="menu-nav">
+            <a href="?route=delivery" class="menu-item"><i class="fas fa-clipboard-list"></i> Pedidos Activos</a>
+            <!-- Aquí podrás agregar más secciones en el futuro -->
+        </nav>
+        <div class="menu-footer">
+            <a href="?route=logout&type=admin" class="logout-item">
+                <i class="fas fa-power-off"></i> Cerrar Sesión
+            </a>
+        </div>
+    </div>
 
     <div class="filter-container">
         <div class="delivery-select-wrapper">
@@ -114,6 +208,12 @@
     <script src="js/toast.js"></script>
 
     <script>
+        // Lógica del Menú Lateral
+        function toggleMenu() {
+            document.getElementById('sideMenu').classList.toggle('open');
+            document.getElementById('menuOverlay').classList.toggle('open');
+        }
+
         // Lógica de filtrado en tiempo real
         document.getElementById('statusFilter').addEventListener('change', function() {
             const status = this.value;
@@ -124,13 +224,14 @@
                 if (status === 'all') {
                     card.style.display = ''; // Restablece al estilo original (flex/block)
                 } else if (status === 'pending_group') {
-                    // Muestra 'ready' (por retirar) y 'shipped' (en camino)
-                    card.style.display = (cardStatus === 'ready' || cardStatus === 'shipped') ? '' : 'none';
+                    // Muestra 'confirmed' (asignado) y 'shipped' (en camino)
+                    card.style.display = (cardStatus === 'confirmed' || cardStatus === 'shipped') ? '' : 'none';
                 } else {
                     card.style.display = (cardStatus === status) ? '' : 'none';
                 }
             });
         });
     </script>
+    
 </body>
 </html>

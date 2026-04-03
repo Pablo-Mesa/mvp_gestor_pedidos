@@ -54,12 +54,17 @@ class OrderController {
     public function apiIndex() {
         header('Content-Type: application/json');
         
-        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+        if (!isset($_SESSION['user_role']) || !in_array($_SESSION['user_role'], ['admin', 'delivery'])) {
             echo json_encode(['error' => 'No autorizado']);
             exit;
         }
 
         $orderModel = new Order();
+
+        // Seguridad: Si es repartidor, forzamos el filtro para que solo vea sus pedidos
+        if ($_SESSION['user_role'] === 'delivery') {
+            $_GET['delivery_user_id'] = $_SESSION['user_id'];
+        }
 
         // Mantener el filtro por defecto de hoy para la sincronización automática
         if (!isset($_GET['date'])) {

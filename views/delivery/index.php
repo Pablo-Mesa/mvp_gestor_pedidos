@@ -578,9 +578,7 @@ function updateOrderStatus(orderId, newStatus) {
         showCancelButton: true,
         confirmButtonColor: newStatus === 'completed' ? '#00e676' : '#636e72',
         cancelButtonColor: '#d33',
-        confirmButtonText: 'Sí, proceder',
-        background: '#1e1e1e',
-        color: '#fff'
+        confirmButtonText: 'Sí, proceder'
     }).then((result) => {
         if (result.isConfirmed) {
             const formData = new FormData();
@@ -595,12 +593,9 @@ function updateOrderStatus(orderId, newStatus) {
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    Toast.fire("Estado actualizado con éxito", "success");
-                    // Forzamos la actualización inmediata ignorando el fingerprint
-                    // para asegurar que el DOM refleje el cambio de estado enviado
-                    setTimeout(() => {
-                        refreshDeliveryOrders(true);
-                    }, 500); 
+                    refreshDeliveryOrders(true);
+                    // Revertimos al uso original de Toast.fire para mantener el estilo consistente
+                    Swal.fire("¡Actualizado!", "El estado del pedido ha sido actualizado.", "success");
                 }
             });
         }

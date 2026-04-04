@@ -4,6 +4,7 @@ date_default_timezone_set('America/Asuncion');
 
 require_once '../models/Order.php';
 require_once '../models/User.php';
+require_once '../models/ClientLocation.php';
 
 class OrderController {
 
@@ -172,12 +173,33 @@ class OrderController {
             exit;
         }
 
-        // 2. Preparar la vista
-        // Aquí podríamos cargar datos del cliente si quisiéramos pre-llenar campos
-        // $clientModel = new Client(); ...
+        // 2. Cargar ubicaciones guardadas
+        $locationModel = new ClientLocation();
+        $savedLocations = $locationModel->getAllByClient($_SESSION['client_id']);
 
         $content_view = '../views/home/checkout.php';
         require_once '../views/layouts/client_layout.php';
+    }
+
+    /**
+     * Guarda una nueva ubicación vía AJAX
+     */
+    public function saveLocationApi() {
+        header('Content-Type: application/json');
+        if (!isset($_SESSION['client_id'])) {
+            echo json_encode(['success' => false, 'message' => 'Sesión expirada']); exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        $locationModel = new ClientLocation();
+        $input['client_id'] = $_SESSION['client_id'];
+        
+        if ($locationModel->create($input)) {
+            echo json_encode(['success' => true, 'locations' => $locationModel->getAllByClient($_SESSION['client_id'])]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Error al guardar ubicación']);
+        }
+        exit;
     }
 
     public function store() {

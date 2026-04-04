@@ -41,19 +41,32 @@
 
                 <!-- 2. Ubicación (Solo Delivery) -->
                 <div id="deliverySection" class="section-card" style="display: none;">
-                    <h3><i class="fas fa-map-marked-alt"></i> Ubicación de Entrega</h3>
-                    <p class="hint-text">Toca en el mapa para marcar donde debemos llevar tu pedido.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="margin:0;"><i class="fas fa-map-marked-alt"></i> Mis Direcciones</h3>
+                        <button type="button" class="btn-add-location" onclick="openLocationModal()">
+                            <i class="fas fa-plus"></i> Nueva
+                        </button>
+                    </div>
                     
-                    <div id="map" class="map-container"></div>
-                    
+                    <div id="locationsList" class="locations-grid">
+                        <?php if(empty($savedLocations)): ?>
+                            <p class="empty-msg">No tienes direcciones guardadas.</p>
+                        <?php else: ?>
+                            <?php foreach($savedLocations as $loc): ?>
+                                <div class="location-card" onclick="selectLocation(this)" 
+                                     data-lat="<?= $loc['lat'] ?>" data-lng="<?= $loc['lng'] ?>" data-addr="<?= htmlspecialchars($loc['address']) ?>">
+                                    <i class="fas fa-home"></i>
+                                    <strong><?= htmlspecialchars($loc['title']) ?></strong>
+                                    <small><?= htmlspecialchars($loc['address']) ?></small>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+
                     <!-- Inputs Ocultos para Lat/Lng -->
                     <input type="hidden" name="delivery_lat" id="lat">
                     <input type="hidden" name="delivery_lng" id="lng">
-
-                    <div class="input-group mt-3">
-                        <label>Referencia / Dirección escrita</label>
-                        <input type="text" name="delivery_address" placeholder="Ej: Casa azul, reja negra, frente a la plaza..." class="form-control">
-                    </div>
+                    <input type="hidden" name="delivery_address" id="selected_address">
                 </div>
 
                 <!-- 3. Método de Pago -->
@@ -119,6 +132,34 @@
     </div>
 </div>
 
+<!-- Modal Nueva Ubicación (Flujo profesional) -->
+<div id="locationModal" class="modal-overlay" style="display:none;">
+    <div class="modal-card" style="max-width: 600px;">
+        <div class="modal-tabs">
+            <button class="tab-btn active">Guardar Nueva Ubicación</button>
+        </div>
+        <div class="modal-content">
+            <div class="input-group">
+                <label>Título (Ej: Mi Casa, Oficina)</label>
+                <input type="text" id="new_loc_title" placeholder="Casa, Trabajo..." class="form-control">
+            </div>
+            
+            <div class="hint-text mt-3">Ubica el marcador exactamente sobre el lugar de entrega:</div>
+            <div id="map" class="map-container" style="height: 250px;"></div>
+            
+            <div class="input-group mt-3">
+                <label>Referencia Detallada (Opcional)</label>
+                <textarea id="new_loc_addr" class="form-control" rows="2" placeholder="Nro de casa, color de reja, etc."></textarea>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn-main" style="flex:1; background:#6c757d;" onclick="closeLocationModal()">Cancelar</button>
+                <button type="button" class="btn-main" style="flex:2;" onclick="saveNewLocation()">Guardar Dirección</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     /* Layout General */
     .checkout-wrapper { max-width: 1000px; margin: 0 auto; padding: 1rem; }
@@ -135,6 +176,16 @@
     .section-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 1.5rem; border: 1px solid #eee; }
     .section-card h3 { margin-bottom: 1rem; color: #444; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
     .hint-text { font-size: 0.85rem; color: #666; margin-bottom: 0.5rem; }
+
+    /* Grid de Direcciones */
+    .locations-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1rem; }
+    .location-card { 
+        border: 1px solid #eee; padding: 12px; border-radius: 10px; cursor: pointer; 
+        display: flex; flex-direction: column; gap: 4px; transition: 0.2s; font-size: 0.85rem;
+    }
+    .location-card i { font-size: 1.2rem; color: #aaa; margin-bottom: 5px; }
+    .location-card.selected { border-color: #28a745; background: #f0fdf4; border-width: 2px; }
+    .btn-add-location { background: #007bff; color: white; border: none; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
 
     /* Radio Buttons Visuales */
     .delivery-options, .payment-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; }
@@ -234,22 +285,63 @@
 
     function toggleMap(show) {
         const container = document.getElementById('deliverySection');
-        const addressInput = document.querySelector('input[name="delivery_address"]');
-        
-        if (show) {
-            container.style.display = 'block';
-            // Leaflet necesita recalcular su tamaño cuando se hace visible
-            setTimeout(() => { 
-                if(!map) initMap(); 
-                else map.invalidateSize(); 
-            }, 100);
-            addressInput.setAttribute('required', 'required');
-        } else {
-            container.style.display = 'none';
-            addressInput.removeAttribute('required');
-            // Limpiar valores
-            document.getElementById('lat').value = '';
-            document.getElementById('lng').value = '';
+        container.style.display = show ? 'block' : 'none';
+        // Desactivamos los inputs si no es delivery para que no se envíen en el form
+        document.getElementById('lat').disabled = !show;
+        document.getElementById('lng').disabled = !show;
+        document.getElementById('selected_address').disabled = !show;
+    }
+
+    function openLocationModal() {
+        document.getElementById('locationModal').style.display = 'flex';
+        // El mapa necesita un pequeño delay para cargar los tiles correctamente en el modal
+        setTimeout(() => { 
+            if(!map) initMap(); 
+            else map.invalidateSize(); 
+        }, 300);
+    }
+
+    function closeLocationModal() {
+        document.getElementById('locationModal').style.display = 'none';
+    }
+
+    function selectLocation(card) {
+        document.querySelectorAll('.location-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        document.getElementById('lat').value = card.dataset.lat;
+        document.getElementById('lng').value = card.dataset.lng;
+        document.getElementById('selected_address').value = card.dataset.addr;
+        Toast.fire("Dirección seleccionada", "success");
+    }
+
+    async function saveNewLocation() {
+        const data = {
+            title: document.getElementById('new_loc_title').value,
+            address: document.getElementById('new_loc_addr').value,
+            lat: document.getElementById('lat').value,
+            lng: document.getElementById('lng').value
+        };
+
+        if(!data.title || !data.lat) { 
+            Toast.fire("Título y ubicación en mapa son obligatorios", "error"); 
+            return; 
+        }
+
+        try {
+            const resp = await fetch('?route=save_location', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const res = await resp.json();
+            if(res.success) {
+                Toast.fire("Ubicación guardada", "success");
+                location.reload(); 
+            } else {
+                Toast.fire(res.message, "error");
+            }
+        } catch(e) {
+            Toast.fire("Error al conectar con el servidor", "error");
         }
     }
 

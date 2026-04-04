@@ -159,6 +159,7 @@
 </head>
 <body>
 
+    <!-- Encabezado Principal -->
     <header class="delivery-header">
         <h1><i class="fas fa-route"></i> SOLVER LOGÍSTICA</h1>
         <div>
@@ -187,6 +188,7 @@
         </div>
     </div>
 
+    <!-- Filtro de Pedidos -->
     <div class="filter-container">
         <div class="delivery-select-wrapper">
             <i class="fas fa-filter"></i>
@@ -200,6 +202,7 @@
         </div>
     </div>
 
+    <!-- Contenedor Principal -->
     <main class="delivery-main">
         <?php if (isset($content_view) && file_exists($content_view)) require_once $content_view; ?>
     </main>

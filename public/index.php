@@ -258,6 +258,12 @@ switch ($route) {
         $controller->index();
         break;
 
+    case 'save_location':
+        require_once '../controllers/OrderController.php'; // Asegúrate de que esta línea ya exista
+        $controller = new OrderController();
+        $controller->saveLocationApi();
+        break;
+    
     // ... dentro de tu switch($route) o lógica de enrutamiento ...
 
     case 'install_delivery':

@@ -122,7 +122,9 @@ class AuthController {
                 $_SESSION['client_id'] = $client->id;
                 $_SESSION['client_name'] = $client->name;
                 
-                header('Location: ?route=home');
+                // Redirección inteligente post-login
+                $redirectTo = $_POST['redirect_to'] ?? 'home';
+                header('Location: ?route=' . $redirectTo);
                 exit;
             } else {
                 // Podrías redirigir con un error flag
@@ -146,7 +148,10 @@ class AuthController {
                 // Auto-login tras registro exitoso
                 $_SESSION['client_id'] = $client->id;
                 $_SESSION['client_name'] = $client->name;
-                header('Location: ?route=home');
+
+                // Redirección inteligente post-registro
+                $redirectTo = $_POST['redirect_to'] ?? 'home';
+                header('Location: ?route=' . $redirectTo);
             } else {
                 header('Location: ?route=home&error=register_failed');
             }

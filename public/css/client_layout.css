@@ -50,7 +50,12 @@ body {
 .btn { padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; cursor: pointer; border: none; font-size: 0.9rem; }
 .btn-icon { background: none; border: none; font-size: 1.2rem; cursor: pointer; position: relative; color: #333; }
 
-.container { width: 100%; max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
+.container { 
+    width: 100%; 
+    max-width: 960px; 
+    margin: 0.5rem auto; 
+    padding: 0 1rem; 
+}
 
 /* Estilos de Tarjetas de Producto (Usados en la vista) */
 .product-grid {
@@ -243,7 +248,7 @@ body {
     .cart-sidebar { width: 100%; }
     .container {
         padding: 0 0.2rem;
-        
+        margin: 2rem auto;
     }
     .container-logo-title{
         width: 100% !important;

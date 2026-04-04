@@ -30,51 +30,51 @@ if (class_exists('Category')) {
 
     <!-- Header fijo que agrupa Navbar y Categorías -->
     <header class="fixed-header">
-    <!-- Barra Superior -->
-    <nav class="navbar">
+        <!-- Barra Superior -->
+        <nav class="navbar">
 
-        <div class="container-logo-title">
-            <div style="display: flex; flex-direction: row; justify-content: left; align-items: center; width: 100%">
-                <div id="here_cube" class="mr-1"></div>            
-            </div>
-        </div>        
-        
-        <div class="container-control-nav">
-
-            <!-- Botón del Carrito -->
-            <button class="btn-std mr-3" onclick="toggleCart()">
-                <i class="fas fa-shopping-cart"></i>
-                <span class="badge-count" id="cart-count" style="display: none;">0</span>
-            </button>
-
-            <!-- Botón de Login -->
-            <div class="user-menu">
-
-                <?php if(isset($_SESSION['client_id'])): ?>
-                    
-                    <span class="span-user">Hola, <i class="fas fa-user"></i> <?php echo htmlspecialchars($_SESSION['client_name'] ?? 'Cliente'); ?></span>                
-                    
-                    <a href="?route=my_orders" class="btn-std mr-1" title="Mis Pedidos">
-                        <i class="fas fa-list-alt"></i>
-                    </a>
-                    
-                    <a href="?route=logout&type=client" class="btn-logout-solid">
-                        <i class="fa fa-sign-out"></i> <span class="logout-text">Cerrar Sesión</span>
-                    </a>
-
-                <?php else: ?>
-                    <!-- <a href="?route=login" class="">Iniciar Sesión</a> -->                    
-                    <!-- Botón del usuario -->
-                    <button id="openModal" class="btn-std">
-                        <i class="fas fa-user"></i>
-                    </button>
-                <?php endif; ?>
-
-            </div>
-
-        </div>              
+            <div class="container-logo-title">
+                <div style="display: flex; flex-direction: row; justify-content: left; align-items: center; width: 100%">
+                    <div id="here_cube" class="mr-1"></div>            
+                </div>
+            </div>        
             
-    </nav>
+            <div class="container-control-nav">
+
+                <!-- Botón del Carrito -->
+                <button class="btn-std mr-3" onclick="toggleCart()">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="badge-count" id="cart-count" style="display: none;">0</span>
+                </button>
+
+                <!-- Botón de Login -->
+                <div class="user-menu">
+
+                    <?php if(isset($_SESSION['client_id'])): ?>
+                        
+                        <span class="span-user">Hola, <i class="fas fa-user"></i> <?php echo htmlspecialchars($_SESSION['client_name'] ?? 'Cliente'); ?></span>                
+                        
+                        <a href="?route=my_orders" class="btn-std mr-1" title="Mis Pedidos">
+                            <i class="fas fa-list-alt"></i>
+                        </a>
+                        
+                        <a href="?route=logout&type=client" class="btn-logout-solid">
+                            <i class="fa fa-sign-out"></i> <span class="logout-text">Cerrar Sesión</span>
+                        </a>
+
+                    <?php else: ?>
+                        <!-- <a href="?route=login" class="">Iniciar Sesión</a> -->                    
+                        <!-- Botón del usuario -->
+                        <button id="openModal" class="btn-std">
+                            <i class="fas fa-user"></i>
+                        </button>
+                    <?php endif; ?>
+
+                </div>
+
+            </div>              
+                
+        </nav>
     
     <!-- Lista de Categorías -->
     <div class="scroll-container">
@@ -154,6 +154,8 @@ if (class_exists('Category')) {
             <div class="modal-content">
                 <!-- Formulario de Login -->
                 <form id="loginForm" class="auth-form active" action="?route=client_login" method="POST">
+                    <!-- Campo oculto para redirección -->
+                    <input type="hidden" name="redirect_to" id="loginRedirect" value="home">
                     <div id="loginError" style="display:none; color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem; text-align: center; font-size: 0.9rem;"></div>
                     <div class="input-group">
                         <label>Correo Electrónico</label>
@@ -167,6 +169,8 @@ if (class_exists('Category')) {
                 </form>
                 <!-- Formulario de Registro -->
                 <form id="registerForm" class="auth-form" action="?route=client_register" method="POST">
+                    <!-- Campo oculto para redirección -->
+                    <input type="hidden" name="redirect_to" id="registerRedirect" value="home">
                     <div class="grid-inputs">
                         <div class="input-group">
                             <label>Nombre Completo</label>
@@ -347,9 +351,23 @@ if (class_exists('Category')) {
         // Seleccionamos el botón por su ID
         const botonUsuario = document.getElementById('openModal');
 
-        // Le asignamos la función de abrir el modal
+        // Le asignamos la función de abrir el modal capturando la vista actual
         if (botonUsuario) {
-            botonUsuario.addEventListener('click', openAuthModal);
+            botonUsuario.addEventListener('click', () => {
+                const urlParams = new URLSearchParams(window.location.search);
+                let currentRoute = urlParams.get('route') || 'home';
+                
+                // Reconstruimos la ruta con sus parámetros (ej: category_id) para no perder el contexto
+                urlParams.forEach((value, key) => {
+                    if (key !== 'route' && key !== 'error') {
+                        currentRoute += `&${key}=${value}`;
+                    }
+                });
+
+                document.getElementById('loginRedirect').value = currentRoute;
+                document.getElementById('registerRedirect').value = currentRoute;
+                openAuthModal();
+            });
         }
         
         function toggleWsIcon() {
@@ -374,7 +392,9 @@ if (class_exists('Category')) {
 
             // 2. Verificar autenticación
             if (!isUserLoggedIn) {
-                // Si no está logueado, abrir modal y mostrar login
+                // Si viene del carrito, forzamos la redirección al checkout tras el login
+                document.getElementById('loginRedirect').value = 'checkout';
+                document.getElementById('registerRedirect').value = 'checkout';
                 openAuthModal();
                 switchTab('login');
                 return;

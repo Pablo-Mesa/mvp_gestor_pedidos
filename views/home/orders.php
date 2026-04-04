@@ -21,6 +21,7 @@
         align-items: center; 
         width: 100%;
         background-color: #f8f9fa;
+        padding: 0rem 2rem;
     }
 
     .list-months {
@@ -57,11 +58,13 @@
     .orders-list {
         display: flex;
         flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
         gap: 1rem; 
         width: 100% ;
         max-height: 360px;
         overflow-y: auto;
-        background-color:  #f9f9f9;
+        background-color: #f9f9f9;
         padding: 0rem 1rem;
     }
     
@@ -73,7 +76,16 @@
         background: white;
     }*/
 
-    .order-card { background: white; border-radius: 12px; border: 1px solid #eee; padding: 1.2rem; box-shadow: 0 2px 5px rgba(0,0,0,0.03); transition: transform 0.2s; }
+    .order-card { 
+        width: 100%;
+        background: white;
+        border-radius: 12px; 
+        border: 1px solid #eee; 
+        padding: 1.2rem; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.03); 
+        transition: transform 0.2s; 
+    }
+
     .order-card:hover { transform: scale(1.01); border-color: #ddd; }
     
     .order-header { display: flex; justify-content: space-between; border-bottom: 1px dashed #eee; padding-bottom: 0.8rem; margin-bottom: 0.8rem; }
@@ -118,6 +130,7 @@
             margin-bottom: 2px;
             width: 90%;
             margin: 0 auto;
+            padding: 0px;
         }
         .list-months {
             width: 100%;

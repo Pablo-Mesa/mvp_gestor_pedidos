@@ -55,6 +55,10 @@
                             <?php foreach($savedLocations as $loc): ?>
                                 <div class="location-card" onclick="selectLocation(this)" 
                                      data-lat="<?= $loc['lat'] ?>" data-lng="<?= $loc['lng'] ?>" data-addr="<?= htmlspecialchars($loc['address']) ?>">
+                                    <button type="button" class="btn-edit-inline" 
+                                            onclick="event.stopPropagation(); editLocation(<?= $loc['id'] ?>, '<?= addslashes($loc['title']) ?>', '<?= addslashes($loc['address']) ?>', <?= $loc['lat'] ?>, <?= $loc['lng'] ?>)">
+                                        <i class="fas fa-pen"></i>
+                                    </button>
                                     <i class="fas fa-home"></i>
                                     <strong><?= htmlspecialchars($loc['title']) ?></strong>
                                     <small><?= htmlspecialchars($loc['address']) ?></small>
@@ -136,9 +140,10 @@
 <div id="locationModal" class="modal-overlay" style="display:none;">
     <div class="modal-card" style="max-width: 600px;">
         <div class="modal-tabs">
-            <button class="tab-btn active">Guardar Nueva Ubicación</button>
+            <button class="tab-btn active" id="modalTitle">Guardar Nueva Ubicación</button>
         </div>
         <div class="modal-content">
+            <input type="hidden" id="edit_loc_id" value="">
             <div class="input-group">
                 <label>Título (Ej: Mi Casa, Oficina)</label>
                 <input type="text" id="new_loc_title" placeholder="Casa, Trabajo..." class="form-control">
@@ -186,6 +191,14 @@
     .location-card i { font-size: 1.2rem; color: #aaa; margin-bottom: 5px; }
     .location-card.selected { border-color: #28a745; background: #f0fdf4; border-width: 2px; }
     .btn-add-location { background: #007bff; color: white; border: none; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
+    
+    .btn-edit-inline { 
+        position: absolute; top: 5px; right: 5px; background: #f8f9fa; border: 1px solid #ddd; 
+        width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; 
+        justify-content: center; font-size: 0.7rem; color: #666; cursor: pointer; transition: 0.2s;
+    }
+    .btn-edit-inline:hover { background: #e9ecef; color: #007bff; border-color: #007bff; }
+    .location-card { position: relative; }
 
     /* Radio Buttons Visuales */
     .delivery-options, .payment-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; }
@@ -323,8 +336,10 @@
         const addrEl = document.getElementById('new_loc_addr');
         const latEl = document.getElementById('lat');
         const lngEl = document.getElementById('lng');
+        const editId = document.getElementById('edit_loc_id').value;
 
         const data = {
+            id: editId,
             title: titleEl.value,
             address: addrEl.value,
             lat: latEl.value,
@@ -337,7 +352,8 @@
         }
 
         try {
-            const resp = await fetch('?route=save_location', {
+            const route = editId ? 'update_location' : 'save_location';
+            const resp = await fetch(`?route=${route}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
@@ -372,9 +388,14 @@
         let html = '';
         locations.forEach(loc => {
             const safeAddr = loc.address.replace(/"/g, '&quot;');
+            const safeTitle = loc.title.replace(/'/g, "\\'");
             html += `
                 <div class="location-card" onclick="selectLocation(this)" 
                      data-lat="${loc.lat}" data-lng="${loc.lng}" data-addr="${safeAddr}">
+                    <button type="button" class="btn-edit-inline" 
+                            onclick="event.stopPropagation(); editLocation(${loc.id}, '${safeTitle}', '${safeAddr}', ${loc.lat}, ${loc.lng})">
+                        <i class="fas fa-pen"></i>
+                    </button>
                     <i class="fas fa-home"></i>
                     <strong>${loc.title}</strong>
                     <small>${loc.address}</small>

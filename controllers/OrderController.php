@@ -206,6 +206,27 @@ class OrderController {
         exit;
     }
 
+    /**
+     * Actualiza una ubicación existente vía AJAX
+     */
+    public function updateLocationApi() {
+        header('Content-Type: application/json');
+        if (!isset($_SESSION['client_id'])) {
+            echo json_encode(['success' => false, 'message' => 'Sesión expirada']); exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        $locationModel = new ClientLocation();
+        $input['client_id'] = $_SESSION['client_id'];
+        
+        if ($locationModel->update($input)) {
+            echo json_encode(['success' => true, 'locations' => $locationModel->getAllByClient($_SESSION['client_id'])]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Error al actualizar ubicación']);
+        }
+        exit;
+    }
+
     public function store() {
         header('Content-Type: application/json');
         

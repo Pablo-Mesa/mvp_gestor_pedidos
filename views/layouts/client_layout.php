@@ -271,12 +271,7 @@ if (class_exists('Category')) {
             console.warn('Solver PWA: La instalación no funcionará en móviles sin HTTPS.');
         }
     </script>
-            });
-        }
-    </script>
-    
     <script>
-
         const isUserLoggedIn = <?php echo isset($_SESSION['client_id']) ? 'true' : 'false'; ?>;
 
         let cart = JSON.parse(localStorage.getItem('comedor_cart')) || [];

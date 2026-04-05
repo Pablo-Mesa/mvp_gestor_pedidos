@@ -403,7 +403,7 @@ if (empty($orders) && $hasFilter):
         // Cambiamos el parámetro route para apuntar al endpoint JSON
         urlParams.set('route', 'orders_api');
         
-        console.log("Sincronizando pedidos...");
+        //console.log("**Sincronizando pedidos...");
 
         fetch('index.php?' + urlParams.toString(), {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -413,7 +413,7 @@ if (empty($orders) && $hasFilter):
             return response.json();
         })
         .then(data => {
-            console.log("Datos recibidos:", data);
+            //console.log("**Datos recibidos:", data);
             const tbody = document.getElementById('orders-tbody');
             if (!tbody || data.error) return;
 

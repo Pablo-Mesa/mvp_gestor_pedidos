@@ -17,6 +17,29 @@ class HomeController {
     }
     */
 
+    /**
+     * Punto de entrada inteligente para la PWA
+     */
+    public function start() {
+        // 1. Si hay una sesión activa de Staff (Tabla 'users')
+        if (isset($_SESSION['user_id'])) {
+            $role = $_SESSION['user_role'] ?? '';
+            if ($role === 'delivery') {
+                header('Location: ?route=delivery');
+            } elseif ($role === 'admin') {
+                header('Location: ?route=admin');
+            } else {
+                header('Location: ?route=login');
+            }
+            exit;
+        }
+
+        // 2. Si es Cliente (Tabla 'clients') o no está logueado
+        // Enviamos al home donde podrá ver el menú o loguearse como cliente
+        header('Location: ?route=home');
+        exit;
+    }
+
     public function index() {
         // Obtener el menú de la fecha actual
         $date = date('Y-m-d');

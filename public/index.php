@@ -8,6 +8,12 @@ require_once '../config/db.php';
 $route = $_GET['route'] ?? 'home';
 
 switch ($route) {
+    case 'start':
+        require_once '../controllers/HomeController.php';
+        $controller = new HomeController();
+        $controller->start();
+        break;
+
     case 'home':
         require_once '../controllers/HomeController.php';
         $controller = new HomeController();

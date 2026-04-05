@@ -4,21 +4,26 @@ date_default_timezone_set('America/Asuncion');
 class AdminController {
 
     public function __construct() {
-        // Si es un cliente logueado, lo mandamos a la web pública
+        // 1. Si es un cliente logueado (tabla 'clients'), lo mandamos a la web pública
         if (isset($_SESSION['client_id'])) {
             header('Location: ?route=home');
             exit;
         }
 
-        // Si no hay sesión de staff, al login
+        // 2. Si no hay sesión de staff (tabla 'users'), al login
         if (!isset($_SESSION['user_role'])) {
             header('Location: ?route=login');
             exit;
         }
 
-        // Redirección inteligente: Si es repartidor, enviarlo a logística
-        if ($_SESSION['user_role'] === 'delivery') {
-            header('Location: ?route=delivery');
+        // 3. Bloqueo estricto: Solo el rol 'admin' puede permanecer en este controlador.
+        // Si es repartidor, lo enviamos a su panel. Si es cualquier otro rol futuro no admin, al login.
+        if ($_SESSION['user_role'] !== 'admin') {
+            if ($_SESSION['user_role'] === 'delivery') {
+                header('Location: ?route=delivery');
+            } else {
+                header('Location: ?route=login');
+            }
             exit;
         }
     }

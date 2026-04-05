@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Solver Logística - <?php echo $view_title ?? 'Panel'; ?></title>
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#00c853">
+    <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="assets/icono_solver_nobg.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -179,6 +182,9 @@
         </div>
         <nav class="menu-nav">
             <a href="?route=delivery" class="menu-item"><i class="fas fa-clipboard-list"></i> Pedidos Activos</a>
+            <a href="#" id="btnInstallDelivery" class="menu-item" style="display: none; color: var(--delivery-primary);">
+                <i class="fas fa-mobile-alt"></i> Instalar App en Celular
+            </a>
             <!-- Aquí podrás agregar más secciones en el futuro -->
         </nav>
         <div class="menu-footer">
@@ -209,6 +215,34 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="js/toast.js"></script>
+
+    <script>
+        let deferredPrompt;
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Solver Logística PWA activo'))
+                    .catch(err => console.log('Error registro SW Logística', err));
+            });
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const btnInstall = document.getElementById('btnInstallDelivery');
+            if (btnInstall) {
+                btnInstall.style.display = 'flex';
+                btnInstall.addEventListener('click', async (ev) => {
+                    ev.preventDefault();
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') btnInstall.style.display = 'none';
+                    deferredPrompt = null;
+                });
+            }
+        });
+    </script>
 
     <script>
         // Lógica del Menú Lateral

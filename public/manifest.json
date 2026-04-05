@@ -1,0 +1,23 @@
+{
+  "name": "Solver - Pedidos & Logística",
+  "short_name": "Solver",
+  "description": "Sistema de gestión de pedidos y logística gastronómica",
+  "start_url": "index.php?route=start",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2d3436",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "assets/icono_solver_nobg.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icono_solver_nobg.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

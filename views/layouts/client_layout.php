@@ -19,6 +19,10 @@ if (class_exists('Category')) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>Solver - Home</title>
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#2d3436">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="assets/icono_solver_nobg.png">
     <link rel="icon" type="image/png" href="assets/icono_solver_nobg.png">    
     <link rel="stylesheet" href="css/css_cubo.css">
     <link rel="stylesheet" href="css/client_layout.css">   
@@ -69,6 +73,11 @@ if (class_exists('Category')) {
                             <i class="fas fa-user"></i>
                         </button>
                     <?php endif; ?>
+
+                    <!-- Botón de Instalación PWA (Oculto por defecto) -->
+                    <button id="btnInstallPWA" class="btn-icon-highlight-blue" style="display: none; margin-left: 8px;" title="Instalar Aplicación">
+                        <i class="fas fa-download"></i>
+                    </button>
 
                 </div>
 
@@ -167,6 +176,13 @@ if (class_exists('Category')) {
                     </div>
                     <button type="submit" class="btn-main">Iniciar Sesión</button>
                 </form>
+                
+                <div style="text-align: center; margin-top: 1rem; border-top: 1px solid #eee; padding-top: 1rem;">
+                    <a href="?route=login" style="font-size: 0.8rem; color: #888; text-decoration: none;">
+                        <i class="fas fa-id-badge"></i> Acceso para Repartidores y Staff
+                    </a>
+                </div>
+
                 <!-- Formulario de Registro -->
                 <form id="registerForm" class="auth-form" action="?route=client_register" method="POST">
                     <!-- Campo oculto para redirección -->
@@ -214,6 +230,50 @@ if (class_exists('Category')) {
     <script src="js/tool-kit-v002.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="js/toast.js"></script> <!-- JS de Alertas -->
+
+    <script>
+        // Variable para capturar el evento de instalación
+        let deferredPrompt;
+
+        // Registrar el Service Worker para habilitar PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Solver PWA: Service Worker registrado con éxito'))
+                    .catch(err => console.log('Error registro SW', err));
+            });
+        }
+
+        // Detectar si el navegador permite la instalación
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Evitar que el mini-infobar aparezca en móviles automáticamente
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Mostrar el botón de instalación
+            const btnInstall = document.getElementById('btnInstallPWA');
+            if (btnInstall) {
+                btnInstall.style.display = 'inline-flex';
+                btnInstall.addEventListener('click', async () => {
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        if (outcome === 'accepted') {
+                            btnInstall.style.display = 'none';
+                        }
+                        deferredPrompt = null;
+                    }
+                });
+            }
+        });
+
+        if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost') {
+            console.warn('Solver PWA: La instalación no funcionará en móviles sin HTTPS.');
+        }
+    </script>
+            });
+        }
+    </script>
     
     <script>
 

@@ -10,22 +10,26 @@ class OrderController {
 
     // --- Métodos de ADMINISTRADOR ---
 
+    /**
+     * Valida que el usuario sea Admin. 
+     * Si es repartidor, lo manda a su panel. Si no hay sesión, al login.
+     */
+    private function checkAdminAccess() {
+        if (isset($_SESSION['client_id'])) { header('Location: ?route=home'); exit; }
+        if (!isset($_SESSION['user_role'])) { header('Location: ?route=login'); exit; }
+        
+        if ($_SESSION['user_role'] !== 'admin') {
+            if ($_SESSION['user_role'] === 'delivery') {
+                header('Location: ?route=delivery');
+            } else {
+                header('Location: ?route=login');
+            }
+            exit;
+        }
+    }
+
     public function index() {
-        // Verificar seguridad admin
-        if (isset($_SESSION['client_id'])) {
-            header('Location: ?route=home');
-            exit;
-        }
-
-        if (!isset($_SESSION['user_role'])) {
-            header('Location: ?route=login');
-            exit;
-        }
-
-        if ($_SESSION['user_role'] === 'delivery') {
-            header('Location: ?route=delivery');
-            exit;
-        }
+        $this->checkAdminAccess();
 
         $orderModel = new Order();
         
@@ -89,7 +93,7 @@ class OrderController {
     }
 
     public function show() {
-        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') { header('Location: ?route=login'); exit; }
+        $this->checkAdminAccess();
 
         $id = $_GET['id'] ?? null;
         if (!$id) { header('Location: ?route=orders'); exit; }
@@ -111,7 +115,7 @@ class OrderController {
     }
 
     public function ticket() {
-        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') { header('Location: ?route=login'); exit; }
+        $this->checkAdminAccess();
 
         $id = $_GET['id'] ?? null;
         $format = $_GET['format'] ?? '80mm'; // Capturamos el formato (por defecto 80mm)

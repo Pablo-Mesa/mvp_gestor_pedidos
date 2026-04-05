@@ -5,18 +5,25 @@ require_once '../models/Product.php';
 class ProductController {
 
     public function __construct() {
+        // 1. Si es un cliente logueado, lo mandamos a la web pública
         if (isset($_SESSION['client_id'])) {
             header('Location: ?route=home');
             exit;
         }
 
+        // 2. Si no hay sesión de staff, al login
         if (!isset($_SESSION['user_role'])) {
             header('Location: ?route=login');
             exit;
         }
 
-        if ($_SESSION['user_role'] === 'delivery') {
-            header('Location: ?route=delivery');
+        // 3. Bloqueo estricto: Solo el rol 'admin' puede gestionar productos.
+        if ($_SESSION['user_role'] !== 'admin') {
+            if ($_SESSION['user_role'] === 'delivery') {
+                header('Location: ?route=delivery');
+            } else {
+                header('Location: ?route=login');
+            }
             exit;
         }
     }

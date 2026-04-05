@@ -305,21 +305,30 @@
         document.getElementById('locationModal').style.display = 'none';
     }
 
-    function selectLocation(card) {
+    function selectLocation(card, silent = false) {
+        if (!card) return;
+        
         document.querySelectorAll('.location-card').forEach(c => c.classList.remove('selected'));
         card.classList.add('selected');
+        
         document.getElementById('lat').value = card.dataset.lat;
         document.getElementById('lng').value = card.dataset.lng;
         document.getElementById('selected_address').value = card.dataset.addr;
-        Toast.fire("Dirección seleccionada", "success");
+        
+        if (!silent) Toast.fire("Dirección seleccionada", "success");
     }
 
     async function saveNewLocation() {
+        const titleEl = document.getElementById('new_loc_title');
+        const addrEl = document.getElementById('new_loc_addr');
+        const latEl = document.getElementById('lat');
+        const lngEl = document.getElementById('lng');
+
         const data = {
-            title: document.getElementById('new_loc_title').value,
-            address: document.getElementById('new_loc_addr').value,
-            lat: document.getElementById('lat').value,
-            lng: document.getElementById('lng').value
+            title: titleEl.value,
+            address: addrEl.value,
+            lat: latEl.value,
+            lng: lngEl.value
         };
 
         if(!data.title || !data.lat) { 
@@ -335,13 +344,66 @@
             });
             const res = await resp.json();
             if(res.success) {
-                Toast.fire("Ubicación guardada", "success");
-                location.reload(); 
+                // Re-renderizar la lista y auto-seleccionar la nueva (última en la lista)
+                renderLocations(res.locations, data);
+                
+                // Limpiar formulario y cerrar modal
+                titleEl.value = '';
+                addrEl.value = '';
+                closeLocationModal();
             } else {
                 Toast.fire(res.message, "error");
             }
         } catch(e) {
             Toast.fire("Error al conectar con el servidor", "error");
+        }
+    }
+
+    /**
+     * Actualiza la lista de direcciones en el DOM y selecciona la más reciente
+     */
+    function renderLocations(locations, newlySaved = null) {
+        const list = document.getElementById('locationsList');
+        if (!locations || locations.length === 0) {
+            list.innerHTML = '<p class="empty-msg">No tienes direcciones guardadas.</p>';
+            return;
+        }
+
+        let html = '';
+        locations.forEach(loc => {
+            const safeAddr = loc.address.replace(/"/g, '&quot;');
+            html += `
+                <div class="location-card" onclick="selectLocation(this)" 
+                     data-lat="${loc.lat}" data-lng="${loc.lng}" data-addr="${safeAddr}">
+                    <i class="fas fa-home"></i>
+                    <strong>${loc.title}</strong>
+                    <small>${loc.address}</small>
+                </div>
+            `;
+        });
+        list.innerHTML = html;
+
+        // Auto-selección lógica: Buscamos la dirección exacta que acabamos de guardar
+        if (newlySaved) {
+            const cards = list.querySelectorAll('.location-card');
+            let targetCard = null;
+
+            // Buscamos la tarjeta cuyo título coincida con el que acabamos de enviar
+            cards.forEach(card => {
+                if (card.querySelector('strong').innerText === newlySaved.title) {
+                    targetCard = card;
+                }
+            });
+
+            // Si encontramos la coincidencia, la seleccionamos
+            if (targetCard) {
+                selectLocation(targetCard, true);
+                Toast.fire("¡Ubicación guardada y seleccionada!", "success");
+            } else if (cards.length > 0) {
+                // Fallback: si por alguna razón no hay match de texto, seleccionamos la última
+                selectLocation(cards[cards.length - 1], true);
+                Toast.fire("¡Ubicación guardada y seleccionada!", "success");
+            }
         }
     }
 

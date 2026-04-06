@@ -45,7 +45,7 @@ class HomeController {
         $date = date('Y-m-d');
         $clientId = $_SESSION['client_id'] ?? null;
         $dailyMenuModel = new DailyMenu();
-        $daily_menus = $dailyMenuModel->readForDate($date, $clientId)->fetchAll(PDO::FETCH_ASSOC);
+        $daily_menus = $dailyMenuModel->readForDate($date, $clientId, true)->fetchAll(PDO::FETCH_ASSOC);
 
         // Cargar vistas
         $content_view = '../views/home/index.php';

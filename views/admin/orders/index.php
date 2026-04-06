@@ -142,16 +142,24 @@
     .row-new {
         animation: highlightNew 5s ease-out;
     }
-    .status-counters{
+
+    .status-counters {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-top: 1rem;
-        padding: 0rem;
-        background: transparent;
-        border-radius: 0px;
-        box-shadow: none;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 0.8rem 1.5rem;
+        background: #ffffff;
+        border-radius: 12px 12px 0 0;
+        box-shadow: 0 -5px 20px rgba(0,0,0,0.08);
+        position: sticky;
+        z-index: 100;
+        border: 1px solid #dee2e6;
+        border-bottom: none;
+        width: 100%;
     }
+
     .stat-card {
         display: flex;
         flex-direction: row;
@@ -168,6 +176,18 @@
     .stat-card span { font-size: 1.1rem; font-weight: bold; display: block; }
     .stat-card label { font-size: 0.75rem; text-transform: uppercase; color: #666; font-weight: 600; }
     
+    /* Animación de Pulso para los números */
+    @keyframes pulseUpdate {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.3); color: #007bff; }
+        100% { transform: scale(1); }
+    }
+
+    .pulse-animation {
+        animation: pulseUpdate 0.6s ease-out;
+        display: inline-block;
+    }
+
     .stat-all{ background: #e2e3e5; border-color: #d6d8db; color: #383d41; }
     .stat-pending { background: #fff9db; border-color: #ffc107; color: #856404; }
     .stat-confirmed { background: #e3f2fd; border-color: #17a2b8; color: #0c5460; }
@@ -507,14 +527,25 @@ if (empty($orders) && $hasFilter):
                     </tr>`;
             }).join('');
 
-            // Actualizar los contadores visuales en el DOM
-            document.getElementById('count-all-orders').innerText = newCounts.all;
-            document.getElementById('count-pending').innerText = newCounts.pending;
-            document.getElementById('count-confirmed').innerText = newCounts.confirmed;
-            document.getElementById('count-shipped').innerText = newCounts.shipped || 0;
-            document.getElementById('count-completed').innerText = newCounts.completed;
-            document.getElementById('count-cancelled').innerText = newCounts.cancelled;
-            document.getElementById('count-cancelled').innerText = newCounts.cancelled;
+            /**
+             * Función auxiliar para actualizar con animación
+             */
+            const updateCountWithAnimation = (id, newValue) => {
+                const el = document.getElementById(id);
+                if (el && el.innerText != newValue) {
+                    el.innerText = newValue;
+                    el.classList.remove('pulse-animation');
+                    void el.offsetWidth; // Trigger reflow para reiniciar animación
+                    el.classList.add('pulse-animation');
+                }
+            };
+
+            updateCountWithAnimation('count-all-orders', newCounts.all);
+            updateCountWithAnimation('count-pending', newCounts.pending);
+            updateCountWithAnimation('count-confirmed', newCounts.confirmed);
+            updateCountWithAnimation('count-shipped', newCounts.shipped || 0);
+            updateCountWithAnimation('count-completed', newCounts.completed);
+            updateCountWithAnimation('count-cancelled', newCounts.cancelled);
 
             // Si hay pedidos nuevos, disparamos alertas
             if (hasNewOrders) {

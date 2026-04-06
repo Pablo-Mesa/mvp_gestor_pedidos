@@ -40,6 +40,14 @@ class MenuController {
         // Obtener los menús ya asignados para esa fecha
         $dailyMenuModel = new DailyMenu();
         $assigned_menus = $dailyMenuModel->readForDate($current_date)->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Separar en menú principal y secundario
+        $assigned_menus_primary = array_filter($assigned_menus, function($menu) {
+            return ($menu['menu_type'] ?? 'primary') === 'primary';
+        });
+        $assigned_menus_secondary = array_filter($assigned_menus, function($menu) {
+            return ($menu['menu_type'] ?? 'primary') === 'secondary';
+        });
 
         // Obtener todos los productos activos para el dropdown de asignación
         $productModel = new Product();
@@ -58,6 +66,7 @@ class MenuController {
             $menu->product_id = $_POST['product_id'];
             $menu->menu_date = $_POST['menu_date'];
             $menu->daily_stock = $_POST['daily_stock']; // El modelo se encarga de convertir '' a NULL
+            $menu->menu_type = $_POST['menu_type'] ?? 'primary'; // Nuevo: tipo de menú
 
             if ($menu->assign()) {
                 // Éxito
@@ -82,6 +91,13 @@ class MenuController {
             $menu->id = $id;
             $menu->unassign();
         }
+
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true]);
+            exit;
+        }
+
         header('Location: ?route=menus&date=' . $date);
         exit;
     }
@@ -99,6 +115,12 @@ class MenuController {
             $menu->id = $id;
             $menu->is_available = ($current_status == '1') ? 0 : 1; // Invierte el estado
             $menu->updateAvailability();
+        }
+
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'new_status' => $menu->is_available]);
+            exit;
         }
 
         header('Location: ?route=menus&date=' . $date);

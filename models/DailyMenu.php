@@ -10,6 +10,7 @@ class DailyMenu {
     public $menu_date;
     public $daily_stock;
     public $is_available;
+    public $menu_type;
 
     public function __construct() {
         $database = new Database();
@@ -47,9 +48,10 @@ class DailyMenu {
         return $stmt;
     }*/
 
-    public function readForDate($date, $clientId = null) {
+    public function readForDate($date, $clientId = null, $onlyAvailable = false) {
         $query = "SELECT 
-                    dm.*, p.name as product_name, p.price as product_price, p.price_half, p.image, 
+                    dm.id, dm.product_id, dm.menu_date, dm.daily_stock, dm.is_available, dm.menu_type,
+                    p.name as product_name, p.price as product_price, p.price_half, p.image, 
                     c.name as category_name,
                     (SELECT COUNT(*) FROM product_reactions WHERE product_id = p.id AND type = 'fav') as fav_count,
                     (SELECT COUNT(*) FROM product_reactions WHERE product_id = p.id AND type = 'like') as likes_count,
@@ -60,11 +62,15 @@ class DailyMenu {
                 FROM daily_menus dm
                 JOIN products p ON dm.product_id = p.id
                 LEFT JOIN categories c ON p.category_id = c.id
-                WHERE dm.menu_date = :menu_date AND dm.is_available = 1";
+                WHERE dm.menu_date = :menu_date";
+
+        if ($onlyAvailable) {
+            $query .= " AND dm.is_available = 1";
+        }
         
         $stmt = $this->conn->prepare($query);
         $stmt->bindValue(':menu_date', $date);
-        $stmt->bindValue(':client_id', $clientId);
+        $stmt->bindValue(':client_id', $clientId, is_null($clientId) ? PDO::PARAM_NULL : PDO::PARAM_INT);
         $stmt->execute();
         return $stmt;
     }
@@ -75,7 +81,7 @@ class DailyMenu {
      * @return bool
      */
     public function assign() {
-        $query = 'INSERT INTO ' . $this->table . ' (product_id, menu_date, daily_stock) VALUES (:product_id, :menu_date, :daily_stock)';
+        $query = 'INSERT INTO ' . $this->table . ' (product_id, menu_date, daily_stock, menu_type, is_available) VALUES (:product_id, :menu_date, :daily_stock, :menu_type, 1)';
         $stmt = $this->conn->prepare($query);
 
         $stmt->bindParam(':product_id', $this->product_id);
@@ -83,6 +89,7 @@ class DailyMenu {
         // Si el stock es un string vacío, lo guardamos como NULL en la DB
         $stock_val = empty($this->daily_stock) ? null : $this->daily_stock;
         $stmt->bindParam(':daily_stock', $stock_val);
+        $stmt->bindParam(':menu_type', $this->menu_type);
 
         // Usamos un try-catch para manejar el error de clave única (si ya existe)
         try {

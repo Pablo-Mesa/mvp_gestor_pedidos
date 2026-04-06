@@ -48,6 +48,81 @@
         align-items: center; /* Alinea verticalmente los botones al centro */
         white-space: nowrap;
     }
+
+    /* Estilos para el Buscador de Productos (Modal) */
+    .product-picker-modal {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(4px);
+        display: none;
+        justify-content: center;
+        align-items: flex-start;
+        padding-top: 50px;
+        z-index: 2000;
+    }
+    .modal-search-card {
+        background: white;
+        width: 90%;
+        max-width: 600px;
+        border-radius: 16px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        overflow: hidden;
+        transform: translateY(20px);
+        transition: all 0.3s ease;
+    }
+    .product-picker-modal.active .modal-search-card { transform: translateY(0); }
+
+    .modal-step { padding: 1.5rem; display: none; }
+    .modal-step.active { display: block; animation: slideIn 0.3s ease-out; }
+    
+    .modal-search-body { max-height: 300px; overflow-y: auto; border-top: 1px solid #eee; }
+    
+    .search-input, .qty-modal-input { 
+        width: 100%; 
+        padding: 12px; 
+        font-size: 1.1rem; 
+        border: 2px solid #007bff; 
+        border-radius: 8px; 
+        outline: none;
+        box-shadow: 0 4px 6px rgba(0,123,255,0.1);
+    }
+
+    .product-row { 
+        padding: 14px 1rem; 
+        border-bottom: 1px solid #f1f1f1; 
+        cursor: pointer; 
+        display: flex; 
+        justify-content: space-between;
+        align-items: center;
+    }
+    .product-row.selected { background-color: #e7f1ff; border-left: 4px solid #007bff; }
+    .product-row:hover { background-color: #f8f9fa; }
+    .product-row .price { font-weight: bold; color: #28a745; }
+
+    .step-badge { background: #007bff; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; margin-bottom: 10px; display: inline-block; }
+    
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateX(10px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Botón disparador mejorado */
+    .assign-trigger-btn {
+        width: 100%; height: 120px; 
+        border: 2px dashed #007bff; 
+        background: #f0f7ff; 
+        color: #007bff;
+        border-radius: 12px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 10px; cursor: pointer; transition: all 0.2s;
+    }
+    .assign-trigger-btn:hover { background: #e1efff; transform: scale(1.02); }
+    .assign-trigger-btn i { font-size: 2rem; }
+    .assign-trigger-btn span { font-weight: bold; font-size: 1.1rem; }
+    .assign-trigger-btn kbd { 
+        background: #fff; border: 1px solid #007bff; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;
+    }
 </style>
 
 <h1>Gestión de Menú del Día</h1>
@@ -123,48 +198,196 @@
     <!-- Columna Derecha: Asignar Nuevo Menú -->
     <div class="card">
         <h2>Asignar Plato</h2>
-        <form action="?route=menus_assign" method="POST">
+        <form id="mainAssignForm" action="?route=menus_assign" method="POST">
             <input type="hidden" name="menu_date" value="<?php echo htmlspecialchars($current_date); ?>">
+            <input type="hidden" name="product_id" id="final_product_id">
+            <input type="hidden" name="daily_stock" id="final_daily_stock">
             
-            <div class="form-group">
-                <label for="product_id">Seleccionar Producto</label>
-                <select name="product_id" id="product_id" required>
-                    <option value="">-- Elige un producto --</option>
-                    <?php 
-                    // 1. Obtenemos los IDs de productos ya asignados para esta fecha
-                    $assigned_product_ids = array_column($assigned_menus, 'product_id');
-
-                    // 2. Identificamos dinámicamente el ID de la categoría "Almuerzo"
-                    // Usamos stripos para que sea flexible (Almuerzo, Almuerzos, etc.)
-                    $target_category_id = null;
-                    foreach ($available_products as $p) {
-                        if (isset($p['category_name']) && stripos($p['category_name'], 'Almuerzo') !== false) {
-                            $target_category_id = $p['category_id'];
-                            break;
-                        }
-                    }
-
-                    // 3. Generamos las opciones filtrando por ID de categoría y evitando duplicados
-                    foreach($available_products as $product): 
-                        $is_assigned = in_array($product['id'], $assigned_product_ids);
-                        $is_lunch_category = ($target_category_id !== null && $product['category_id'] == $target_category_id);
-
-                        if (!$is_assigned && $is_lunch_category):
-                    ?>
-                        <option value="<?php echo $product['id']; ?>"><?php echo htmlspecialchars($product['name']); ?></option>
-                    <?php 
-                        endif;
-                    endforeach; 
-                    ?>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="daily_stock">Stock para Hoy (Opcional)</label>
-                <input type="number" name="daily_stock" id="daily_stock" min="0" placeholder="Ej: 50 (dejar vacío para ilimitado)">
-            </div>
-
-            <button type="submit" class="btn" style="width: 100%;">+ Asignar al Menú</button>
+            <button type="button" class="assign-trigger-btn" onclick="openProductPicker()">
+                <i class="fas fa-utensils"></i>
+                <span>Asignar Plato</span>
+                <kbd>F2</kbd>
+            </button>
         </form>
     </div>
 </div>
+
+<!-- Modal de Búsqueda de Productos -->
+<div id="productPickerModal" class="product-picker-modal" onclick="if(event.target === this) closeProductPicker()">
+    <div class="modal-search-card">
+        <div style="padding: 10px 1.5rem; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: bold; color: #444;">Asistente de Asignación</span>
+            <button type="button" onclick="closeProductPicker()" style="border:none; background:none; cursor:pointer; color:#999; font-size:1.2rem;">&times;</button>
+        </div>
+        <!-- Paso 1: Selección -->
+        <div id="step1" class="modal-step active">
+            <span class="step-badge"><i class="fas fa-search"></i> Paso 1: Seleccionar Plato</span>
+            <input type="text" id="productSearchInput" class="search-input" placeholder="Buscar por nombre o ID..." autocomplete="off">
+            <div class="modal-search-body" id="productSearchResults" style="margin-top: 15px;">
+                <!-- Se llena dinámicamente -->
+            </div>
+            <small style="color: #666; display: block; margin-top: 10px;">↑↓ Navegar • <strong>Enter</strong> Cantidad • <strong>Shift+Enter</strong> Ilimitado</small>
+        </div>
+
+        <!-- Paso 2: Cantidad -->
+        <div id="step2" class="modal-step">
+            <span class="step-badge">Paso 2: Definir Stock</span>
+            <h3 id="selectedProductName" style="margin-bottom: 1rem; color: #333;"></h3>
+            <div class="form-group">
+                <label>Cantidad para hoy (Opcional):</label>
+                <input type="number" id="modalQtyInput" class="qty-modal-input" placeholder="Ej: 50 (Vacío = Ilimitado)" min="0">
+            </div>
+            <div style="margin-top: 1.5rem; display: flex; gap: 10px;">
+                <button type="button" class="btn" style="flex: 1; font-weight: bold;" onclick="processFinalAssign()">Confirmar Asignación</button>
+                <button type="button" class="btn btn-danger" onclick="goToStep(1)">Atrás</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const assignedIds = <?php echo json_encode(array_column($assigned_menus, 'product_id')); ?>;
+    const allProducts = <?php echo json_encode($available_products); ?>;
+    
+    // Filtrar solo los que corresponden a Almuerzo y no están asignados
+    const filteredProducts = allProducts.filter(p => {
+        const isLunch = p.category_name && p.category_name.toLowerCase().includes('almuerzo');
+        return isLunch && !assignedIds.includes(p.id);
+    });
+
+    let selectedIndex = -1;
+    let visibleProducts = [];
+    let currentStep = 1;
+    let selectedProduct = null;
+
+    function openProductPicker() {
+        document.getElementById('productPickerModal').style.display = 'flex';
+        setTimeout(() => document.getElementById('productPickerModal').classList.add('active'), 10);
+        goToStep(1);
+    }
+
+    function closeProductPicker() {
+        document.getElementById('productPickerModal').style.display = 'none';
+        document.getElementById('productPickerModal').classList.remove('active');
+    }
+
+    function goToStep(step) {
+        currentStep = step;
+        document.getElementById('step1').classList.toggle('active', step === 1);
+        document.getElementById('step2').classList.toggle('active', step === 2);
+
+        if (step === 1) {
+            const input = document.getElementById('productSearchInput');
+            input.value = '';
+            input.focus();
+            renderProducts('');
+        } else {
+            document.getElementById('selectedProductName').innerText = selectedProduct.name;
+            const qtyInput = document.getElementById('modalQtyInput');
+            qtyInput.value = '';
+            qtyInput.focus();
+        }
+    }
+
+    function renderProducts(filter = '') {
+        const container = document.getElementById('productSearchResults');
+        filter = filter.toLowerCase();
+        
+        visibleProducts = filteredProducts.filter(p => 
+            p.name.toLowerCase().includes(filter) || p.id.toString().includes(filter)
+        );
+
+        selectedIndex = visibleProducts.length > 0 ? 0 : -1;
+        
+        updateTable();
+    }
+
+    function updateTable() {
+        const container = document.getElementById('productSearchResults');
+        container.innerHTML = visibleProducts.map((p, index) => `
+            <div class="product-row ${index === selectedIndex ? 'selected' : ''}" onclick="selectProductByIndex(${index})">
+                <span><strong>#${p.id}</strong> ${p.name}</span>
+                <div style="text-align: right;">
+                    <span class="price">Gs. ${new Intl.NumberFormat('es-PY').format(p.product_price || p.price)}</span>
+                    <?php /* Badge de categoría si existe */ ?>
+                    <div style="font-size: 0.7rem; color: #888; margin-top: 2px;">
+                        <i class="fas fa-tag"></i> ${p.category_name}
+                    </div>
+                </div>
+            </div>
+        `).join('') || '<div style="padding: 20px; text-align: center; color: #999;">No se encontraron resultados</div>';
+        
+        // Auto scroll al seleccionado
+        const selectedRow = container.querySelector('.selected');
+        if (selectedRow) selectedRow.scrollIntoView({ block: 'nearest' });
+    }
+
+    function selectProductByIndex(index) {
+        selectedProduct = visibleProducts[index];
+        if (!selectedProduct) return;
+        goToStep(2);
+    }
+
+    function processFinalAssign(directProduct = null) {
+        const targetProduct = directProduct || selectedProduct;
+        const qty = directProduct ? '' : document.getElementById('modalQtyInput').value;
+        
+        document.getElementById('final_product_id').value = targetProduct.id;
+        document.getElementById('final_daily_stock').value = qty;
+        document.getElementById('mainAssignForm').submit();
+    }
+
+    // Eventos de teclado
+    document.getElementById('productSearchInput').addEventListener('input', (e) => renderProducts(e.target.value));
+    
+    // Prevenir que el Enter en el input de búsqueda haga submit al form de fondo
+    document.getElementById('productSearchInput').addEventListener('keydown', (e) => { if(e.key === 'Enter') e.preventDefault(); });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'F2') {
+            e.preventDefault();
+            openProductPicker();
+        }
+
+        if (document.getElementById('productPickerModal').style.display === 'flex') {
+            if (currentStep === 1) {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (selectedIndex < visibleProducts.length - 1) {
+                        selectedIndex++;
+                        updateTable();
+                    }
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (selectedIndex > 0) {
+                        selectedIndex--;
+                        updateTable();
+                    }
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (selectedIndex !== -1) {
+                        // Si presiona Shift + Enter, asignación directa ilimitada
+                        if (e.shiftKey) {
+                            processFinalAssign(visibleProducts[selectedIndex]);
+                        } else {
+                            selectProductByIndex(selectedIndex);
+                        }
+                    }
+                }
+            } else if (currentStep === 2) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    processFinalAssign();
+                }
+            }
+            
+            if (e.key === 'Escape') {
+                if (currentStep === 2) {
+                    goToStep(1);
+                } else {
+                    closeProductPicker();
+                }
+            }
+        }
+    });
+</script>

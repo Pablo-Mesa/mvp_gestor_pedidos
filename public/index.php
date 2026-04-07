@@ -168,6 +168,23 @@ switch ($route) {
         $controller->delete();
         break;
 
+    // --- Rutas de Hero Promo (Banner Cliente) ---
+    case 'hero_promos':
+        require_once '../controllers/HeroPromoController.php';
+        $controller = new HeroPromoController();
+        $controller->index();
+        break;
+    case 'hero_promos_edit':
+        require_once '../controllers/HeroPromoController.php';
+        $controller = new HeroPromoController();
+        $controller->edit();
+        break;
+    case 'hero_promos_update':
+        require_once '../controllers/HeroPromoController.php';
+        $controller = new HeroPromoController();
+        $controller->update();
+        break;
+
     // --- Rutas de Menú del Día ---
     case 'menus':
         require_once '../controllers/MenuController.php';

@@ -7,11 +7,29 @@ if (!class_exists('Category')) {
     if (file_exists($path)) require_once $path;
     elseif (file_exists('../' . $path)) require_once '../' . $path;
 }
+if (!class_exists('Product')) {
+    $path = 'models/Product.php';
+    if (file_exists($path)) require_once $path;
+    elseif (file_exists('../' . $path)) require_once '../' . $path;
+}
+
 $navCategories = [];
-if (class_exists('Category')) {
+if (class_exists('Category') && class_exists('Product')) {
     $catModel = new Category();
-    $stmt = $catModel->readAll();
-    $navCategories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $prodModel = new Product();
+    $clientId = $_SESSION['client_id'] ?? null;
+
+    // Obtenemos todas las categorías y los productos activos para validar
+    $allCategories = $catModel->readAll()->fetchAll(PDO::FETCH_ASSOC);
+    $activeProds = $prodModel->readAllActive($clientId)->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Extraemos los IDs de categorías que tienen al menos un producto activo
+    $activeCategoryIds = array_unique(array_column($activeProds, 'category_id'));
+
+    // Filtramos la lista: Solo incluimos categorías con contenido disponible
+    $navCategories = array_filter($allCategories, function($cat) use ($activeCategoryIds) {
+        return in_array($cat['id'], $activeCategoryIds);
+    });
 }
 ?>
 <html lang="es">

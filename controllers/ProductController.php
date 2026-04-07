@@ -93,7 +93,7 @@ class ProductController {
             }
 
             if ($product->create()) {
-                header('Location: ?route=products');
+                header('Location: ?route=products&success=created');
             } else {
                 echo "Error al crear producto";
             }
@@ -150,7 +150,7 @@ class ProductController {
             }
 
             if ($product->update()) {
-                header('Location: ?route=products');
+                header('Location: ?route=products&success=updated');
             } else {
                 echo "Error al actualizar";
             }
@@ -163,7 +163,7 @@ class ProductController {
             $product = new Product();
             $product->id = $id;
             if ($product->delete()) {
-                header('Location: ?route=products');
+                header('Location: ?route=products&success=deleted');
             }
         }
     }

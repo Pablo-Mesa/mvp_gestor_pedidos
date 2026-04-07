@@ -168,3 +168,18 @@
         </tbody>
     </table>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    
+    if (success === 'created') {
+        Toast.fire('¡Producto creado con éxito!', 'success');
+    } else if (success === 'updated') {
+        Toast.fire('¡Producto actualizado con éxito!', 'success');
+    } else if (success === 'deleted') {
+        Toast.fire('El producto ha sido eliminado.', 'info');
+    }
+});
+</script>

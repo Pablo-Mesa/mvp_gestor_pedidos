@@ -6,6 +6,8 @@
     <title>Solver - Panel de Control</title>
     <link rel="icon" type="image/png" href="assets/icono_solver_nobg.png">
     <link rel="stylesheet" href="css/css_cubo.css">
+    <!-- Bootstrap 5 para la interfaz administrativa -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/toast.css"> <!-- Estilos de Alertas -->
     <style> 
@@ -135,7 +137,8 @@
             <li><a href="?route=orders">📦 Pedidos</a></li>
             <li><a href="?route=menus">📅 Menú del Día</a></li>
             <li><a href="?route=products">🍔 Menú / Productos</a></li>
-            <li><a href="?route=categories">🏷️ Categorías</a></li>            
+            <li><a href="?route=categories">🏷️ Categorías</a></li> 
+            <li><a href="?route=hero_promos">🎨 Hero Promo</a></li>
             <!-- <li><a href="#">👥 Usuarios</a></li> -->
         </ul>
     </nav>
@@ -180,6 +183,7 @@
     </div>
 
     <script src="js/tool-kit-v002.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="js/toast.js"></script> <!-- JS de Alertas -->
     <script>

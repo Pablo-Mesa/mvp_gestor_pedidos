@@ -4,6 +4,7 @@ date_default_timezone_set('America/Asuncion');
 require_once '../models/DailyMenu.php';
 require_once '../models/Order.php';
 require_once '../models/ProductReaction.php';
+require_once '../models/HeroPromo.php';
 
 class HomeController {
 
@@ -46,6 +47,35 @@ class HomeController {
         $clientId = $_SESSION['client_id'] ?? null;
         $dailyMenuModel = new DailyMenu();
         $daily_menus = $dailyMenuModel->readForDate($date, $clientId, true)->fetchAll(PDO::FETCH_ASSOC);
+
+        // Obtener Promos activas para el Hero
+        $heroModel = new HeroPromo();
+        $promos = $heroModel->readActive();
+        
+        $finalPromos = [];
+        $db = null;
+
+        foreach ($promos as $promo) {
+            if ($promo['type'] === 'reviews') {
+                if (!$db) $db = (new Database())->getConnection();
+                
+                // Buscamos una reseña aleatoria unida al nombre del producto
+                $sql = "SELECT r.comment, p.name as product_name 
+                        FROM product_reviews r 
+                        JOIN products p ON r.product_id = p.id 
+                        ORDER BY RAND() LIMIT 1";
+                $res = $db->query($sql)->fetch(PDO::FETCH_ASSOC);
+                if ($res) {
+                    $promo['content'] = $res['comment'];
+                    $promo['title'] = "Opinión: " . $res['product_name'];
+                    $finalPromos[] = $promo;
+                }
+                // Si no hay reseñas en la DB, no la agregamos al array final
+            } else {
+                $finalPromos[] = $promo;
+            }
+        }
+        $promos = $finalPromos;
 
         // Cargar vistas
         $content_view = '../views/home/index.php';

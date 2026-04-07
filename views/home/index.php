@@ -42,6 +42,11 @@ if ($filter_category_id) {
     // Si no hay filtro, usamos la variable $daily_menus que viene del controlador
     $menu_items = isset($daily_menus) ? $daily_menus : [];
 }
+
+// Preparamos las promociones para el Hero (se necesita aquí arriba para el cálculo del CSS)
+$promosList = !empty($promos) ? $promos : [
+    ['type' => 'offer', 'title' => 'Bienvenido', 'content' => 'Explora nuestro menú del día.', 'css_class' => 'ambient', 'image' => '']
+];
 ?>
 
 <style>
@@ -250,7 +255,7 @@ if ($filter_category_id) {
     right: 50%;
     margin-left: -50vw;
     margin-right: -50vw;
-    margin-top: -2rem; 
+    margin-top: 0; 
     margin-bottom: 0;    
     overflow: hidden;
     background: linear-gradient(135deg, #1a1a1a 0%, #2d3436 100%); /* Fondo oscuro para resaltar el cristal */
@@ -314,7 +319,7 @@ if ($filter_category_id) {
 
     @keyframes scroll {
     0% { transform: translateX(0); }
-    100% { transform: translateX(calc(-1 * (var(--slide-width) + var(--gap)) * 4)); }
+    100% { transform: translateX(calc(-1 * (var(--slide-width) + var(--gap)) * <?php echo count($promosList); ?>)); }
     }
 
     .slide {
@@ -389,96 +394,45 @@ if ($filter_category_id) {
 
 </style>
 
-    <!-- hero -->
     <div class="hero-promo">
         <div class="carousel-container">
             <div class="carousel-track">
-            <!-- Grupo 1 -->
-            <div class="slide ambient">
-                <div class="overlay">
-                <h3>Nuestro Comedor</h3>
-                <p>Sabor casero hecho con amor todos los días.</p>
-                </div>
-            </div>
-            <div class="slide process">
-                <div class="overlay">
-                    <h3>¿Cómo funciona?</h3>
-                    <div class="steps-container">
-                        <div class="step-box">
-                            <i class="fas fa-utensils"></i>
-                            <span>Elige</span>
-                        </div>
-                        <div class="step-sep"><i class="fas fa-chevron-right"></i></div>
-                        <div class="step-box">
-                            <i class="fas fa-shopping-cart"></i>
-                            <span>Pide</span>
-                        </div>
-                        <div class="step-sep"><i class="fas fa-chevron-right"></i></div>
-                        <div class="step-box">
-                            <i class="fas fa-smile-beam"></i>
-                            <span>Disfruta</span>
-                        </div>
+            <?php             
+            // Duplicamos la lista para el efecto de scroll infinito seamless
+            $displayItems = array_merge($promosList, $promosList); 
+            
+            foreach($displayItems as $index => $promo): 
+                $isDuplicate = $index >= count($promosList);
+                $bgStyle = !empty($promo['image']) ? "style='background-image: url(\"uploads/{$promo['image']}\")'" : "";
+                $isInfoCard = ($promo['css_class'] === 'info-card');
+            ?>
+                <div class="slide <?php echo $promo['css_class']; ?>" <?php echo $bgStyle; ?> <?php echo $isDuplicate ? 'aria-hidden="true"' : ''; ?>>
+                    <div class="<?php echo $isInfoCard ? 'info-content' : 'overlay'; ?>">
+                        <h3><?php echo htmlspecialchars($promo['title']); ?></h3>
+                        
+                        <?php if($promo['type'] === 'reviews'): ?>
+                            <div class="review-mini-slider">
+                                <i class="fas fa-quote-left" style="opacity: 0.5; font-size: 0.8rem;"></i>
+                                <p style="font-style: italic; font-size: 0.85rem; margin: 5px 0;">
+                                    <?php echo htmlspecialchars($promo['content']); ?>
+                                </p>
+                                <div style="color: #ffa502; font-size: 0.7rem;">
+                                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                </div>
+                            </div>
+                        <?php else: ?>
+                            <p><?php echo nl2br(htmlspecialchars($promo['content'])); ?></p>
+                        <?php endif; ?>
+                        
+                        <?php if($promo['type'] === 'hours' || $promo['type'] === 'location'): ?>
+                            <span class="badge">¡Te esperamos!</span>
+                        <?php endif; ?>
                     </div>
                 </div>
-            </div>
-            <div class="slide info-card">
-                <div class="info-content">
-                <h3>Horarios de Atención</h3>
-                <ul>
-                    <li><strong>Lun - Vie:</strong> 12:00 - 15:30 / 20:00 - 00:00</li>
-                    <li><strong>Sáb - Dom:</strong> 12:00 - 16:30 / 20:00 - 01:00</li>
-                </ul>
-                <span class="badge">¡Te esperamos!</span>
-                </div>
-            </div>
-            <div class="slide food-1">
-                <div class="overlay">
-                <h3>Ingredientes Frescos</h3>
-                <p>Directo del mercado a tu mesa.</p>
-                </div>
-            </div>
-
-            <!-- Duplicado para efecto infinito (Seamless Loop) -->
-            <div class="slide ambient" aria-hidden="true">
-                <div class="overlay">
-                <h3>Nuestro Comedor</h3>
-                </div>
-            </div>
-            <div class="slide process" aria-hidden="true">
-                <div class="overlay">
-                    <h3>¿Cómo funciona?</h3>
-                    <div class="steps-container">
-                        <div class="step-box">
-                            <i class="fas fa-utensils"></i>
-                            <span>Elige</span>
-                        </div>
-                        <div class="step-sep"><i class="fas fa-chevron-right"></i></div>
-                        <div class="step-box">
-                            <i class="fas fa-shopping-cart"></i>
-                            <span>Pide</span>
-                        </div>
-                        <div class="step-sep"><i class="fas fa-chevron-right"></i></div>
-                        <div class="step-box">
-                            <i class="fas fa-smile-beam"></i>
-                            <span>Disfruta</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="slide info-card" aria-hidden="true">
-                <div class="info-content">
-                <h3>Horarios de Atención</h3>
-                </div>
-            </div>
-            <div class="slide food-1" aria-hidden="true">
-                <div class="overlay">
-                <h3>Ingredientes Frescos</h3>
-                </div>
-            </div>
+            <?php endforeach; ?>
             </div>
         </div>
     </div>
-    <!-- hero -->
 
     <!-- Grid de Productos -->
     <div class="product-grid">

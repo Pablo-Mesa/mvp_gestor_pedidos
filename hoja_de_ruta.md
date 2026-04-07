@@ -31,6 +31,7 @@ Este documento establece el norte estratégico del ecosistema **Solver**, dividi
 ## 🚀 Fases de Implementación (Objetivos)
 
 ### Fase 1: Consolidación Administrativa (Prioridad Alta)
+*   [x] Gestión Dinámica de Hero Promo (Banner de Cliente).
 *   [ ] Implementar el formulario de pedido local en el panel Admin.
 *   [ ] Crear tablas y lógica para el control de caja y arqueo.
 *   [ ] Vincular pedidos online y locales en un solo flujo de caja.

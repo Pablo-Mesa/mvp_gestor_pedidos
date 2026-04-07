@@ -129,7 +129,7 @@
     <!-- 1. Menú Lateral -->
     <nav class="sidebar">
         <div class="sidebar-header">
-            <div id="here_cube" class="mr-1 h1-cf-dark"></div>
+            <div id="here_cube" class="h1-cf-dark"></div>
         </div>
         <ul class="sidebar-menu">
             <li><a href="?route=admin">📊 Dashboard</a></li>
@@ -139,6 +139,7 @@
             <li><a href="?route=products">🍔 Menú / Productos</a></li>
             <li><a href="?route=categories">🏷️ Categorías</a></li> 
             <li><a href="?route=hero_promos">🎨 Hero Promo</a></li>
+            <li><a href="?route=settings">⚙️ Ajustes Marca</a></li>
             <!-- <li><a href="#">👥 Usuarios</a></li> -->
         </ul>
     </nav>
@@ -187,7 +188,10 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="js/toast.js"></script> <!-- JS de Alertas -->
     <script>
-        drawCube("here_cube", true, "28px");
+        if(document.getElementById('here_cube')) {
+            // En el admin, si no hay logo, dibujamos el cubo un poco más pequeño para el sidebar
+            drawCube("here_cube", true, "24px");
+        }
 
         /**
          * Función Global de Confirmación

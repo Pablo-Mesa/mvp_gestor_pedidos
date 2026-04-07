@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <?php
 // Lógica para obtener categorías disponibles para la navegación
+if (!class_exists('Setting')) {
+    $path = 'models/Setting.php';
+    if (file_exists($path)) require_once $path;
+    elseif (file_exists('../' . $path)) require_once '../' . $path;
+}
 if (!class_exists('Category')) {
     // Intentar cargar el modelo si no está cargado
     $path = 'models/Category.php';
@@ -31,6 +36,12 @@ if (class_exists('Category') && class_exists('Product')) {
         return in_array($cat['id'], $activeCategoryIds);
     });
 }
+
+// Cargar Ajustes de Identidad (Siempre disponible)
+$settingModel = new Setting();
+$siteSettings = $settingModel->getAll();
+$siteName = !empty($siteSettings['site_name']) ? $siteSettings['site_name'] : 'Solver';
+$siteLogo = !empty($siteSettings['site_logo']) ? 'uploads/' . $siteSettings['site_logo'] : 'assets/icono_solver_nobg.png';
 ?>
 <html lang="es">
 <head>
@@ -54,75 +65,89 @@ if (class_exists('Category') && class_exists('Product')) {
     <header class="fixed-header">
         <!-- Barra Superior -->
         <nav class="navbar">
-
             <div class="container-logo-title">
-                <div style="display: flex; flex-direction: row; justify-content: left; align-items: center; width: 100%">
-                    <div id="here_cube" class="mr-1"></div>            
-                </div>
+                <a href="?route=home" class="brand-link">
+                    <img src="<?php echo $siteLogo; ?>" alt="Logo" class="brand-logo">
+                    <span class="brand-text"><?php echo htmlspecialchars($siteName); ?></span>
+                </a>
             </div>        
             
             <div class="container-control-nav">
-
                 <!-- Botón del Carrito -->
-                <button class="btn-std mr-3" onclick="toggleCart()">
+                <button class="btn-std" onclick="toggleCart()">
                     <i class="fas fa-shopping-cart"></i>
                     <span class="badge-count" id="cart-count" style="display: none;">0</span>
                 </button>
 
-                <!-- Botón de Login -->
+                <!-- Botón de Usuario / Hamburguesa -->
                 <div class="user-menu">
-
-                    <?php if(isset($_SESSION['client_id'])): ?>
-                        
-                        <span class="span-user">Hola, <i class="fas fa-user"></i> <?php echo htmlspecialchars($_SESSION['client_name'] ?? 'Cliente'); ?></span>                
-                        
-                        <a href="?route=my_orders" class="btn-std mr-1" title="Mis Pedidos">
-                            <i class="fas fa-list-alt"></i>
-                        </a>
-                        
-                        <a href="?route=logout&type=client" class="btn-logout-solid">
-                            <i class="fa fa-sign-out"></i> <span class="logout-text">Cerrar Sesión</span>
-                        </a>
-
+                    <?php if(isset($_SESSION['client_id'])): ?>                                                
+                        <button class="btn-std" onclick="toggleUserSidebar()" title="Menú de usuario">
+                            <i class="fas fa-bars"></i>
+                        </button>
                     <?php else: ?>
-                        <!-- <a href="?route=login" class="">Iniciar Sesión</a> -->                    
-                        <!-- Botón del usuario -->
                         <button id="openModal" class="btn-std">
-                            <i class="fas fa-user"></i>
+                            <i class="far fa-user"></i>
                         </button>
                     <?php endif; ?>
-
-                    <!-- Botón de Instalación PWA (Oculto por defecto) -->
-                    <button id="btnInstallPWA" class="btn-icon-highlight-blue" style="display: none; margin-left: 8px;" title="Instalar Aplicación">
-                        <i class="fas fa-download"></i>
-                    </button>
-
                 </div>
-
             </div>              
-                
         </nav>
+
+        <!-- Sidebar de Usuario (Nuevo) -->
+        <div class="user-sidebar-overlay" onclick="toggleUserSidebar()"></div>
+        <div class="user-sidebar" id="userSidebar">
+            <?php if(isset($_SESSION['client_id'])): ?>
+                <div class="user-sidebar-header">
+                    <div class="user-avatar">
+                        <?php echo strtoupper(substr($_SESSION['client_name'], 0, 1)); ?>
+                    </div>
+                    <div>
+                        <span style="display:block; font-weight: 700; font-size: 1.1rem; color: #2d3436;">
+                            <?php echo htmlspecialchars($_SESSION['client_name']); ?>
+                        </span>
+                        <small style="color: #636e72;">Cliente Verificado</small>
+                    </div>
+                </div>
+                <div class="user-sidebar-content">
+                    <a href="?route=home" class="sidebar-link">
+                        <i class="fas fa-home"></i> Inicio
+                    </a>
+                    <a href="?route=my_orders" class="sidebar-link">
+                        <i class="fas fa-receipt"></i> Mis Pedidos
+                    </a>
+                    <a href="#" class="sidebar-link" id="btnSidebarInstall" style="display:none; color: #0984e3;">
+                        <i class="fas fa-download"></i> Instalar Aplicación
+                    </a>
+                </div>
+                <div class="sidebar-footer">
+                    <a href="?route=logout&type=client" class="btn-logout-sidebar">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                    </a>
+                </div>
+            <?php endif; ?>
+        </div>
     
-    <!-- Lista de Categorías -->
-    <div class="scroll-container">
-        <a href="?route=home" class="category-btn <?php echo !isset($_GET['category_id']) ? 'active' : ''; ?>">🏠 Menú del Día</a>
-        
-        <?php foreach($navCategories as $cat): ?>
-            <?php 
-                // Emojis simples según nombre (opcional)
-                $emoji = '🍽️';
-                if (stripos($cat['name'], 'bebida') !== false) $emoji = '🥤';
-                if (stripos($cat['name'], 'postre') !== false) $emoji = '🍦';
-                if (stripos($cat['name'], 'desayuno') !== false) $emoji = '☕';
-                if (stripos($cat['name'], 'minuta') !== false || stripos($cat['name'], 'hamburguesa') !== false) $emoji = '🍔';
-                
-                $isActive = (isset($_GET['category_id']) && $_GET['category_id'] == $cat['id']) ? 'active' : '';
-            ?>
-            <a href="?route=home&category_id=<?php echo $cat['id']; ?>" class="category-btn <?php echo $isActive; ?>">
-                <?php echo $emoji . ' ' . htmlspecialchars($cat['name']); ?>
-            </a>
-        <?php endforeach; ?>
-    </div>
+        <!-- Lista de Categorías -->
+        <div class="scroll-container">
+            <a href="?route=home" class="category-btn <?php echo !isset($_GET['category_id']) ? 'active' : ''; ?>">🏠 Menú del Día</a>
+            
+            <?php foreach($navCategories as $cat): ?>
+                <?php 
+                    // Emojis simples según nombre (opcional)
+                    $emoji = '🍽️';
+                    if (stripos($cat['name'], 'bebida') !== false) $emoji = '🥤';
+                    if (stripos($cat['name'], 'postre') !== false) $emoji = '🍦';
+                    if (stripos($cat['name'], 'desayuno') !== false) $emoji = '☕';
+                    if (stripos($cat['name'], 'minuta') !== false || stripos($cat['name'], 'hamburguesa') !== false) $emoji = '🍔';
+                    
+                    $isActive = (isset($_GET['category_id']) && $_GET['category_id'] == $cat['id']) ? 'active' : '';
+                ?>
+                <a href="?route=home&category_id=<?php echo $cat['id']; ?>" class="category-btn <?php echo $isActive; ?>">
+                    <?php echo $emoji . ' ' . htmlspecialchars($cat['name']); ?>
+                </a>
+            <?php endforeach; ?>
+        </div>
     </header>
     
     <!-- Filtros de Categoría 
@@ -268,8 +293,8 @@ if (class_exists('Category') && class_exists('Product')) {
             e.preventDefault();
             deferredPrompt = e;
             
-            // Mostrar el botón de instalación
-            const btnInstall = document.getElementById('btnInstallPWA');
+            // Mostrar el botón de instalación en el menú lateral
+            const btnInstall = document.getElementById('btnSidebarInstall');
             if (btnInstall) {
                 btnInstall.style.display = 'inline-flex';
                 btnInstall.addEventListener('click', async () => {
@@ -291,6 +316,11 @@ if (class_exists('Category') && class_exists('Product')) {
     </script>
     <script>
         const isUserLoggedIn = <?php echo isset($_SESSION['client_id']) ? 'true' : 'false'; ?>;
+
+        function toggleUserSidebar() {
+            document.getElementById('userSidebar').classList.toggle('open');
+            document.querySelector('.user-sidebar-overlay').classList.toggle('open');
+        }
 
         let cart = JSON.parse(localStorage.getItem('comedor_cart')) || [];
 
@@ -476,8 +506,6 @@ if (class_exists('Category') && class_exists('Product')) {
             // 3. Si está logueado, ir al checkout
             window.location.href = '?route=checkout';
         }
-
-        drawCube("here_cube", true, "28px");
 
         // Cargar carrito al iniciar
         document.addEventListener('DOMContentLoaded', () => {

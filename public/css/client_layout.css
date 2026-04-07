@@ -17,10 +17,10 @@ body {
     min-height: 100vh;
     width: 100%;
     overflow-x: hidden; /* Evita el pequeño gap por desbordamiento de hijos */
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f8f9fa;/**/
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #fbfbfb;
     margin: 0;
-    padding-top: 115px; /* Compensa el header fijo para que el contenido no se oculte detrás */
+    padding-top: 110px; /* Reducción de espacio muerto inicial */
 }
 
 /* Header Contenedor Fijo (Navbar + Categorías) */
@@ -29,26 +29,159 @@ body {
     top: 0;
     left: 0;
     width: 100%;
-    z-index: 1100; /* Aumentamos para estar por encima del hero y otros elementos */
-    background-color: #ffffff;
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); /* Sombra suave para todo el bloque */
+    z-index: 1100;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 /* Navbar Estilo */
 .navbar { 
-    background-color: #ffffff; 
-    padding: 1rem 2rem; 
+    padding: 0.6rem 1.5rem; 
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
-    width: auto; /* Evita conflictos de cálculo de ancho */
-    /* Se eliminó sticky, top, z-index y shadow porque ahora lo maneja .fixed-header */
+    width: 100%;
 }
-.navbar-brand { font-size: 1.5rem; font-weight: bold; color: #333; text-decoration: none; }
+
+.container-logo-title {
+    flex: 1;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    min-width: 120px;
+    background-color: transparent;
+}
+
+.brand-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+}
+
+.brand-logo {
+    height: 40px;
+    width: auto;
+    object-fit: contain;
+}
+
+.brand-text {
+    font-weight: 800;
+    font-size: 1.25rem;
+    color: #2d3436;
+    letter-spacing: -0.5px;
+}
+
+.container-control-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
 
 /* Botones y Utilidades */
 .btn { padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; cursor: pointer; border: none; font-size: 0.9rem; }
 .btn-icon { background: none; border: none; font-size: 1.2rem; cursor: pointer; position: relative; color: #333; }
+
+/* Menú Lateral de Usuario (Sidebar) */
+.user-sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.user-sidebar-overlay.open {
+    display: block;
+    opacity: 1;
+}
+
+.user-sidebar {
+    position: fixed;
+    top: 0;
+    right: -300px;
+    width: 280px;
+    height: 100vh;
+    background: white;
+    z-index: 2100;
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+}
+
+.user-sidebar.open {
+    right: 0;
+}
+
+.user-sidebar-header {
+    padding: 2rem 1.5rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.user-sidebar-header .user-avatar {
+    width: 50px;
+    height: 50px;
+    background: #2d3436;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.user-sidebar-content {
+    flex: 1;
+    padding: 1rem 0;
+    overflow-y: auto;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 1.5rem;
+    color: #2d3436;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.sidebar-link:hover {
+    background: #f1f2f6;
+}
+
+.sidebar-link i {
+    width: 20px;
+    color: #636e72;
+    font-size: 1.1rem;
+}
+
+.sidebar-footer {
+    padding: 1.5rem;
+    border-top: 1px solid #eee;
+}
+
+.btn-logout-sidebar {
+    color: #ff4757;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
 
 .container { 
     width: 100%; 
@@ -242,61 +375,43 @@ body {
 @media (max-width: 768px) {
     
     body {
-        padding-top: 130px; /* Un poco más de espacio para el header en móviles */
+        padding-top: 115px;
     }
 
     .cart-sidebar { width: 100%; }
-    .container {
-        padding: 0 0.2rem;
-        margin: 2rem auto;
-    }
-    .container-logo-title{
-        width: 100% !important;
-        background-color: transparent !important;
-    }
     
     .navbar {
-        display: flex;
-        flex-direction: column; /* Apila el logo y el menú */
-        align-items: center;
-        padding: 10px;
-        gap: 15px; /* Espacio entre el logo y los botones */
+        padding: 0.5rem 1rem;
+        flex-direction: row; /* Mantenemos una sola fila para el logo y acciones */
+        justify-content: space-between;
     }
 
-    .navbar-brand {
-        font-size: 1.2rem;
-        margin-bottom: 5px;
+    .container-logo-title {
+        width: auto !important;
     }
 
     .container-control-nav {
-        display: flex!important; /* Alinea los hijos en fila */
-        justify-content: space-between!important; /* Empuja uno a cada extremo */
-        align-items: center!important; /* Centra verticalmente */
-        width: 100%!important;
-        gap: 10px!important; /* Espacio mínimo entre ellos */
+        width: auto !important;
+        gap: 8px !important;
     }
 
     .user-menu {
-        display: flex!important;
-        align-items: center!important;
-        flex-grow: 1!important; /* Permite que el menú ocupe el espacio necesario */
-        justify-content: flex-end!important; /* Alinea el contenido del menú a la derecha */
-        white-space: nowrap!important; /* Evita que el texto de "Cerrar Sesión" salte de línea */
-        gap: 6px!important; /* Un poco más apretado en móviles para que quepa todo */
+        gap: 4px !important;
     }
 
-    /* Ajuste opcional para que el nombre no empuje demasiado */
     .span-user {
-        font-size: 14px!important;
-        margin-right: 0!important; /* El gap de .user-menu ya se encarga del espacio */
-        padding: 4px 8px!important;
+        display: none; /* Ocultamos el nombre en móviles para ganar espacio */
     }
-
     
     /* Botones más cómodos para tocar con el dedo */
     .btn, .btn-icon {
-        padding: 8px 12px;
+        padding: 6px 10px;
         font-size: 0.9rem;
+    }
+
+    .btn-std {
+        width: 38px;
+        height: 38px;
     }
 
     .btn-icon {
@@ -362,6 +477,8 @@ body {
     padding: 0 20px 12px 20px; /* Padding inferior agregado para separar del borde del header */
     /* Ocultar barra de scroll en Chrome/Safari */
     scrollbar-width: none; /* Firefox */
+    mask-image: linear-gradient(to right, black 90%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%);
 }
 
 .scroll-container::-webkit-scrollbar {
@@ -385,9 +502,10 @@ body {
 }
 
 .category-btn:hover, .category-btn.active {
-    background-color: #000;
+    background-color: #2d3436;
     color: #fff;
-    border-color: #000;
+    border-color: #2d3436;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .btn-icon-highlight-blue {
@@ -635,41 +753,15 @@ input:checked + .slider:before {
 input:checked + .slider {
     background-color: #25D366 !important;
 }
-
-.container-logo-title{
-    display: flex;
-    justify-content: left;
-    flex-direction: column;
-    align-items: center;
-    width: 50%;
-    background-color: transparent;            
-}           
-
-.container-control-nav{
-    display: flex;
-    flex-direction: row;
-    justify-content: right;
-    align-items: center;
-    width: 50%;
-    background-color: transparent;
-    gap: 10px;
-}
-
-.user-menu {
-    display: flex;
-    align-items: center;
-    gap: 8px; /* Espacio uniforme entre Saludo, Historial y Logout */
-}
-
 .btn-std {
-    position: relative; /* ¡Indispensable para que el span se ubique en la esquina del botón! */
-    width: 36px;
-    height: 36px;
+    position: relative;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    border: 1px solid blue;
-    background-color: #f8f9fa;
-    color: #007bff;
-    display: flex; /* Centra el icono del carrito perfectamente */
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background-color: #fff;
+    color: #2d3436;
+    display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
@@ -678,8 +770,8 @@ input:checked + .slider {
 
 .btn-std:hover {
     transform: scale(1.1); /* 'transform' es más compatible que 'scale' a secas */
-    background-color: #007bff;
-    color: #f8f9fa;
+    background-color: #f8f9fa;
+    border-color: #2d3436;
 }
 
 .badge-count {
@@ -690,20 +782,17 @@ input:checked + .slider {
     display: flex;   /* Centra el número dentro del círculo rojo */
     align-items: center;
     justify-content: center;
-
-    background-color: #fff;
-    
-    color: #444;
-    font-size: 0.65rem; /* Un poco más pequeño para que no sature */
+    background-color: #ff4757;
+    color: #fff;
+    font-size: 0.7rem;
     font-weight: bold;
     line-height: 1.2;
-    
     padding: 0px;
     border-radius: 50%;
-    border: 1px solid red; /* Le da un borde blanco para que resalte del botón */
-    
-    width: 16px;
-    height: 16px;
+    border: 2px solid #fff;
+    width: 20px;
+    height: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 

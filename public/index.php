@@ -55,6 +55,22 @@ switch ($route) {
         $controller = new AuthController();
         $controller->login();
         break;
+    
+    case 'forgot_password':
+        require_once '../controllers/AuthController.php';
+        $controller = new AuthController();
+        $controller->forgotPassword();
+        break;
+    case 'send_reset_link':
+        require_once '../controllers/AuthController.php';
+        $controller = new AuthController();
+        $controller->sendResetLink();
+        break;
+    case 'reset_password':
+        require_once '../controllers/AuthController.php';
+        $controller = new AuthController();
+        $controller->resetPassword();
+        break;
 
     case 'client_login':
         require_once '../controllers/AuthController.php';
@@ -98,6 +114,11 @@ switch ($route) {
         $controller = new OrderController();
         $controller->saveLocationApi();
         break;
+    case 'update_location':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->updateLocationApi();
+        break;
 
     // --- Administración (Dashboard y POS) ---
     case 'admin':
@@ -130,6 +151,26 @@ switch ($route) {
         $controller = new ProductController();
         $controller->create();
         break;
+    case 'products_store':
+        require_once '../controllers/ProductController.php';
+        $controller = new ProductController();
+        $controller->store();
+        break;
+    case 'products_edit':
+        require_once '../controllers/ProductController.php';
+        $controller = new ProductController();
+        $controller->edit();
+        break;
+    case 'products_update':
+        require_once '../controllers/ProductController.php';
+        $controller = new ProductController();
+        $controller->update();
+        break;
+    case 'products_delete':
+        require_once '../controllers/ProductController.php';
+        $controller = new ProductController();
+        $controller->delete();
+        break;
 
     // --- Gestión de Categorías ---
     case 'categories':
@@ -137,6 +178,32 @@ switch ($route) {
         $controller = new CategoryController();
         $controller->index();
         break;
+    case 'categories_create':
+        require_once '../controllers/CategoryController.php';
+        $controller = new CategoryController();
+        $controller->create();
+        break;
+    case 'categories_store':
+        require_once '../controllers/CategoryController.php';
+        $controller = new CategoryController();
+        $controller->store();
+        break;
+    case 'categories_edit':
+        require_once '../controllers/CategoryController.php';
+        $controller = new CategoryController();
+        $controller->edit();
+        break;
+    case 'categories_update':
+        require_once '../controllers/CategoryController.php';
+        $controller = new CategoryController();
+        $controller->update();
+        break;
+    case 'categories_delete':
+        require_once '../controllers/CategoryController.php';
+        $controller = new CategoryController();
+        $controller->delete();
+        break;
+
     case 'settings_reset':
         require_once '../controllers/SettingController.php';
         $controller = new SettingController();
@@ -150,11 +217,37 @@ switch ($route) {
         $controller->index();
         break;
 
+    case 'menus_assign':
+        require_once '../controllers/MenuController.php';
+        $controller = new MenuController();
+        $controller->assign();
+        break;
+    case 'menus_unassign':
+        require_once '../controllers/MenuController.php';
+        $controller = new MenuController();
+        $controller->unassign();
+        break;
+    case 'menus_toggle_availability':
+        require_once '../controllers/MenuController.php';
+        $controller = new MenuController();
+        $controller->toggleAvailability();
+        break;
+
     // --- Gestión de Hero Promos ---
     case 'hero_promos':
         require_once '../controllers/HeroPromoController.php';
         $controller = new HeroPromoController();
         $controller->index();
+        break;
+    case 'hero_promos_edit':
+        require_once '../controllers/HeroPromoController.php';
+        $controller = new HeroPromoController();
+        $controller->edit();
+        break;
+    case 'hero_promos_update':
+        require_once '../controllers/HeroPromoController.php';
+        $controller = new HeroPromoController();
+        $controller->update();
         break;
 
     // --- Ajustes de Marca ---
@@ -187,6 +280,30 @@ switch ($route) {
         require_once '../controllers/OrderController.php';
         $controller = new OrderController();
         $controller->show();
+        break;
+
+    case 'orders_api':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->apiIndex();
+        break;
+
+    case 'orders_ticket':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->ticket();
+        break;
+
+    case 'orders_update_status':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->updateStatus();
+        break;
+
+    case 'orders_assign_delivery':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->assignDelivery();
         break;
 
     default:

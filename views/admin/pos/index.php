@@ -1,9 +1,8 @@
 <style>
     .pos-container {
         display: flex;
-        gap: 15px;
-        height: calc(100vh - 160px);
-        margin-top: -10px;
+        gap: 20px;
+        height: calc(100vh - 145px);
     }
 
     /* Panel Izquierdo: Productos */
@@ -12,9 +11,9 @@
         display: flex;
         flex-direction: column;
         background: white;
-        border-radius: 12px;
-        padding: 15px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
     }
 
     .pos-search-bar {
@@ -25,96 +24,107 @@
 
     .pos-search-bar input {
         flex: 1;
-        padding: 12px;
-        border: 2px solid #eee;
-        border-radius: 8px;
+        padding: 12px 18px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
         font-size: 1rem;
+        transition: all 0.3s ease;
+        background-color: #f8fafc;
     }
+    .pos-search-bar input:focus { border-color: #0984e3; background-color: #fff; outline: none; box-shadow: 0 0 0 3px rgba(9, 132, 227, 0.1); }
 
     .pos-category-pills {
         display: flex;
         gap: 8px;
         overflow-x: auto;
         padding-bottom: 10px;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
+        scrollbar-width: none;
     }
-
+    .pos-category-pills::-webkit-scrollbar { display: none; }
+    
     .pos-category-pills button {
-        padding: 6px 15px;
+        padding: 8px 18px;
         border-radius: 20px;
-        border: 1px solid #ddd;
-        background: white;
+        border: 1px solid #e2e8f0;
+        background: #fff;
         white-space: nowrap;
         cursor: pointer;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #64748b;
+        transition: all 0.2s;
     }
-
     .pos-category-pills button.active {
-        background: #007bff;
+        background: #2d3436;
         color: white;
-        border-color: #007bff;
+        border-color: #2d3436;
     }
 
     .pos-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        gap: 10px;
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        gap: 15px;
         overflow-y: auto;
-        padding-right: 5px;
+        padding-right: 8px;
     }
+    .pos-grid::-webkit-scrollbar { width: 5px; }
+    .pos-grid::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
 
     .pos-item-card {
-        border: 1px solid #eee;
-        padding: 10px;
-        border-radius: 8px;
+        border: 1px solid #f1f5f9;
+        padding: 15px;
+        border-radius: 12px;
         cursor: pointer;
-        transition: 0.2s;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
+        background: #fff;
     }
-
-    .pos-item-card:hover { border-color: #007bff; background: #f8f9ff; }
+    .pos-item-card:hover { border-color: #0984e3; transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+    
     .pos-item-name { font-weight: 600; font-size: 0.9rem; margin-bottom: 5px; display: block; }
-    .pos-item-price { color: #28a745; font-weight: bold; font-size: 0.85rem; }
+    .pos-item-price { color: #00b894; font-weight: 700; font-size: 0.9rem; }
 
     /* Acciones de Porción */
     .pos-item-actions {
         display: flex;
-        gap: 5px;
+        gap: 8px;
         margin-top: 8px;
     }
     .btn-portion {
         flex: 1;
-        padding: 4px;
-        font-size: 0.7rem;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        background: #f8f9fa;
+        padding: 6px;
+        font-size: 0.65rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: #fff;
         cursor: pointer;
         line-height: 1.2;
+        transition: all 0.2s;
     }
-    .btn-portion:hover { background: #e9ecef; border-color: #007bff; color: #007bff; }
-    .btn-portion small { color: #28a745; font-weight: bold; display: block; }
+    .btn-portion:hover { border-color: #0984e3; color: #0984e3; background: #f0f7ff; }
+    .btn-portion small { color: #00b894; font-weight: 800; display: block; margin-top: 2px; }
 
     .btn-show-img {
         position: absolute;
-        top: 5px;
-        right: 5px;
-        background: rgba(0,0,0,0.05);
+        top: 8px;
+        right: 8px;
+        background: #f1f5f9;
         border: none;
         border-radius: 4px;
-        padding: 4px 6px;
-        color: #666;
+        padding: 5px 7px;
+        color: #64748b;
         cursor: pointer;
+        font-size: 0.75rem;
     }
-
-    .btn-show-img:hover { background: #eee; color: #007bff; }
+    .btn-show-img:hover { background: #e2e8f0; color: #0984e3; }
 
     /* Panel Derecho: Ticket */
     .pos-ticket {
-        width: 380px;
-        background: #343a40;
+        width: 400px;
+        background: #2d3436;
         color: white;
-        border-radius: 12px;
+        border-radius: 16px;
         display: flex;
         flex-direction: column;
         padding: 20px;
@@ -122,59 +132,63 @@
     }
 
     .ticket-header { 
-        border-bottom: 1px dashed rgba(255,255,255,0.2); 
-        padding-bottom: 10px; 
+        border-bottom: 2px dashed rgba(255,255,255,0.1); 
+        padding-bottom: 15px; 
         margin-bottom: 15px;
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
     }
+    .ticket-header h3 { font-size: 1.1rem; font-weight: 700; margin: 0; letter-spacing: -0.5px; }
 
     .btn-clear-cart {
         background: none;
-        border: 1px solid rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.15);
         color: #ff4757;
         padding: 5px 10px;
         border-radius: 6px;
         cursor: pointer;
         transition: 0.3s;
     }
-    .btn-clear-cart:hover {
-        background: #ff4757;
-        color: white;
-        border-color: #ff4757;
-    }
+    .btn-clear-cart:hover { background: #ff4757; color: white; border-color: #ff4757; }
 
-    .ticket-items { flex: 1; overflow-y: auto; margin-bottom: 15px; }
+    .ticket-items { flex: 1; overflow-y: auto; margin-bottom: 15px; padding-right: 5px; }
+    .ticket-items::-webkit-scrollbar { width: 4px; }
+    .ticket-items::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
 
     .ticket-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 10px;
+        margin-bottom: 12px;
         font-size: 0.9rem;
+        background: rgba(255,255,255,0.03);
+        padding: 8px 12px;
+        border-radius: 8px;
     }
 
     .ticket-item-info { flex: 1; }
-    .ticket-item-qty { background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; margin-right: 8px; }
+    .ticket-item-qty { background: #0984e3; color: white; padding: 2px 8px; border-radius: 4px; margin-right: 10px; font-weight: 700; font-size: 0.8rem; }
 
-    .ticket-footer { border-top: 2px solid rgba(255,255,255,0.1); padding-top: 15px; }
-    .ticket-total { display: flex; justify-content: space-between; font-size: 1.4rem; font-weight: bold; margin-bottom: 15px; color: #2ecc71; }
+    .ticket-footer { border-top: 2px dashed rgba(255,255,255,0.1); padding-top: 20px; }
+    .ticket-total { display: flex; justify-content: space-between; font-size: 1.6rem; font-weight: 800; margin-bottom: 20px; color: #00b894; letter-spacing: -1px; }
 
     .btn-confirm-sale {
         width: 100%;
-        padding: 15px;
-        background: #28a745;
+        padding: 18px;
+        background: #00b894;
         color: white;
         border: none;
-        border-radius: 8px;
-        font-weight: bold;
+        border-radius: 12px;
+        font-weight: 800;
         font-size: 1.1rem;
         cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 1px;
         transition: 0.2s;
+        box-shadow: 0 4px 15px rgba(0, 184, 148, 0.3);
     }
-
-    .btn-confirm-sale:hover { background: #218838; transform: scale(1.02); }
+    .btn-confirm-sale:hover { background: #00a887; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 184, 148, 0.4); }
 
     /* Mobile Responsive */
     @media (max-width: 768px) {

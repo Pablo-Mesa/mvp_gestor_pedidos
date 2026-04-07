@@ -150,16 +150,6 @@ $siteLogo = !empty($siteSettings['site_logo']) ? 'uploads/' . $siteSettings['sit
         </div>
     </header>
     
-    <!-- Filtros de Categoría 
-    <div class="category-filters">
-        <button class="cat-pill active" onclick="filterCategory('all', this)">Todos</button>
-        <?php foreach($categories as $cat): ?>
-            <button class="cat-pill" onclick="filterCategory('<?php echo htmlspecialchars($cat); ?>', this)">
-                <?php echo htmlspecialchars($cat); ?>
-            </button>
-        <?php endforeach; ?>
-    </div> -->
-
     <!-- Overlay y Sidebar del Carrito -->
     <div class="cart-overlay" onclick="toggleCart()"></div>
     <div class="cart-sidebar" id="cart-sidebar">

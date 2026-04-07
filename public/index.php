@@ -24,6 +24,11 @@ switch ($route) {
         $controller = new HomeController();
         $controller->myOrders();
         break;
+    case 'my_locations':
+        require_once '../controllers/HomeController.php';
+        $controller = new HomeController();
+        $controller->myLocations();
+        break;
 
     case 'my_order_details':
         require_once '../controllers/HomeController.php';
@@ -118,6 +123,11 @@ switch ($route) {
         require_once '../controllers/OrderController.php';
         $controller = new OrderController();
         $controller->updateLocationApi();
+        break;
+    case 'delete_location':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->deleteLocationApi();
         break;
 
     // --- Administración (Dashboard y POS) ---

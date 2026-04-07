@@ -61,14 +61,20 @@
                     <div class="col-md-6">
                         <label class="form-label fw-bold">Imagen de Fondo</label>
                         <input type="file" name="image" class="form-control" id="imageInput" accept="image/*" onchange="previewHeroImage(this)">
-                        <div class="mt-3 text-center">
+                        <div class="mt-3 text-center position-relative">
                             <?php 
                                 $displayImg = !empty($promo['image']) ? 'uploads/' . $promo['image'] : 'https://via.placeholder.com/400x200?text=Sin+Imagen+Configurada';
                             ?>
-                            <img id="imgPreview" src="<?php echo $displayImg; ?>" 
-                                 class="rounded shadow-sm" 
-                                 style="max-width: 100%; height: 160px; object-fit: cover; border: 1px solid #dee2e6;">
-                            <div id="imageName" class="small text-muted mt-1"><?php echo $promo['image'] ?? ''; ?></div>
+                            <div class="d-inline-block position-relative">
+                                <img id="imgPreview" src="<?php echo $displayImg; ?>" 
+                                     class="rounded shadow-sm" 
+                                     style="max-width: 100%; height: 160px; object-fit: cover; border: 1px solid #dee2e6;">
+                                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1" 
+                                        onclick="resetHeroImage()" title="Quitar imagen">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div id="imageName" class="small text-muted mt-1"><?php echo !empty($promo['image']) ? $promo['image'] : 'Sin imagen'; ?></div>
                         </div>
                     </div>
                 </div>
@@ -122,5 +128,16 @@ function previewHeroImage(input) {
         }
         reader.readAsDataURL(input.files[0]);
     }
+}
+
+/**
+ * Restablece la imagen a su estado default (vacío)
+ */
+function resetHeroImage() {
+    document.getElementById('imageInput').value = ""; // Limpia el input file
+    document.querySelector('input[name="current_image"]').value = ""; // Limpia el nombre de la imagen actual
+    document.getElementById('imgPreview').src = 'https://via.placeholder.com/400x200?text=Sin+Imagen+Configurada';
+    document.getElementById('imageName').innerText = 'Sin imagen';
+    Toast.fire("Imagen marcada para eliminar", "info");
 }
 </script>

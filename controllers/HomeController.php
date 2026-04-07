@@ -5,6 +5,7 @@ require_once '../models/DailyMenu.php';
 require_once '../models/Order.php';
 require_once '../models/ProductReaction.php';
 require_once '../models/HeroPromo.php';
+require_once '../models/ClientLocation.php';
 
 class HomeController {
 
@@ -204,6 +205,23 @@ class HomeController {
         $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $content_view = '../views/home/orders.php';
+        require_once '../views/layouts/client_layout.php';
+    }
+
+    /**
+     * Muestra la gestión de direcciones del cliente
+     */
+    public function myLocations() {
+        if (!isset($_SESSION['client_id'])) {
+            header('Location: ?route=home');
+            exit;
+        }
+
+        $locationModel = new ClientLocation();
+        $savedLocations = $locationModel->getAllByClient($_SESSION['client_id']);
+
+        $view_title = "Mis Direcciones";
+        $content_view = '../views/home/locations.php';
         require_once '../views/layouts/client_layout.php';
     }
 

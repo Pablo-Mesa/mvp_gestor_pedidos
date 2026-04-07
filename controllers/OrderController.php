@@ -189,19 +189,28 @@ class OrderController {
      * Guarda una nueva ubicación vía AJAX
      */
     public function saveLocationApi() {
-        header('Content-Type: application/json');
-        if (!isset($_SESSION['client_id'])) {
-            echo json_encode(['success' => false, 'message' => 'Sesión expirada']); exit;
-        }
+        ob_start(); // Capturar cualquier salida accidental (notices/warnings)
+        try {
+            header('Content-Type: application/json');
+            if (!isset($_SESSION['client_id'])) {
+                throw new Exception('Sesión expirada');
+            }
 
-        $input = json_decode(file_get_contents('php://input'), true);
-        $locationModel = new ClientLocation();
-        $input['client_id'] = $_SESSION['client_id'];
-        
-        if ($locationModel->create($input)) {
-            echo json_encode(['success' => true, 'locations' => $locationModel->getAllByClient($_SESSION['client_id'])]);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Error al guardar ubicación']);
+            $input = json_decode(file_get_contents('php://input'), true);
+            if (!$input) throw new Exception('Datos de entrada inválidos');
+
+            $locationModel = new ClientLocation();
+            $input['client_id'] = $_SESSION['client_id'];
+            
+            if ($locationModel->create($input)) {
+                ob_clean(); // Limpiar el buffer antes de enviar el JSON real
+                echo json_encode(['success' => true, 'locations' => $locationModel->getAllByClient($_SESSION['client_id'])]);
+            } else {
+                throw new Exception('Error al guardar ubicación en la base de datos');
+            }
+        } catch (Exception $e) {
+            ob_clean();
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
         exit;
     }
@@ -210,19 +219,57 @@ class OrderController {
      * Actualiza una ubicación existente vía AJAX
      */
     public function updateLocationApi() {
-        header('Content-Type: application/json');
-        if (!isset($_SESSION['client_id'])) {
-            echo json_encode(['success' => false, 'message' => 'Sesión expirada']); exit;
-        }
+        ob_start();
+        try {
+            header('Content-Type: application/json');
+            if (!isset($_SESSION['client_id'])) {
+                throw new Exception('Sesión expirada');
+            }
 
-        $input = json_decode(file_get_contents('php://input'), true);
-        $locationModel = new ClientLocation();
-        $input['client_id'] = $_SESSION['client_id'];
-        
-        if ($locationModel->update($input)) {
-            echo json_encode(['success' => true, 'locations' => $locationModel->getAllByClient($_SESSION['client_id'])]);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Error al actualizar ubicación']);
+            $input = json_decode(file_get_contents('php://input'), true);
+            if (!$input || empty($input['id'])) throw new Exception('ID de ubicación no proporcionado');
+
+            $locationModel = new ClientLocation();
+            $input['client_id'] = $_SESSION['client_id'];
+            
+            if ($locationModel->update($input)) {
+                ob_clean();
+                echo json_encode(['success' => true, 'locations' => $locationModel->getAllByClient($_SESSION['client_id'])]);
+            } else {
+                throw new Exception('Error al actualizar ubicación en la base de datos');
+            }
+        } catch (Exception $e) {
+            ob_clean();
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    /**
+     * Elimina una ubicación existente vía AJAX
+     */
+    public function deleteLocationApi() {
+        ob_start();
+        try {
+            header('Content-Type: application/json');
+            if (!isset($_SESSION['client_id'])) {
+                throw new Exception('Sesión expirada');
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            if (!$input || empty($input['id'])) throw new Exception('ID de ubicación no proporcionado');
+
+            $locationModel = new ClientLocation();
+            
+            if ($locationModel->delete($input['id'], $_SESSION['client_id'])) {
+                ob_clean();
+                echo json_encode(['success' => true, 'locations' => $locationModel->getAllByClient($_SESSION['client_id'])]);
+            } else {
+                throw new Exception('Error al eliminar ubicación de la base de datos');
+            }
+        } catch (Exception $e) {
+            ob_clean();
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
         exit;
     }

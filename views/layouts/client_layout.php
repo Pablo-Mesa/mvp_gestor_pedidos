@@ -116,6 +116,9 @@ $siteLogo = !empty($siteSettings['site_logo']) ? 'uploads/' . $siteSettings['sit
                     <a href="?route=my_orders" class="sidebar-link">
                         <i class="fas fa-receipt"></i> Mis Pedidos
                     </a>
+                    <a href="?route=my_locations" class="sidebar-link">
+                        <i class="fas fa-map-marker-alt"></i> Mis Direcciones
+                    </a>
                     <a href="#" class="sidebar-link" id="btnSidebarInstall" style="display:none; color: #0984e3;">
                         <i class="fas fa-download"></i> Instalar Aplicación
                     </a>

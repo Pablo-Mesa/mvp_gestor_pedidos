@@ -28,4 +28,32 @@ class ClientLocation {
             $data['lng']
         ]);
     }
+
+    /**
+     * Actualiza solo el título y la dirección de una ubicación existente.
+     */
+    public function update($data) {
+        $query = "UPDATE " . $this->table . " 
+                  SET title = ?, address = ? 
+                  WHERE id = ? AND client_id = ?";
+        $stmt = $this->conn->prepare($query);
+        return $stmt->execute([
+            $data['title'],
+            $data['address'],
+            $data['id'],
+            $data['client_id']
+        ]);
+    }
+
+    /**
+     * Elimina una ubicación existente.
+     */
+    public function delete($id, $client_id) {
+        $query = "DELETE FROM " . $this->table . " 
+                  WHERE id = :id AND client_id = :client_id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $id);
+        $stmt->bindParam(':client_id', $client_id);
+        return $stmt->execute();
+    }
 }

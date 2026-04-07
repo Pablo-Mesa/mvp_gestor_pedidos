@@ -43,25 +43,32 @@
                 <div id="deliverySection" class="section-card" style="display: none;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                         <h3 style="margin:0;"><i class="fas fa-map-marked-alt"></i> Mis Direcciones</h3>
-                        <button type="button" class="btn-add-location" onclick="openLocationModal()">
-                            <i class="fas fa-plus"></i> Nueva
-                        </button>
+                        <div style="display: flex; gap: 8px;">
+                            <button type="button" class="btn-add-location" style="background: #ffc107; color: #212529;" onclick="editSelectedLocation()">
+                                <i class="fas fa-pen"></i> Editar
+                            </button>
+                            <button type="button" class="btn-add-location" onclick="openLocationModal()">
+                                <i class="fas fa-plus"></i> Nueva
+                            </button>
+                        </div>
                     </div>
                     
                     <div id="locationsList" class="locations-grid">
                         <?php if(empty($savedLocations)): ?>
                             <p class="empty-msg">No tienes direcciones guardadas.</p>
                         <?php else: ?>
+                            <?php $firstLocationSelected = false; ?>
                             <?php foreach($savedLocations as $loc): ?>
-                                <div class="location-card" onclick="selectLocation(this)" 
+                                <div class="location-card <?php if(!$firstLocationSelected) { echo 'selected'; $firstLocationSelected = true; } ?>" onclick="selectLocation(this)"
+                                     data-id="<?= $loc['id'] ?>"
                                      data-lat="<?= $loc['lat'] ?>" data-lng="<?= $loc['lng'] ?>" data-addr="<?= htmlspecialchars($loc['address']) ?>">
-                                    <button type="button" class="btn-edit-inline" 
-                                            onclick="event.stopPropagation(); editLocation(<?= $loc['id'] ?>, '<?= addslashes($loc['title']) ?>', '<?= addslashes($loc['address']) ?>', <?= $loc['lat'] ?>, <?= $loc['lng'] ?>)">
-                                        <i class="fas fa-pen"></i>
-                                    </button>
                                     <i class="fas fa-home"></i>
                                     <strong><?= htmlspecialchars($loc['title']) ?></strong>
                                     <small><?= htmlspecialchars($loc['address']) ?></small>
+                                    <button type="button" class="btn-delete-checkout" 
+                                            onclick="event.stopPropagation(); confirmDeleteLocation(<?= $loc['id'] ?>, '<?= addslashes($loc['title']) ?>')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
                                 </div>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -149,11 +156,13 @@
                 <input type="text" id="new_loc_title" placeholder="Casa, Trabajo..." class="form-control">
             </div>
             
-            <div class="hint-text mt-3">Ubica el marcador exactamente sobre el lugar de entrega:</div>
-            <div id="map" class="map-container" style="height: 250px;"></div>
+            <div id="mapSection">
+                <div class="hint-text mt-3">Ubica el marcador exactamente sobre el lugar de entrega:</div>
+                <div id="map" class="map-container" style="height: 250px;"></div>
+            </div>
             
             <div class="input-group mt-3">
-                <label>Referencia Detallada (Opcional)</label>
+                <label id="addrLabel">Referencia Detallada (Opcional)</label>
                 <textarea id="new_loc_addr" class="form-control" rows="2" placeholder="Nro de casa, color de reja, etc."></textarea>
             </div>
 
@@ -192,6 +201,12 @@
     .location-card.selected { border-color: #28a745; background: #f0fdf4; border-width: 2px; }
     .btn-add-location { background: #007bff; color: white; border: none; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
     
+    .btn-delete-checkout {
+        position: absolute; top: 5px; right: 5px; background: transparent; border: none;
+        color: #ff4757; cursor: pointer; opacity: 0; transition: 0.3s; padding: 5px;
+    }
+    .location-card:hover .btn-delete-checkout { opacity: 1; }
+
     .btn-edit-inline { 
         position: absolute; top: 5px; right: 5px; background: #f8f9fa; border: 1px solid #ddd; 
         width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; 
@@ -305,17 +320,73 @@
         document.getElementById('selected_address').disabled = !show;
     }
 
-    function openLocationModal() {
+    function openLocationModal(isEdit = false) {
         document.getElementById('locationModal').style.display = 'flex';
-        // El mapa necesita un pequeño delay para cargar los tiles correctamente en el modal
-        setTimeout(() => { 
-            if(!map) initMap(); 
-            else map.invalidateSize(); 
-        }, 300);
+
+        if (isEdit) {
+            document.getElementById('modalTitle').innerText = 'Editar Ubicación';
+            if(document.getElementById('mapSection')) {
+                document.getElementById('mapSection').style.display = 'none';
+            }
+            if(document.getElementById('addrLabel')) {
+                document.getElementById('addrLabel').innerText = 'Dirección / Referencia';
+            }
+        } else {
+            document.getElementById('modalTitle').innerText = 'Guardar Nueva Ubicación';
+            if(document.getElementById('mapSection')) document.getElementById('mapSection').style.display = 'block';
+            if(document.getElementById('addrLabel')) document.getElementById('addrLabel').innerText = 'Referencia Detallada (Opcional)';
+            
+            // El mapa necesita un pequeño delay para cargar correctamente
+            setTimeout(() => {  
+                if(!map) initMap(); 
+                else map.invalidateSize(); 
+            }, 300);
+
+            // Limpiar campos para nueva ubicación
+            document.getElementById('edit_loc_id').value = '';
+            document.getElementById('new_loc_title').value = '';
+            document.getElementById('new_loc_addr').value = '';
+            // Limpiar inputs ocultos de lat/lng para nueva ubicación
+            document.getElementById('lat').value = '';
+            document.getElementById('lng').value = '';
+
+            if (marker) { // Eliminar marcador si se abre para una nueva ubicación
+                map.removeLayer(marker);
+                marker = null;
+            }
+            // Restablecer la vista del mapa a la ubicación inicial o actual del usuario si está disponible
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    map.setView([position.coords.latitude, position.coords.longitude], 15);
+                });
+            } else {
+                map.setView([-25.2865, -57.6470], 13); // Vista predeterminada
+            }
+        }
     }
 
     function closeLocationModal() {
         document.getElementById('locationModal').style.display = 'none';
+        
+        // Si cerramos el modal, nos aseguramos de que el formulario principal 
+        // mantenga la dirección que el usuario tiene seleccionada en el grid.
+        const selected = document.querySelector('.location-card.selected');
+        if (selected) selectLocation(selected, true);
+    }
+
+    function editSelectedLocation() {
+        const selected = document.querySelector('.location-card.selected');
+        if (!selected) {
+            Toast.fire("Selecciona una dirección para editar", "info");
+            return;
+        }
+        editLocation(
+            selected.dataset.id,
+            selected.querySelector('strong').innerText,
+            selected.dataset.addr,
+            selected.dataset.lat,
+            selected.dataset.lng
+        );
     }
 
     function selectLocation(card, silent = false) {
@@ -329,6 +400,51 @@
         document.getElementById('selected_address').value = card.dataset.addr;
         
         if (!silent) Toast.fire("Dirección seleccionada", "success");
+    }
+
+    async function confirmDeleteLocation(id, title) {
+        const { isConfirmed } = await Swal.fire({
+            title: `¿Eliminar "${title}"?`,
+            text: "Se quitará de tus direcciones guardadas.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            confirmButtonText: 'Sí, eliminar'
+        });
+
+        if (isConfirmed) {
+            try {
+                const response = await fetch('?route=delete_location', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    Toast.fire("Dirección eliminada", "success");
+                    renderLocations(result.locations);
+                }
+            } catch (err) {
+                Toast.fire("Error al conectar con el servidor", "error");
+            }
+        }
+    }
+
+    /**
+     * Función para editar una ubicación existente
+     */
+    function editLocation(id, title, address, lat, lng) {
+        // Rellenar los campos del formulario
+        document.getElementById('edit_loc_id').value = id;
+        document.getElementById('new_loc_title').value = title;
+        document.getElementById('new_loc_addr').value = address;
+
+        // Preparar el mapa por si el usuario cambia a "Nueva" estando en el modal
+        if (!map) initMap(); // Asegurarse de que el mapa esté inicializado
+        map.setView([lat, lng], 15); // Centrar el mapa en la ubicación
+        updateMarker(lat, lng); // Colocar el marcador
+
+        openLocationModal(true); // Abrir el modal en modo edición
     }
 
     async function saveNewLocation() {
@@ -358,19 +474,30 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            const res = await resp.json();
-            if(res.success) {
-                // Re-renderizar la lista y auto-seleccionar la nueva (última en la lista)
-                renderLocations(res.locations, data);
-                
+
+            const textResponse = await resp.text(); // Leemos como texto primero para debug
+            let res;
+            try {
+                res = JSON.parse(textResponse);
+            } catch (err) {
+                console.error("Respuesta no JSON del servidor:", textResponse);
+                throw new Error("El servidor no respondió en formato JSON");
+            }
+
+            if(res && res.success) {
                 // Limpiar formulario y cerrar modal
                 titleEl.value = '';
                 addrEl.value = '';
+                document.getElementById('edit_loc_id').value = ''; // Limpiar el ID de edición
                 closeLocationModal();
+                
+                // Re-renderizar la lista después de cerrar el modal para evitar saltos visuales
+                renderLocations(res.locations, data);
             } else {
-                Toast.fire(res.message, "error");
+                Toast.fire(res.message || "Error al procesar la solicitud", "error");
             }
         } catch(e) {
+            console.error("Error en saveNewLocation:", e);
             Toast.fire("Error al conectar con el servidor", "error");
         }
     }
@@ -386,26 +513,28 @@
         }
 
         let html = '';
-        locations.forEach(loc => {
-            const safeAddr = loc.address.replace(/"/g, '&quot;');
-            const safeTitle = loc.title.replace(/'/g, "\\'");
-            html += `
-                <div class="location-card" onclick="selectLocation(this)" 
-                     data-lat="${loc.lat}" data-lng="${loc.lng}" data-addr="${safeAddr}">
-                    <button type="button" class="btn-edit-inline" 
-                            onclick="event.stopPropagation(); editLocation(${loc.id}, '${safeTitle}', '${safeAddr}', ${loc.lat}, ${loc.lng})">
-                        <i class="fas fa-pen"></i>
-                    </button>
-                    <i class="fas fa-home"></i>
-                    <strong>${loc.title}</strong>
-                    <small>${loc.address}</small>
-                </div>
-            `;
-        });
+        if (locations && locations.length > 0) {
+            locations.forEach(loc => {
+                const safeAddr = loc.address.replace(/"/g, '&quot;');
+                html += `
+                    <div class="location-card" onclick="selectLocation(this)"
+                         data-id="${loc.id}"
+                         data-lat="${loc.lat}" data-lng="${loc.lng}" data-addr="${safeAddr}">
+                        <i class="fas fa-home"></i>
+                        <strong>${loc.title}</strong>
+                        <small>${loc.address}</small>
+                        <button type="button" class="btn-delete-checkout" 
+                                onclick="event.stopPropagation(); confirmDeleteLocation(${loc.id}, '${loc.title}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+            });
+        }
         list.innerHTML = html;
 
-        // Auto-selección lógica: Buscamos la dirección exacta que acabamos de guardar
-        if (newlySaved) {
+        // Auto-selección lógica: Buscamos la dirección exacta que acabamos de guardar/actualizar
+        if (newlySaved && newlySaved.id) {
             const cards = list.querySelectorAll('.location-card');
             let targetCard = null;
 
@@ -415,16 +544,19 @@
                     targetCard = card;
                 }
             });
-
-            // Si encontramos la coincidencia, la seleccionamos
-            if (targetCard) {
-                selectLocation(targetCard, true);
-                Toast.fire("¡Ubicación guardada y seleccionada!", "success");
+            const targetCardById = list.querySelector(`.location-card[data-id="${newlySaved.id}"]`);
+            if (targetCardById) {
+                selectLocation(targetCardById, true);
             } else if (cards.length > 0) {
-                // Fallback: si por alguna razón no hay match de texto, seleccionamos la última
-                selectLocation(cards[cards.length - 1], true);
-                Toast.fire("¡Ubicación guardada y seleccionada!", "success");
+                // Fallback: si por alguna razón no se encuentra la tarjeta por ID, seleccionamos la última
+                selectLocation(list.lastElementChild, true);
             }
+
+            const msg = newlySaved.id ? "Ubicación actualizada y seleccionada" : "Ubicación guardada y seleccionada";
+            Toast.fire(msg, "success");
+        } else if (locations.length > 0) {
+            // Si no hay un newlySaved específico, pero hay ubicaciones, seleccionamos la primera por defecto
+            selectLocation(list.firstElementChild, true);
         }
     }
 
@@ -439,6 +571,12 @@
         const container = document.getElementById('checkout-items');
         const totalEl = document.getElementById('checkout-total');
         
+        // Auto-seleccionar la primera ubicación si existe al cargar la página
+        const firstLocationCard = document.querySelector('.location-card');
+        if (firstLocationCard) {
+            selectLocation(firstLocationCard, true); // Seleccionar silenciosamente
+        }
+
         if (cart.length === 0) {
             container.innerHTML = '<p>Tu carrito está vacío.</p>';
             window.location.href = '?route=home'; // Redirigir si no hay nada

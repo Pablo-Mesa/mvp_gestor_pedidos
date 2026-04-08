@@ -31,11 +31,16 @@ if (class_exists('Category') && class_exists('Product')) {
     // Extraemos los IDs de categorías que tienen al menos un producto activo
     $activeCategoryIds = array_unique(array_column($activeProds, 'category_id'));
 
-    // Filtramos la lista: Solo incluimos categorías con contenido disponible
+    // Filtramos la lista: Solo incluimos categorías con contenido disponible y excluimos "Almuerzos"
     $navCategories = array_filter($allCategories, function($cat) use ($activeCategoryIds) {
-        return in_array($cat['id'], $activeCategoryIds);
+        $isAlmuerzo = (stripos($cat['name'], 'almuerzo') !== false);
+        return in_array($cat['id'], $activeCategoryIds) && !$isAlmuerzo;
     });
 }
+
+// Detectar si estamos en la Home para mostrar categorías
+$currentRoute = $_GET['route'] ?? 'home';
+$showCategories = ($currentRoute === 'home');
 
 // Cargar Ajustes de Identidad (Siempre disponible)
 $settingModel = new Setting();
@@ -59,42 +64,65 @@ $siteLogo = !empty($siteSettings['site_logo']) ? 'uploads/' . $siteSettings['sit
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
+<body class="<?php echo !$showCategories ? 'is-compact' : ''; ?>">
 
     <!-- Header fijo que agrupa Navbar y Categorías -->
     <header class="fixed-header">
-        <!-- Barra Superior -->
-        <nav class="navbar">
-            <div class="container-logo-title">
-                <a href="?route=home" class="brand-link">
-                    <img src="<?php echo $siteLogo; ?>" alt="Logo" class="brand-logo">
-                    <span class="brand-text"><?php echo htmlspecialchars($siteName); ?></span>
-                </a>
-            </div>        
-            
-            <div class="container-control-nav">
-                <!-- Botón del Carrito -->
-                <button class="btn-std" onclick="toggleCart()">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span class="badge-count" id="cart-count" style="display: none;">0</span>
-                </button>
+        <div class="header-content">
+            <!-- Barra Superior -->
+            <nav class="navbar">
+                <div class="container-logo-title">
+                    <a href="?route=home" class="brand-link">
+                        <img src="<?php echo $siteLogo; ?>" alt="Logo" class="brand-logo">
+                        <span class="brand-text"><?php echo htmlspecialchars($siteName); ?></span>
+                    </a>
+                </div>        
+                
+                <div class="container-control-nav">
+                    <!-- Botón del Carrito -->
+                    <button class="btn-std" onclick="toggleCart()">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span class="badge-count" id="cart-count" style="display: none;">0</span>
+                    </button>
 
-                <!-- Botón de Usuario / Hamburguesa -->
-                <div class="user-menu">
-                    <?php if(isset($_SESSION['client_id'])): ?>                                                
-                        <button class="btn-std" onclick="toggleUserSidebar()" title="Menú de usuario">
-                            <i class="fas fa-bars"></i>
-                        </button>
-                    <?php else: ?>
-                        <button id="openModal" class="btn-std">
-                            <i class="far fa-user"></i>
-                        </button>
-                    <?php endif; ?>
-                </div>
-            </div>              
-        </nav>
+                    <!-- Botón de Usuario / Hamburguesa -->
+                    <div class="user-menu">
+                        <?php if(isset($_SESSION['client_id'])): ?>                                                
+                            <button class="btn-std" onclick="toggleUserSidebar()" title="Menú de usuario">
+                                <i class="fas fa-bars"></i>
+                            </button>
+                        <?php else: ?>
+                            <button id="openModal" class="btn-std">
+                                <i class="far fa-user"></i>
+                            </button>
+                        <?php endif; ?>
+                    </div>
+                </div>              
+            </nav>
 
-        <!-- Sidebar de Usuario (Nuevo) -->
+            <?php if ($showCategories): ?>
+            <!-- Lista de Categorías -->
+            <div class="scroll-container">
+                <a href="?route=home" class="category-btn <?php echo !isset($_GET['category_id']) ? 'active' : ''; ?>">🏠 Menú del Día</a>
+                
+                <?php foreach($navCategories as $cat): ?>
+                    <?php 
+                        $emoji = '🍽️';
+                        if (stripos($cat['name'], 'bebida') !== false) $emoji = '🥤';
+                        if (stripos($cat['name'], 'postre') !== false) $emoji = '🍦';
+                        if (stripos($cat['name'], 'desayuno') !== false) $emoji = '☕';
+                        if (stripos($cat['name'], 'minuta') !== false || stripos($cat['name'], 'hamburguesa') !== false) $emoji = '🍔';
+                        $isActive = (isset($_GET['category_id']) && $_GET['category_id'] == $cat['id']) ? 'active' : '';
+                    ?>
+                    <a href="?route=home&category_id=<?php echo $cat['id']; ?>" class="category-btn <?php echo $isActive; ?>">
+                        <?php echo $emoji . ' ' . htmlspecialchars($cat['name']); ?>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Sidebar de Usuario (Movido fuera del wrapper de ancho limitado para que sea fixed a la derecha) -->
         <div class="user-sidebar-overlay" onclick="toggleUserSidebar()"></div>
         <div class="user-sidebar" id="userSidebar">
             <?php if(isset($_SESSION['client_id'])): ?>
@@ -129,27 +157,6 @@ $siteLogo = !empty($siteSettings['site_logo']) ? 'uploads/' . $siteSettings['sit
                     </a>
                 </div>
             <?php endif; ?>
-        </div>
-    
-        <!-- Lista de Categorías -->
-        <div class="scroll-container">
-            <a href="?route=home" class="category-btn <?php echo !isset($_GET['category_id']) ? 'active' : ''; ?>">🏠 Menú del Día</a>
-            
-            <?php foreach($navCategories as $cat): ?>
-                <?php 
-                    // Emojis simples según nombre (opcional)
-                    $emoji = '🍽️';
-                    if (stripos($cat['name'], 'bebida') !== false) $emoji = '🥤';
-                    if (stripos($cat['name'], 'postre') !== false) $emoji = '🍦';
-                    if (stripos($cat['name'], 'desayuno') !== false) $emoji = '☕';
-                    if (stripos($cat['name'], 'minuta') !== false || stripos($cat['name'], 'hamburguesa') !== false) $emoji = '🍔';
-                    
-                    $isActive = (isset($_GET['category_id']) && $_GET['category_id'] == $cat['id']) ? 'active' : '';
-                ?>
-                <a href="?route=home&category_id=<?php echo $cat['id']; ?>" class="category-btn <?php echo $isActive; ?>">
-                    <?php echo $emoji . ' ' . htmlspecialchars($cat['name']); ?>
-                </a>
-            <?php endforeach; ?>
         </div>
     </header>
     
@@ -392,8 +399,9 @@ $siteLogo = !empty($siteSettings['site_logo']) ? 'uploads/' . $siteSettings['sit
 
             cart.forEach(item => {
                 total += item.price * item.quantity;
-                // Fix image path for cart display
-                const imgPath = item.image ? 'uploads/' + encodeURIComponent(item.image) : 'https://via.placeholder.com/50';
+                // Reemplazo de placeholder externo por SVG local para evitar errores de red/PWA
+                const placeholder = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2250%22%20height%3D%2250%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2050%2050%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23eeeeee%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%23aaaaaa%22%20font-family%3D%22sans-serif%22%20font-size%3D%2210%22%20dy%3D%22.3em%22%20text-anchor%3D%22middle%22%3E🍴%3C%2Ftext%3E%3C%2Fsvg%3E";
+                const imgPath = item.image ? 'uploads/' + encodeURIComponent(item.image) : placeholder;
                 
                 html += `
                 <div class="cart-item">

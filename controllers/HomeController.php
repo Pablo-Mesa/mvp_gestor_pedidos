@@ -72,6 +72,32 @@ class HomeController {
                     $finalPromos[] = $promo;
                 }
                 // Si no hay reseñas en la DB, no la agregamos al array final
+            } elseif ($promo['type'] === 'hours') {
+                // Lógica de Horarios Dinámicos
+                $schedule = json_decode($promo['content'], true);
+                
+                if (json_last_error() === JSON_ERROR_NONE && is_array($schedule)) {
+                    $dayNum = date('w'); // 0 (Dom) a 6 (Sab)
+                    $now = date('H:i');
+                    $today = $schedule[$dayNum] ?? null;
+
+                    if ($today && !$today['closed']) {
+                        $isOpen = ($now >= $today['open'] && $now <= $today['close']);
+                        if ($isOpen) {
+                            $promo['title'] = "🟢 ¡Estamos Abiertos!";
+                            $promo['content'] = "Atendiendo hoy hasta las " . $today['close'] . ". ¡Haz tu pedido ahora!";
+                        } else {
+                            $promo['title'] = "🔴 Cerrado temporalmente";
+                            $nextOpen = ($now < $today['open']) ? "Abrimos hoy a las " . $today['open'] : "Abrimos mañana";
+                            $promo['content'] = $nextOpen . ". ¡Vuelve pronto!";
+                        }
+                    } else {
+                        $promo['title'] = "🗓️ Hoy Cerrado";
+                        $promo['content'] = "Hoy no abrimos al público. ¡Te esperamos en nuestro próximo horario!";
+                    }
+                }
+                // Si no es JSON (texto viejo), se muestra tal cual
+                $finalPromos[] = $promo;
             } else {
                 $finalPromos[] = $promo;
             }

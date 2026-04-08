@@ -38,6 +38,8 @@
                         <small class="text-muted">
                             <?php if($p['type'] === 'reviews'): ?>
                                 <i class="fas fa-sync-alt text-info"></i> <em>Contenido dinámico (Reseñas aleatorias)</em>
+                            <?php elseif($p['type'] === 'hours'): ?>
+                                <i class="fas fa-calendar-alt text-primary"></i> <em>Horario semanal estructurado</em>
                             <?php else: ?>
                                 <?php echo (strlen($p['content'] ?? '') > 50) ? substr(htmlspecialchars($p['content']), 0, 50) . '...' : htmlspecialchars($p['content'] ?? ''); ?>
                             <?php endif; ?>

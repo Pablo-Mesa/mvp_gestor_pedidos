@@ -333,10 +333,10 @@ $promosList = !empty($promos) ? $promos : [
     transition: transform 0.3s ease;
     }
 
-    /* Imágenes de ejemplo realistas */
-    .ambient { background-image: url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=600'); }
-    .food-1 { background-image: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=600'); }
-    .process { background-image: url('https://images.unsplash.com/photo-1526367790999-0150786484a2?q=80&w=600'); }
+    /* Imágenes de ejemplo locales (Data URI) para evitar 404s y errores de red */
+    .ambient { background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22600%22%20height%3D%22400%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23333%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%23555%22%20font-family%3D%22sans-serif%22%20font-size%3D%2224%22%20dy%3D%22.3em%22%20text-anchor%3D%22middle%22%3EAmbiente%3C%2Ftext%3E%3C%2Fsvg%3E'); }
+    .food-1 { background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22600%22%20height%3D%22400%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23333%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%23555%22%20font-family%3D%22sans-serif%22%20font-size%3D%2224%22%20dy%3D%22.3em%22%20text-anchor%3D%22middle%22%3EPlato%20D%C3%ADa%3C%2Ftext%3E%3C%2Fsvg%3E'); }
+    .process { background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22600%22%20height%3D%22400%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23333%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%23555%22%20font-family%3D%22sans-serif%22%20font-size%3D%2224%22%20dy%3D%22.3em%22%20text-anchor%3D%22middle%22%3EProceso%3C%2Ftext%3E%3C%2Fsvg%3E'); }
 
     .info-card {
     background: rgba(255, 255, 255, 0.1); /* Fondo semi-transparente */
@@ -448,8 +448,9 @@ $promosList = !empty($promos) ? $promos : [
                     $imgUrl = !empty($item['image']) ? $item['image'] : '';                 
                     // 1. Verificamos si el archivo existe físicamente (relativo a public/index.php)
                     $physicPath = 'uploads/' . $item['image'];                
-                    // 2. Si existe, usamos 'uploads/' como ruta web. Si no, usamos placeholder.
-                    $displayImg = (!empty($item['image']) && file_exists($physicPath)) ? 'uploads/' . rawurlencode($item['image']) . '?v=' . time() : 'https://via.placeholder.com/300?text=Sin+Imagen';
+                    // 2. Si existe, usamos 'uploads/'. Si no, usamos SVG local.
+                    $localPlaceholder = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22%20height%3D%22300%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23eee%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%23aaa%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20dy%3D%22.3em%22%20text-anchor%3D%22middle%22%3ESin%20Imagen%3C%2Ftext%3E%3C%2Fsvg%3E";
+                    $displayImg = (!empty($item['image']) && file_exists($physicPath)) ? 'uploads/' . rawurlencode($item['image']) . '?v=' . time() : $localPlaceholder;
                     // Validar si tiene medio plato
                     $hasHalf = !empty($item['price_half']) && $item['price_half'] > 0;
                 ?>

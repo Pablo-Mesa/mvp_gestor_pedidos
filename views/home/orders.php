@@ -1,17 +1,27 @@
-
 <style>
-
-    *{
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-    }            
-
     .orders-history-container {
-        max-width: 800px;
+        max-width: 960px;
         margin: 0 auto;
-        padding-bottom: 2rem;
-        background-color: #f5f5f5;
+        padding: 0 1rem;
+        /* Altura dinámica: 100vh menos el header y márgenes de seguridad */
+        height: calc(100vh - var(--compact-header-height) - 20px); 
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
+        scrollbar-width: thin;
+    }
+
+    /* Estilos para el encabezado y los filtros de mes que deben ser sticky */
+    /* Este contenedor agrupa el título y los filtros de mes */
+    .history-controls-fixed {
+        position: sticky;
+        top: 0; /* Se pegará a la parte superior del contenedor scrollable */
+        background-color: #fbfbfb; /* Fondo para que el contenido no se vea a través */
+        z-index: 10; /* Asegura que esté por encima de las tarjetas */
+        margin: 0 -1rem; /* Compensar el padding lateral del contenedor principal */
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding: 1rem 1rem 1rem 1rem; /* Padding interno para el sticky wrapper */
     }
 
     .history-header {
@@ -20,98 +30,92 @@
         justify-content: space-between; 
         align-items: center; 
         width: 100%;
-        background-color: #f8f9fa;
-        padding: 0rem 2rem;
+        padding: 0.5rem 0;
     }
 
     .list-months {
         display: flex;
         gap: 8px;
         overflow-x: auto;
-        padding: 10px 0;
-        scrollbar-width: none;
+        padding: 12px 0;
+        scrollbar-width: none; /* Firefox */
     }
     .list-months::-webkit-scrollbar { display: none; }
 
     .month-pill {
-        padding: 6px 14px;
-        background: #fff;
-        border: 1px solid #ddd;
-        border-radius: 20px;
+        padding: 8px 16px;
+        background: rgba(0,0,0,0.03);
+        border: 1px solid rgba(0,0,0,0.05);
+        border-radius: 10px;
         text-decoration: none;
-        color: #666;
-        font-size: 0.85rem;
+        color: #555;
+        font-weight: 500;
+        font-size: 0.8rem;
         white-space: nowrap;
         transition: 0.3s;
     }
-    .month-pill.active {
-        background: #007bff;
+    .month-pill.active, .month-pill:hover {
+        background: #000;
         color: #fff;
-        border-color: #007bff;
+        border-color: #000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
 
-    .section-title { margin-bottom: 0.5rem; color: #333; display: flex; align-items: center; gap: 10px; }
+    .section-title { font-size: 1.4rem; font-weight: 800; color: #2d3436; letter-spacing: -0.5px; margin: 0; }
     
-    .empty-state { text-align: center; padding: 4rem 2rem; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .empty-state { text-align: center; padding: 4rem 2rem; background: white; border-radius: 16px; border: 1px solid #eee; }
     .empty-state i { font-size: 3rem; color: #ccc; margin-bottom: 1rem; display: block; }
 
     .orders-list {
         display: flex;
         flex-direction: column;
-        justify-content: flex-start;
-        align-items: center;
         gap: 1rem; 
+        padding-bottom: 2rem;
         width: 100% ;
-        max-height: 360px;
-        overflow-y: auto;
-        background-color: #f9f9f9;
-        padding: 0rem 1rem;
+        /* No necesita overflow-y: auto aquí, ya lo tiene el contenedor padre */
     }
-    
-    /*.contenedor-tabla {
-        max-height: 400px;
-        overflow-y: auto;
-        border-radius: 8px; 
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        background: white;
-    }*/
-
     .order-card { 
         width: 100%;
         background: white;
-        border-radius: 12px; 
+        border-radius: 16px; 
         border: 1px solid #eee; 
         padding: 1.2rem; 
-        box-shadow: 0 2px 5px rgba(0,0,0,0.03); 
-        transition: transform 0.2s; 
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02); 
+        transition: all 0.3s ease; 
     }
-
-    .order-card:hover { transform: scale(1.01); border-color: #ddd; }
+    .order-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.05); border-color: #ddd; }
     
-    .order-header { display: flex; justify-content: space-between; border-bottom: 1px dashed #eee; padding-bottom: 0.8rem; margin-bottom: 0.8rem; }
-    .order-id { font-weight: bold; color: #007bff; }
-    .order-date { color: #888; font-size: 0.85rem; }
+    .order-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f8f9fa; padding-bottom: 1rem; margin-bottom: 1rem; }
+    .order-id { font-weight: 800; color: #2d3436; font-size: 1.05rem; }
+    .order-date { color: #a4b0be; font-size: 0.8rem; font-weight: 500; }
 
     .order-body { display: flex; justify-content: space-between; align-items: center; }
-    .order-info p { margin-bottom: 4px; font-size: 0.9rem; color: #555; }
+    .order-info p { margin-bottom: 5px; font-size: 0.9rem; color: #57606f; }
+    .order-info strong { color: #2d3436; }
 
     .btn-detail {
-        background: #f0f2f5;
-        border: 1px solid #ddd;
-        padding: 8px 15px;
-        border-radius: 6px;
+        background: #fff;
+        border: 1px solid #eee;
+        padding: 10px 20px;
+        border-radius: 10px;
         cursor: pointer;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
+        font-weight: 700;
         transition: 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #2d3436;
     }
-    .btn-detail:hover { background: #e4e6e9; border-color: #ccc; }
+    .btn-detail:hover { background: #f8f9fa; border-color: #2d3436; }
 
     .order-status-badge {
         padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: bold;
+        border-radius: 8px;
+        font-size: 0.7rem;
+        font-weight: 800;
         text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     /* Colores de estado */
@@ -123,35 +127,29 @@
     .status-cancelled { background-color: #f8d7da; color: #721c24; }
 
     @media (max-width: 768px) {
+        .orders-history-container {
+            height: calc(100vh - var(--compact-header-height) - 10px);
+            padding: 0 12px; /* Reducimos el padding lateral para ganar espacio */
+        }
+        .history-controls-fixed {
+            margin: 0 -12px 1rem -12px; /* Sincronizado con el nuevo padding del contenedor */
+            padding: 1rem 12px 0.5rem 12px;
+        }
         .history-header {
             flex-direction: column;
             align-items: flex-start;
-            gap: 10px;
-            margin-bottom: 2px;
-            width: 90%;
-            margin: 0 auto;
-            padding: 0px;
+            gap: 5px;
+            padding: 0;
         }
-        .list-months {
-            width: 100%;
-            padding: 5px 0;
-        }
-        .orders-list {
-            height: 100vh;
-            max-height: none;
-        }
-    }
-
-    @media (max-width: 600px) {
-        .order-body { flex-direction: column; align-items: flex-start; gap: 1rem; }
-        .order-status-badge { align-self: flex-end; }
     }
 </style>
 
 <div class="orders-history-container">
-    
-    <div class="history-header">
-        <h2 class="section-title"> <i class="fas fa-history"></i> Mi Historial de Pedidos</h2>
+
+    <div class="history-controls-fixed">
+        <div class="history-header">
+            <h2 class="section-title"> <i class="fas fa-history"></i> Mi Historial de Pedidos</h2>
+        </div>
         <div class="list-months">
             <?php 
             $monthsES = [1 => 'Ene', 2 => 'Feb', 3 => 'Mar', 4 => 'Abr', 5 => 'May', 6 => 'Jun', 7 => 'Jul', 8 => 'Ago', 9 => 'Sep', 10 => 'Oct', 11 => 'Nov', 12 => 'Dic'];
@@ -170,7 +168,7 @@
             ?>
         </div>
     </div>
-    
+
     <?php if(empty($orders)): ?>
         <div class="empty-state">
             <i class="fas fa-utensils"></i>

@@ -40,11 +40,11 @@
     }
 
     .filter-form { display: flex; align-items: center; }
-    .filter-group { display: flex; gap: 8px; align-items: center; }
+    .filter-group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     
     .filter-group input, .filter-group select {
         padding: 8px 12px;
-        border: 1px solid #ddd;
+        border: 1px solid #ced4da;
         border-radius: 6px;
         font-size: 0.9rem;
         outline: none;
@@ -57,6 +57,41 @@
     .btn-clear { color: #dc3545; background: #fff1f2; padding: 8px 12px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; justify-content: center; }
 
     .page-title { margin: 0; font-size: 1.5rem; color: #333; }
+    
+    /* Optimizaciones Responsive para el Header de Acciones */
+    @media (max-width: 992px) {
+        .header-actions {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem;
+        }
+        .filter-form {
+            width: 100%;
+        }
+        .filter-group {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Dos columnas en tablets */
+            gap: 10px;
+        }
+        .filter-group input[name="client_name"] {
+            grid-column: span 2; /* El buscador ocupa todo el ancho */
+        }
+        .btn-filter-submit, .btn-clear {
+            justify-content: center;
+            height: 40px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .filter-group {
+            grid-template-columns: 1fr; /* Una sola columna en móviles pequeños */
+        }
+        .filter-group input[name="client_name"] {
+            grid-column: span 1;
+        }
+    }
     
     /**/
     

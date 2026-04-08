@@ -1,25 +1,40 @@
 <div class="header-actions">
-    <h1 class="page-title">Gestión de Productos</h1>
-
-    <div class="filter-scroll-wrapper">
-        <?php 
-        if (isset($categories)) {
-            $current_cat = $_GET['category'] ?? 'all';
-            echo '<div class="filter-group">';
-            
-            echo '<a href="?route=products&category=all" class="filter-pill ' . ($current_cat === 'all' ? 'active' : '') . '">Todos</a>';
-            
-            foreach ($categories as $cat) {
-                $isActive = ($current_cat == $cat['id']) ? 'active' : '';
-                echo '<a href="?route=products&category=' . $cat['id'] . '" class="filter-pill ' . $isActive . '">' . htmlspecialchars($cat['name']) . '</a>';
-            }
-            
-            echo '</div>';
-        }
-        ?>
+    <div class="header-main">
+        <h1 class="page-title">Gestión de Productos</h1>
+        <a href="?route=products_create" class="btn-add-product">
+            <i class="fas fa-plus"></i> <span class="d-none d-sm-inline">Nuevo Producto</span>
+        </a>
     </div>
 
-    <a href="?route=products_create" class="btn-add-product"><i class="fas fa-plus"></i> Nuevo Producto</a>
+    <div class="filter-container-admin">
+        <form action="index.php" method="GET" class="search-box-admin">
+            <input type="hidden" name="route" value="products">
+            <?php if(isset($_GET['category'])): ?>
+                <input type="hidden" name="category" value="<?php echo htmlspecialchars($_GET['category']); ?>">
+            <?php endif; ?>
+            <i class="fas fa-search"></i>
+            <input type="text" name="search" placeholder="Buscar producto..." value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>">
+            <?php if(!empty($_GET['search'])): ?>
+                <a href="?route=products<?php echo isset($_GET['category']) ? '&category='.$_GET['category'] : ''; ?>" class="clear-search">
+                    <i class="fas fa-times-circle"></i>
+                </a>
+            <?php endif; ?>
+        </form>
+
+        <div class="category-scroll-admin">
+            <?php 
+            $current_cat = $_GET['category'] ?? 'all';
+            $search_val = !empty($_GET['search']) ? '&search='.urlencode($_GET['search']) : '';
+            ?>
+            <a href="?route=products&category=all<?php echo $search_val; ?>" class="pill-admin <?php echo $current_cat === 'all' ? 'active' : ''; ?>">Todos</a>
+            <?php foreach ($categories as $cat): ?>
+                <a href="?route=products&category=<?php echo $cat['id']; ?><?php echo $search_val; ?>" 
+                   class="pill-admin <?php echo $current_cat == $cat['id'] ? 'active' : ''; ?>">
+                   <?php echo htmlspecialchars($cat['name']); ?>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
 </div>
 
 <style>
@@ -37,60 +52,111 @@
     /* Header y Filtros */
     .header-actions {
         display: flex;
-        flex-wrap: wrap;
+        flex-direction: column;
+        gap: 1.25rem;
+        margin-bottom: 1.25rem;
+        background-color: #fff;
+        padding: 1.25rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    }
+
+    .header-main {
+        display: flex;
         justify-content: space-between;
         align-items: center;
+        width: 100%;
+    }
+
+    .page-title { margin: 0; font-size: 1.6rem; font-weight: 700; color: #2d3436; letter-spacing: -0.5px; }
+
+    .filter-container-admin {
+        display: flex;
+        align-items: center;
         gap: 1rem;
-        margin-bottom: 1.5rem;
-        background-color: #fff;
-        padding: 1rem;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+        flex-wrap: wrap;
     }
 
-    .page-title { margin: 0; font-size: 1.5rem; color: #333; white-space: nowrap; }
-
-    /* Contenedor central de filtros */
-    .filter-scroll-wrapper {
+    /* Buscador Moderno */
+    .search-box-admin {
         flex: 1;
+        min-width: 280px;
         display: flex;
-        justify-content: center;
-        min-width: 0; /* Crucial para permitir scroll en flex items */
-        padding: 0 1rem;
+        align-items: center;
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        padding: 0 12px;
+        border-radius: 10px;
+        transition: all 0.3s ease;
     }
 
-    .filter-group {
-        display: flex;
-        gap: 0.5rem;
-        overflow-x: auto;
-        padding-bottom: 4px; /* Espacio para scrollbar sutil */
-        scrollbar-width: thin;
-        white-space: nowrap;
-        max-width: 100%;
+    .search-box-admin:focus-within {
+        background: #fff;
+        border-color: #007bff;
+        box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
     }
 
-    /* Estilo de los botones filtro (Píldoras) */
-    .filter-pill {
-        padding: 0.4rem 1rem;
-        border-radius: 50px;
-        text-decoration: none;
-        color: #555;
-        font-size: 0.85rem;
-        background-color: #f1f3f5;
-        border: 1px solid transparent;
-        transition: all 0.2s ease;
-    }
-
-    .filter-pill:hover { background-color: #e9ecef; color: #333; }
+    .search-box-admin i { color: #adb5bd; font-size: 0.9rem; }
     
-    .filter-pill.active {
-        background-color: #007bff;
-        color: white;
-        box-shadow: 0 2px 5px rgba(0,123,255,0.3);
+    .search-box-admin input {
+        flex: 1;
+        border: none;
+        background: none;
+        padding: 10px;
+        font-size: 0.9rem;
+        color: #495057;
+        outline: none;
     }
 
-    .btn-add-product { background: #28a745; color: white; padding: 0.6rem 1.2rem; text-decoration: none; border-radius: 6px; font-weight: 500; white-space: nowrap; transition: 0.2s; }
-    .btn-add-product:hover { background: #218838; box-shadow: 0 2px 5px rgba(40,167,69,0.3); }
+    .clear-search { color: #adb5bd; transition: color 0.2s; }
+    .clear-search:hover { color: #dc3545; }
+
+    /* Scroll de Categorías Estilo Admin */
+    .category-scroll-admin {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding: 2px 0;
+    }
+    .category-scroll-admin::-webkit-scrollbar { display: none; }
+
+    .pill-admin {
+        padding: 8px 16px;
+        border-radius: 8px;
+        text-decoration: none;
+        color: #636e72;
+        font-size: 0.85rem;
+        font-weight: 500;
+        background: #f1f3f5;
+        white-space: nowrap;
+        border: 1px solid transparent;
+        transition: all 0.2s;
+    }
+
+    .pill-admin:hover { background: #e9ecef; color: #2d3436; }
+    .pill-admin.active { background: #2d3436; color: #fff; border-color: #2d3436; }
+
+    .btn-add-product { 
+        background: #28a745; 
+        color: white; 
+        padding: 0.75rem 1.25rem; 
+        text-decoration: none; 
+        border-radius: 10px; 
+        font-weight: 600; 
+        font-size: 0.9rem;
+        white-space: nowrap; 
+        transition: 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-add-product:hover { 
+        background: #218838; 
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(40,167,69,0.2); 
+    }
 
     /* Tabla con Scroll */
     .contenedor-tabla {
@@ -114,10 +180,24 @@
         border-bottom: 1px solid #ddd;
     }
 
+    /* Efecto de enfoque en filas (Consistencia con Pedidos) */
+    table tbody:hover tr {
+        filter: blur(1px);
+        opacity: 0.6;
+        transition: all 0.3s;
+    }
+    table tbody tr:hover {
+        filter: blur(0);
+        opacity: 1;
+        background-color: #f8f9fa;
+    }
+
     @media (max-width: 768px) {
-        .header-actions { flex-direction: column; align-items: stretch; }
-        .filter-scroll-wrapper { justify-content: flex-start; padding: 0; }
-        .page-title { text-align: center; }
+        .header-actions { padding: 1rem; gap: 1rem; }
+        .page-title { font-size: 1.4rem; }
+        .search-box-admin { min-width: 100%; order: 2; }
+        .category-scroll-admin { order: 3; width: 100%; }
+        .header-main { order: 1; }
     }
 </style>
 
@@ -161,7 +241,11 @@
                 </td>
                 <td>
                     <a href="?route=products_edit&id=<?php echo $prod['id']; ?>" class="btn-sm btn-edit">Editar</a>
-                    <a href="?route=products_delete&id=<?php echo $prod['id']; ?>" class="btn-sm btn-delete" onclick="return confirm('¿Estás seguro?')">Eliminar</a>
+                    <a href="javascript:void(0)" 
+                       class="btn-sm btn-delete" 
+                       onclick="confirmAction('?route=products_delete&id=<?php echo $prod['id']; ?>', {title: '¿Eliminar producto?', message: 'Se eliminará <?php echo addslashes(htmlspecialchars($prod['name'])); ?> del catálogo permanentemente.'})">
+                       Eliminar
+                    </a>
                 </td>
             </tr>
             <?php endforeach; ?>

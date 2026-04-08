@@ -1,26 +1,14 @@
 <?php
-require_once '../models/Category.php'; // Añadir esta línea para incluir el modelo Category
 require_once '../models/Product.php';
+require_once '../models/Category.php';
 
 class ProductController {
 
     public function __construct() {
-        // 1. Si es un cliente logueado, lo mandamos a la web pública
-        if (isset($_SESSION['client_id'])) {
-            header('Location: ?route=home');
-            exit;
-        }
-
-        // 2. Si no hay sesión de staff, al login
-        if (!isset($_SESSION['user_role'])) {
-            header('Location: ?route=login');
-            exit;
-        }
-
-        // 3. Bloqueo estricto: Solo el rol 'admin' puede gestionar productos.
-        if ($_SESSION['user_role'] !== 'admin') {
-            if ($_SESSION['user_role'] === 'delivery') {
-                header('Location: ?route=delivery');
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            if (isset($_GET['route']) && $_GET['route'] === 'products_api') {
+                header('Content-Type: application/json');
+                echo json_encode(['error' => 'No autorizado']);
             } else {
                 header('Location: ?route=login');
             }
@@ -29,32 +17,47 @@ class ProductController {
     }
 
     public function index() {
-        // Obtener categorías para el filtro
+        $productModel = new Product();
         $categoryModel = new Category();
-        $stmtCat = $categoryModel->readAll();
-        $categories = $stmtCat->fetchAll(PDO::FETCH_ASSOC);
 
-        $product = new Product();
-        $stmt = $product->readAll();
-        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        // Filtrar productos si se seleccionó una categoría
-        if (isset($_GET['category']) && $_GET['category'] !== 'all') {
-            $filterId = $_GET['category'];
-            $products = array_filter($products, function($p) use ($filterId) {
-                return isset($p['category_id']) && $p['category_id'] == $filterId;
-            });
-        }
+        $filters = [
+            'search'   => $_GET['search'] ?? '',
+            'category' => $_GET['category'] ?? 'all'
+        ];
+
+        $products = $productModel->readAll($filters)->fetchAll(PDO::FETCH_ASSOC);
+        $categories = $categoryModel->readAll()->fetchAll(PDO::FETCH_ASSOC);
 
         $content_view = '../views/admin/products/index.php';
         require_once '../views/layouts/admin_layout.php';
     }
 
+    /**
+     * Endpoint para búsqueda y filtrado dinámico vía AJAX
+     */
+    public function apiIndex() {
+        $productModel = new Product();
+        
+        // Recogemos los filtros del GET
+        $filters = [
+            'search'   => $_GET['search'] ?? '',
+            'category' => $_GET['category'] ?? 'all'
+        ];
+
+        // El modelo ya tiene la lógica para buscar por ID (código) o Nombre
+        $stmt = $productModel->readAll($filters);
+        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Devolvemos el JSON
+        header('Content-Type: application/json');
+        echo json_encode($products);
+        exit;
+    }
+
     public function create() {
-        // Obtener todas las categorías para el formulario
         $categoryModel = new Category();
-        $stmt = $categoryModel->readAll();
-        $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $categories = $categoryModel->readAll()->fetchAll(PDO::FETCH_ASSOC);
+        
         $content_view = '../views/admin/products/form.php';
         require_once '../views/layouts/admin_layout.php';
     }
@@ -66,55 +69,36 @@ class ProductController {
             $product->category_id = $_POST['category_id'];
             $product->description = $_POST['description'];
             $product->price = $_POST['price'];
-            // 1. CAPTURAR EL PRECIO MEDIO PLATO
-            // Si viene vacío (porque no se activó el toggle), se asigna null
-            $product->price_half = !empty($_POST['price_half']) ? $_POST['price_half'] : null;
-
-            // VALIDACIÓN: El medio plato no puede ser más caro que el entero
-            if (!is_null($product->price_half) && (float)$product->price_half >= (float)$product->price) {
-                echo "<script>alert('Error: El precio de medio plato no puede ser mayor o igual al plato entero.'); window.history.back();</script>";
-                return;
-            }
-
+            $product->price_half = $_POST['price_half'] ?? null;
             $product->is_active = isset($_POST['is_active']) ? 1 : 0;
-            
-            // Manejo de Imagen
-            $product->image = ''; // Por defecto
+
             if (isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
-                $target_dir = "../public/uploads/";
-                if (!is_dir($target_dir)) mkdir($target_dir, 0777, true);
-                
-                $filename = time() . '_' . basename($_FILES["image"]["name"]);
-                $target_file = $target_dir . $filename;
-                
-                if (move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
-                    $product->image = $filename;
-                }
+                $filename = time() . '_' . $_FILES['image']['name'];
+                move_uploaded_file($_FILES['image']['tmp_name'], 'uploads/' . $filename);
+                $product->image = $filename;
             }
 
             if ($product->create()) {
                 header('Location: ?route=products&success=created');
             } else {
-                echo "Error al crear producto";
+                echo "Error al crear el producto.";
             }
         }
     }
 
     public function edit() {
         $id = $_GET['id'] ?? null;
-        if ($id) {
-            $productModel = new Product();
-            $productModel->id = $id;
-            $product = $productModel->readOne();
-            
-            // Cargar categorías para el select en modo edición
-            $categoryModel = new Category();
-            $stmt = $categoryModel->readAll();
-            $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!$id) { header('Location: ?route=products'); exit; }
 
-            $content_view = '../views/admin/products/form.php';
-            require_once '../views/layouts/admin_layout.php';
-        }
+        $productModel = new Product();
+        $productModel->id = $id;
+        $product = $productModel->readOne();
+
+        $categoryModel = new Category();
+        $categories = $categoryModel->readAll()->fetchAll(PDO::FETCH_ASSOC);
+
+        $content_view = '../views/admin/products/form.php';
+        require_once '../views/layouts/admin_layout.php';
     }
 
     public function update() {
@@ -125,34 +109,20 @@ class ProductController {
             $product->category_id = $_POST['category_id'];
             $product->description = $_POST['description'];
             $product->price = $_POST['price'];
-            // 2. CAPTURAR EL PRECIO MEDIO PLATO TAMBIÉN AQUÍ
-            $product->price_half = !empty($_POST['price_half']) ? $_POST['price_half'] : null;
-
-            // VALIDACIÓN: El medio plato no puede ser más caro que el entero
-            if (!is_null($product->price_half) && (float)$product->price_half >= (float)$product->price) {
-                echo "<script>alert('Error: El precio de medio plato no puede ser mayor o igual al plato entero.'); window.history.back();</script>";
-                return;
-            }
-
+            $product->price_half = $_POST['price_half'] ?? null;
             $product->is_active = isset($_POST['is_active']) ? 1 : 0;
-            $product->image = $_POST['current_image']; // Mantener imagen anterior si no se sube nueva
+            $product->image = $_POST['current_image'];
 
             if (isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
-                $target_dir = "../public/uploads/";
-                if (!is_dir($target_dir)) mkdir($target_dir, 0777, true);
-                
-                $filename = time() . '_' . basename($_FILES["image"]["name"]);
-                $target_file = $target_dir . $filename;
-                
-                if (move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
-                    $product->image = $filename;
-                }
+                $filename = time() . '_' . $_FILES['image']['name'];
+                move_uploaded_file($_FILES['image']['tmp_name'], 'uploads/' . $filename);
+                $product->image = $filename;
             }
 
             if ($product->update()) {
                 header('Location: ?route=products&success=updated');
             } else {
-                echo "Error al actualizar";
+                echo "Error al actualizar el producto.";
             }
         }
     }
@@ -164,6 +134,8 @@ class ProductController {
             $product->id = $id;
             if ($product->delete()) {
                 header('Location: ?route=products&success=deleted');
+            } else {
+                echo "Error al eliminar.";
             }
         }
     }

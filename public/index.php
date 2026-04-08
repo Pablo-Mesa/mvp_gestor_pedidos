@@ -156,6 +156,12 @@ switch ($route) {
         $controller->index();
         break;
 
+    case 'products_api':
+        require_once '../controllers/ProductController.php';
+        $controller = new ProductController();
+        $controller->apiIndex();
+        break;
+
     case 'products_create':
         require_once '../controllers/ProductController.php';
         $controller = new ProductController();

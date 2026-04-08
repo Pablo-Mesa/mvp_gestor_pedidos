@@ -7,13 +7,18 @@
     </div>
 
     <div class="filter-container-admin">
-        <form action="index.php" method="GET" class="search-box-admin">
+        <form id="adminProductSearchForm" action="index.php" method="GET" class="search-box-admin">
             <input type="hidden" name="route" value="products">
             <?php if(isset($_GET['category'])): ?>
                 <input type="hidden" name="category" value="<?php echo htmlspecialchars($_GET['category']); ?>">
             <?php endif; ?>
             <i class="fas fa-search"></i>
-            <input type="text" name="search" placeholder="Buscar producto..." value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>">
+            <input type="text" 
+                   id="adminProductSearch" 
+                   name="search" 
+                   placeholder="Buscar por nombre o ID..." 
+                   value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>" 
+                   autocomplete="off">
             <?php if(!empty($_GET['search'])): ?>
                 <a href="?route=products<?php echo isset($_GET['category']) ? '&category='.$_GET['category'] : ''; ?>" class="clear-search">
                     <i class="fas fa-times-circle"></i>
@@ -213,7 +218,7 @@
                 <th>Acciones</th>
             </tr>
         </thead>    
-        <tbody>
+        <tbody id="productTableBody">
             <?php foreach($products as $prod): ?>
             <tr>
                 <td>
@@ -264,6 +269,115 @@ document.addEventListener('DOMContentLoaded', function() {
         Toast.fire('¡Producto actualizado con éxito!', 'success');
     } else if (success === 'deleted') {
         Toast.fire('El producto ha sido eliminado.', 'info');
+    }
+});
+</script>
+
+<script>
+/**
+ * Lógica de Búsqueda Live (AJAX) para Productos
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('adminProductSearch');
+    const searchForm = document.getElementById('adminProductSearchForm');
+    const tableBody = document.getElementById('productTableBody');
+    const categoryPills = document.querySelectorAll('.pill-admin');
+    let debounceTimer;
+
+    // 1. Evitar que el formulario recargue la página al dar Enter
+    if (searchForm) {
+        searchForm.addEventListener('submit', (e) => e.preventDefault());
+    }
+
+    // 2. Escuchar escritura en el buscador
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            // Esperamos 300ms antes de disparar la búsqueda para optimizar recursos
+            debounceTimer = setTimeout(() => {
+                executeSearch();
+            }, 300);
+        });
+    }
+
+    // 3. Escuchar clics en categorías (AJAX)
+    categoryPills.forEach(pill => {
+        pill.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Actualizar UI de los botones
+            categoryPills.forEach(p => p.classList.remove('active'));
+            this.classList.add('active');
+
+            // Actualizar URL sin recargar (opcional, para poder copiar el link)
+            window.history.pushState({}, '', this.href);
+            
+            executeSearch();
+        });
+    });
+
+    function executeSearch() {
+        const query = searchInput.value.trim();
+        // Obtenemos la categoría de la píldora activa
+        const activePill = document.querySelector('.pill-admin.active');
+        const url = new URL(activePill.href, window.location.origin);
+        const category = url.searchParams.get('category') || 'all';
+
+        fetchProducts(query, category);
+    }
+
+    async function fetchProducts(search, category) {
+        try {
+            const response = await fetch(`?route=products_api&search=${encodeURIComponent(search)}&category=${category}`);
+            const products = await response.json();
+            renderTable(products);
+        } catch (error) {
+            console.error('Error en la búsqueda:', error);
+        }
+    }
+
+    function renderTable(products) {
+        if (products.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem; color: #636e72;">No se encontraron resultados.</td></tr>';
+            return;
+        }
+
+        let html = '';
+        products.forEach(prod => {
+            const imgPath = prod.image ? `uploads/${prod.image}` : 'https://via.placeholder.com/50?text=Sin+Img';
+            const statusBadge = prod.is_active 
+                ? '<span class="badge badge-success">Activo</span>' 
+                : '<span class="badge badge-danger">Inactivo</span>';
+            const price = new Intl.NumberFormat('es-PY').format(prod.price);
+
+            html += `
+            <tr>
+                <td><img src="${imgPath}" width="50" height="50" style="object-fit: cover; border-radius: 4px;"></td>
+                <td>${escapeHtml(prod.name)}</td>
+                <td><span class="badge" style="background: #e9ecef; color: #495057;">${escapeHtml(prod.category_name || 'Sin categoría')}</span></td>
+                <td>Gs. ${price}</td>
+                <td>${statusBadge}</td>
+                <td>
+                    <a href="?route=products_edit&id=${prod.id}" class="btn-sm btn-edit">Editar</a>
+                    <a href="javascript:void(0)" 
+                       class="btn-sm btn-delete" 
+                       onclick="confirmAction('?route=products_delete&id=${prod.id}', {
+                           title: '¿Eliminar producto?', 
+                           message: 'Se eliminará ${escapeHtml(prod.name)} permanentemente.'
+                       })">
+                       Eliminar
+                    </a>
+                </td>
+            </tr>`;
+        });
+        tableBody.innerHTML = html;
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 });
 </script>

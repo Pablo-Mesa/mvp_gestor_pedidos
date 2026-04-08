@@ -19,9 +19,33 @@ class Product {
         $this->conn = $database->getConnection();
     }
 
-    public function readAll() {
-        $query = 'SELECT p.*, c.name as category_name FROM ' . $this->table . ' p LEFT JOIN categories c ON p.category_id = c.id ORDER BY p.created_at DESC';
+    public function readAll($filters = []) {
+        $query = 'SELECT p.*, c.name as category_name 
+                  FROM ' . $this->table . ' p 
+                  LEFT JOIN categories c ON p.category_id = c.id 
+                  WHERE 1=1';
+
+        if (!empty($filters['category']) && $filters['category'] !== 'all') {
+            $query .= ' AND p.category_id = :category_id';
+        }
+
+        if (!empty($filters['search'])) {
+            // Buscamos coincidencia en nombre o ID (actúa como código)
+            $query .= ' AND (p.name LIKE :search OR p.id = :id)';
+        }
+
+        $query .= ' ORDER BY p.created_at DESC';
+        
         $stmt = $this->conn->prepare($query);
+
+        if (!empty($filters['category']) && $filters['category'] !== 'all') {
+            $stmt->bindValue(':category_id', $filters['category']);
+        }
+        if (!empty($filters['search'])) {
+            $stmt->bindValue(':search', '%' . $filters['search'] . '%');
+            $stmt->bindValue(':id', $filters['search']);
+        }
+
         $stmt->execute();
         return $stmt;
     }

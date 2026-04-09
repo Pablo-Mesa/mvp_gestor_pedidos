@@ -48,6 +48,9 @@ $promosList = !empty($promos) ? $promos : [
     ['type' => 'offer', 'title' => 'Bienvenido', 'content' => 'Explora nuestro menú del día.', 'css_class' => 'ambient', 'image' => '']
 ];
 ?>
+<?php // Definimos el placeholder globalmente para evitar errores de variable indefinida
+$localPlaceholder = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22%20height%3D%22300%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23eee%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%23aaa%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20dy%3D%22.3em%22%20text-anchor%3D%22middle%22%3ESin%20Imagen%3C%2Ftext%3E%3C%2Fsvg%3E"; ?>
+
 
 <style>
     body {
@@ -433,23 +436,67 @@ $promosList = !empty($promos) ? $promos : [
             </div>
         </div>
     </div>
-
     <!-- Grid de Productos -->
     <div class="product-grid">
         <?php if(empty($menu_items)): ?>
-            <div style="grid-column: 1/-1; text-align: center; padding: 3rem; background: white; border-radius: 8px;">
-                <h3>No hay productos disponibles aquí 😔</h3>
-                <p>Vuelve más tarde para ver las opciones.</p>
+            <div class="empty-state-container" style="grid-column: 1/-1; text-align: center; padding: 4rem 2rem; background: linear-gradient(145deg, #ffffff, #f0f2f5); border-radius: 24px; border: 1px dashed #d1d8e0; margin-top: 1rem;">
+                <!-- Espacio para Animación Lottie o Icono Gigante -->
+                <div class="empty-state-icon" style="font-size: 4rem; margin-bottom: 1.5rem; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1));">
+                    🍳
+                </div>
+                
+                <h3 style="font-weight: 800; color: #2d3436; margin-bottom: 0.5rem; font-size: 1.5rem;">
+                    ¡Estamos preparando algo delicioso!
+                </h3>
+                <p style="color: #636e72; max-width: 400px; margin: 0 auto 2rem auto; line-height: 1.6;">
+                    Esta categoría se está renovando con los mejores ingredientes. ¿Por qué no exploras lo más pedido de hoy?
+                </p>
+
+                <!-- Botón de Acción sugerido: Regresar o Sugerir -->
+                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                    <a href="?route=home" class="btn-primary" style="background: #2d3436; color: white; border: none; text-decoration: none;">
+                        Ver Menú del Día <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>
+                    </a>
+                    <button class="btn-primary" onclick="Toast.fire('¡Gracias! Tomamos nota de tu antojo 📝', 'success')" style="background: white; color: #2d3436; border: 1px solid #eee;">
+                        Sugerir un Plato <i class="fas fa-lightbulb" style="margin-left: 8px; color: #ffa502;"></i>
+                    </button>
+                </div>
+
+                <?php if(!empty($recommended_items)): ?>
+                    <div class="recommended-section">
+                        <h4 class="recommended-title">
+                            <i class="fas fa-fire" style="color: #ff4757;"></i> Te podría gustar...
+                        </h4>
+                        <div class="slider-container-rel">
+                            <div class="slider-wrapper">
+                                <button class="slider-arrow prev" onclick="scrollSlider(this, -200)"><i class="fas fa-chevron-left"></i></button>
+                                <div class="horizontal-slider">
+                                    <?php foreach($recommended_items as $rec): 
+                                        $recImg = (!empty($rec['image']) && file_exists('uploads/'.$rec['image'])) ? 'uploads/'.rawurlencode($rec['image']) : $localPlaceholder;
+                                    ?>
+                                        <div class="mini-card">
+                                            <img src="<?php echo $recImg; ?>" alt="img">
+                                            <div class="mini-card-body">
+                                                <div class="mini-card-title"><?php echo htmlspecialchars($rec['name']); ?></div>
+                                                <div class="mini-card-price">Gs. <?php echo number_format($rec['price'], 0, ',', '.'); ?></div>
+                                                <button class="btn btn-primary" style="padding: 8px; font-size: 0.75rem; width: 100%;" 
+                                                    onclick="handleAddToCart(this, '<?php echo $rec['id']; ?>', '<?php echo addslashes($rec['name']); ?>', <?php echo $rec['price']; ?>, '<?php echo htmlspecialchars($rec['image']); ?>', 1)">
+                                                    Agregar <i class="fas fa-plus"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                                <button class="slider-arrow next" onclick="scrollSlider(this, 200)"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
             </div>
         <?php else: ?>
             <?php $delay = 0; foreach($menu_items as $item): ?>
                 <?php 
-                        // Preparar datos para JS
-                    $imgUrl = !empty($item['image']) ? $item['image'] : '';                 
-                    // 1. Verificamos si el archivo existe físicamente (relativo a public/index.php)
                     $physicPath = 'uploads/' . $item['image'];                
-                    // 2. Si existe, usamos 'uploads/'. Si no, usamos SVG local.
-                    $localPlaceholder = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22%20height%3D%22300%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23eee%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%23aaa%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20dy%3D%22.3em%22%20text-anchor%3D%22middle%22%3ESin%20Imagen%3C%2Ftext%3E%3C%2Fsvg%3E";
                     $displayImg = (!empty($item['image']) && file_exists($physicPath)) ? 'uploads/' . rawurlencode($item['image']) . '?v=' . time() : $localPlaceholder;
                     // Validar si tiene medio plato
                     $hasHalf = !empty($item['price_half']) && $item['price_half'] > 0;
@@ -557,6 +604,14 @@ function handleAddToCart(btn, id, name, price, image, qty) {
         btn.innerHTML = originalHTML;
         btn.disabled = false;
     }, 1200);
+}
+
+/**
+ * Función para desplazar el slider de recomendados
+ */
+function scrollSlider(btn, distance) {
+    const slider = btn.parentElement.querySelector('.horizontal-slider');
+    slider.scrollBy({ left: distance, behavior: 'smooth' });
 }
 
 // --- Lógica de Reacciones ---

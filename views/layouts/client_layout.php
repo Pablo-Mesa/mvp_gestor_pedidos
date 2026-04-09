@@ -49,6 +49,7 @@ $siteName = !empty($siteSettings['site_name']) ? $siteSettings['site_name'] : 'S
 $siteLogo = !empty($siteSettings['site_logo']) ? 'uploads/' . $siteSettings['site_logo'] : 'assets/icono_solver_nobg.png';
 ?>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
@@ -64,6 +65,7 @@ $siteLogo = !empty($siteSettings['site_logo']) ? 'uploads/' . $siteSettings['sit
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body class="<?php echo !$showCategories ? 'is-compact' : ''; ?>">
 
     <!-- Header fijo que agrupa Navbar y Categorías -->
@@ -179,6 +181,9 @@ $siteLogo = !empty($siteSettings['site_logo']) ? 'uploads/' . $siteSettings['sit
                 <i class="fas fa-shopping-bag"></i>
                 <span>Finalizar Pedido</span>
             </a>
+            <button type="button" onclick="toggleCart()" class="btn-back-link">
+                <i class="fas fa-arrow-left"></i> Seguir Comprando
+            </button>
         </div>
     </div>
     

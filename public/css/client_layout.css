@@ -584,7 +584,8 @@ body.is-compact {
     width: 100%;
     max-width: 450px;
     border-radius: 16px;
-    overflow: hidden;
+    overflow-y: auto !important; /* Forzamos el scroll vertical */
+    max-height: calc(100vh - 40px); /* Establece una altura máxima para el modal, dejando 20px de padding arriba y abajo del overlay */
     position: relative;
     box-shadow: 0 20px 40px rgba(0,0,0,0.1);
 }
@@ -865,4 +866,115 @@ input:checked + .slider {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(40, 167, 69, 0.35);
     filter: brightness(1.1);
+}
+
+/* Botón de retorno / Seguir comprando en el carrito */
+.btn-back-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 1.2rem;
+    color: #636e72;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    background: none;
+    cursor: pointer;
+    width: 100%;
+}
+.btn-back-link:hover { color: #2d3436; }
+.btn-back-link i { transition: transform 0.3s ease; }
+.btn-back-link:hover i { transform: translateX(-5px); }
+
+/* Estilos para el Slider de Recomendados (Empty State) */
+.recommended-section {
+    margin-top: 3rem;
+    width: 100%;
+    text-align: left;
+}
+.recommended-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2d3436;
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.horizontal-slider {
+    display: flex;
+    overflow-x: auto;
+    gap: 15px;
+    padding: 10px 5px 20px 5px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+.horizontal-slider::-webkit-scrollbar { display: none; }
+
+.mini-card {
+    flex: 0 0 180px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    overflow: hidden;
+    border: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease; /* Añadido para interactividad */
+}
+.mini-card:hover { /* Efecto hover para las mini-cards */
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+}
+.mini-card img { width: 100%; height: 110px; object-fit: cover; background: #f8f9fa; }
+.mini-card-body { padding: 12px; flex: 1; display: flex; flex-direction: column; }
+.mini-card-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 4px; color: #2d3436; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-card-price { font-size: 0.85rem; color: #28a745; font-weight: 700; margin-bottom: 12px; }
+
+/* Navegación del Slider mejorada */
+.slider-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 0 10px;
+}
+
+.slider-arrow {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    background: white;
+    border-radius: 50%;
+    border: 1px solid #eee;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s;
+    color: #2d3436;
+}
+
+.slider-arrow:hover { background: #f8f9fa; transform: scale(1.1); }
+.slider-arrow.prev { left: -10px; }
+.slider-arrow.next { right: -10px; }
+
+/* Indicador visual de scroll lateral */
+.slider-container-rel {
+    position: relative;
+    width: 100%;
+}
+
+.slider-container-rel::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: 40px;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,0.8));
+    pointer-events: none;
 }

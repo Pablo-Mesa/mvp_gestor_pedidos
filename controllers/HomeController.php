@@ -6,6 +6,7 @@ require_once '../models/Order.php';
 require_once '../models/ProductReaction.php';
 require_once '../models/HeroPromo.php';
 require_once '../models/ClientLocation.php';
+require_once '../models/Product.php';
 
 class HomeController {
 
@@ -48,6 +49,14 @@ class HomeController {
         $clientId = $_SESSION['client_id'] ?? null;
         $dailyMenuModel = new DailyMenu();
         $daily_menus = $dailyMenuModel->readForDate($date, $clientId, true)->fetchAll(PDO::FETCH_ASSOC);
+
+        // Obtener Recomendados (Top 8 más gustados de todo el catálogo para el Empty State)
+        $productModel = new Product();
+        $allActive = $productModel->readAllActive($clientId)->fetchAll(PDO::FETCH_ASSOC);
+        usort($allActive, function($a, $b) {
+            return ($b['likes_count'] ?? 0) <=> ($a['likes_count'] ?? 0);
+        });
+        $recommended_items = array_slice($allActive, 0, 8);
 
         // Obtener Promos activas para el Hero
         $heroModel = new HeroPromo();

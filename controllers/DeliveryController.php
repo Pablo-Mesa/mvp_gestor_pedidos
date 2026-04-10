@@ -40,11 +40,12 @@ class DeliveryController {
         $stmt = $orderModel->readAll($filters);
         $allOrders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Lógica de visibilidad inteligente:
-        // 1. Mostrar SIEMPRE lo que no está terminado (independiente de la fecha)
-        // 2. Mostrar lo terminado SOLO si es de hoy (para limpiar la lista)
         $today = date('Y-m-d');
         $orders = array_filter($allOrders, function($o) use ($today) {
+            // Vista operativa:
+            // 1. Mostrar lo que no está terminado
+            // 2. Mostrar lo terminado SOLO si es de hoy para que el repartidor vea sus logros recientes
+
             $isFinished = in_array($o['status'], ['completed', 'rejected', 'cancelled']);
             $isFromToday = date('Y-m-d', strtotime($o['created_at'])) === $today;
             
@@ -60,6 +61,44 @@ class DeliveryController {
         $content_view = '../views/delivery/index.php';
         
         // Usamos el nuevo layout independiente de logística
+        require_once '../views/layouts/delivery_layout.php';
+    }
+
+    public function history() {
+        $orderModel = new Order();
+        $selectedDate = $_GET['date'] ?? date('Y-m-d');
+        
+        $filters = [
+            'delivery_type' => 'delivery',
+            'delivery_user_id' => $_SESSION['user_id'],
+            'date' => $selectedDate
+        ];
+
+        $stmt = $orderModel->readAll($filters);
+        $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Inicializar resumen de cuentas
+        $summary = [
+            'cash' => 0,      // Lo cobrado en efectivo (debe rendir)
+            'digital' => 0,   // Lo pagado por medios digitales
+            'total' => 0,
+            'count' => 0
+        ];
+
+        foreach ($orders as $o) {
+            if ($o['status'] === 'completed') {
+                $summary['count']++;
+                $summary['total'] += $o['total'];
+                if (strtolower($o['payment_method']) === 'efectivo') {
+                    $summary['cash'] += $o['total'];
+                } else {
+                    $summary['digital'] += $o['total'];
+                }
+            }
+        }
+
+        $view_title = "Historial y Rendición";
+        $content_view = '../views/delivery/history.php';
         require_once '../views/layouts/delivery_layout.php';
     }
 }

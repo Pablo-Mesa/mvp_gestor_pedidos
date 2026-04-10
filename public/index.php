@@ -286,6 +286,12 @@ switch ($route) {
         $controller->index();
         break;
 
+    case 'delivery_history':
+        require_once '../controllers/DeliveryController.php';
+        $controller = new DeliveryController();
+        $controller->history();
+        break;
+
     case 'orders':
         require_once '../controllers/OrderController.php';
         $controller = new OrderController();

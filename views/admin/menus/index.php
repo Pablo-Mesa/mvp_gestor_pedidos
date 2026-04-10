@@ -311,6 +311,7 @@
     @media (max-width: 768px) { 
         .menu-assigned-column{
             width: 100%;
+            back
         }    
     }
 

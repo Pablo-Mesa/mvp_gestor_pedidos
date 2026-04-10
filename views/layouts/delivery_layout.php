@@ -182,6 +182,7 @@
         </div>
         <nav class="menu-nav">
             <a href="?route=delivery" class="menu-item"><i class="fas fa-clipboard-list"></i> Pedidos Activos</a>
+            <a href="?route=delivery_history" class="menu-item"><i class="fas fa-history"></i> Historial y Cuentas</a>
             <a href="#" id="btnInstallDelivery" class="menu-item" style="display: none; color: var(--delivery-primary);">
                 <i class="fas fa-mobile-alt"></i> Instalar App en Celular
             </a>
@@ -191,20 +192,6 @@
             <a href="?route=logout&type=admin" class="logout-item">
                 <i class="fas fa-power-off"></i> Cerrar Sesión
             </a>
-        </div>
-    </div>
-
-    <!-- Filtro de Pedidos -->
-    <div class="filter-container">
-        <div class="delivery-select-wrapper">
-            <i class="fas fa-filter"></i>
-            <select id="statusFilter" class="delivery-select">
-                <option value="all">1. Todos los pedidos</option>
-                <option value="pending_group">2. Pendientes</option>
-                <option value="completed">3. Entregados</option>
-                <option value="cancelled">4. Cancelados</option>
-                <option value="rejected">5. Rechazados</option>
-            </select>
         </div>
     </div>
 

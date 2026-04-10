@@ -308,7 +308,7 @@ function renderOrderCardHTML($order) {
                         </button>
                     <?php elseif($order['status'] === 'shipped'): ?>
                         <div style="display: flex; flex-direction: column; gap: 10px;">
-                            <button class="btn-logistics btn-complete" onclick="updateOrderStatus(<?php echo $order['id']; ?>, 'completed')">
+                            <button class="btn-logistics btn-complete" style="cursor:pointer;" onclick="updateOrderStatus(<?php echo $order['id']; ?>, 'completed')">
                                 <i class="fas fa-check-circle"></i> CONFIRMAR ENTREGA
                             </button>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -355,8 +355,11 @@ const notificationSound = new Audio('https://assets.mixkit.co/active_storage/sfx
 async function refreshDeliveryOrders(forceUpdate = false) {
     try {
         const cacheBuster = Date.now();
-        // Eliminamos el parámetro 'date' para que el controlador decida qué pedidos mostrar
-        const url = `index.php?route=orders_api&delivery_user_id=${currentUserId}&_=${cacheBuster}`;
+        const dateParam = document.getElementById('dateFilter')?.value || '';
+        
+        // Corregida la URL que causaba el error de ejecución
+        const url = `index.php?route=orders_api&delivery_user_id=${currentUserId}&date=${dateParam}&_=${cacheBuster}`;
+        
         const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
         const newData = await response.json();
 
@@ -400,8 +403,11 @@ function updateOrdersUI(orders) {
     container.innerHTML = orders.map(order => renderOrderCardJS(order)).join('');
     
     // Reinicializar mapas para las nuevas tarjetas
-    orders.forEach(order => {
-        if (order.delivery_lat && order.delivery_lng) initMapForOrder(order);
+    // Agregamos un pequeño delay para asegurar que el DOM esté listo
+    setTimeout(() => {
+        orders.forEach(order => {
+            if (order.delivery_lat && order.delivery_lng) initMapForOrder(order);
+        });
     });
 
     // Re-aplicar filtros si el usuario tiene alguno seleccionado
@@ -499,7 +505,8 @@ function initMapForOrder(order) {
     const container = document.getElementById(mapId);
     if (!container || container._leaflet_id) return; // Evitar reinicializar si ya existe
 
-    const map = L.map(mapId, { zoomControl: false, dragging: false, touchZoom: false, scrollWheelZoom: false }).setView([order.delivery_lat, order.delivery_lng], 16);
+    // Ajuste de zoom y centrado
+    const map = L.map(mapId, { zoomControl: false, dragging: true, touchZoom: true, scrollWheelZoom: false }).setView([order.delivery_lat, order.delivery_lng], 16);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     const markerIcon = L.divIcon({
         className: 'custom-div-icon',
@@ -508,6 +515,9 @@ function initMapForOrder(order) {
         iconAnchor: [6, 6]
     });
     L.marker([order.delivery_lat, order.delivery_lng], {icon: markerIcon}).addTo(map);
+    
+    // Asegurar que el mapa calcule bien su tamaño al aparecer
+    setTimeout(() => map.invalidateSize(), 400);
 }
 
 // Iniciar polling inteligente cada 15 segundos

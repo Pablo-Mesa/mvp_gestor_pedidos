@@ -24,6 +24,7 @@
             display: flex;
             min-height: 100vh;
             background-color: #f4f6f9;
+            overflow: hidden; /* Evita el pequeño gap por desbordamiento de hijos */
         }
 
         /* Sidebar (Menú Lateral) */

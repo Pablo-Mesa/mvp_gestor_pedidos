@@ -1,12 +1,3 @@
-<div class="header-actions">
-    <div class="header-main">
-        <h1 class="page-title">Gestión de Staff</h1>
-        <a href="?route=users_create" class="btn-add-product">
-            <i class="fas fa-user-plus"></i> <span class="d-none d-sm-inline">Nuevo Usuario</span>
-        </a>
-    </div>
-</div>
-
 <style>
     /* Integración de estilos Solver (basados en client_layout.css y consistencia Admin) */
     .header-actions {
@@ -124,6 +115,15 @@
     .btn-action:hover { background: #f8f9fa; color: #2d3436; border-color: #ddd; }
     .btn-delete-staff:hover { color: #dc3545; border-color: #f8d7da; }
 </style>
+
+<div class="header-actions">
+    <div class="header-main">
+        <h1 class="page-title">Gestión de Staff</h1>
+        <a href="?route=users_create" class="btn-add-product">
+            <i class="fas fa-user-plus"></i> <span class="d-none d-sm-inline">Nuevo Usuario</span>
+        </a>
+    </div>
+</div>
 
 <div class="contenedor-tabla">
     <table>

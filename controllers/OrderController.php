@@ -71,13 +71,31 @@ class OrderController {
             $_GET['delivery_user_id'] = $_SESSION['user_id'];
         }
 
-        // Mantener el filtro por defecto de hoy para la sincronización automática
-        if (!isset($_GET['date'])) {
+        // Mantener el filtro por defecto de hoy para la sincronización automática (ADMIN)
+        // Solo aplicamos el filtro de fecha si NO es delivery, ya que el repartidor 
+        // necesita ver sus pedidos pendientes independientemente de la fecha.
+        if (!isset($_GET['date']) && $_SESSION['user_role'] !== 'delivery') {
             $_GET['date'] = date('Y-m-d');
         }
 
         $stmt = $orderModel->readAll($_GET);
         $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Si es repartidor, aplicamos la misma lógica de "visibilidad inteligente" 
+        // que en DeliveryController::index para mantener la sincronización.
+        if ($_SESSION['user_role'] === 'delivery') {
+            $today = date('Y-m-d');
+            $requestedDate = $_GET['date'] ?? null;
+
+            $orders = array_filter($orders, function($o) use ($today, $requestedDate) {
+                if ($requestedDate) return true; // Si pidió una fecha, no filtramos nada más
+
+                $isFinished = in_array($o['status'], ['completed', 'rejected', 'cancelled']);
+                $isFromToday = date('Y-m-d', strtotime($o['created_at'])) === $today;
+                return !$isFinished || $isFromToday;
+            });
+            $orders = array_values($orders); // Reindexar para asegurar un array JSON []
+        }
 
         // Formatear datos para el frontend (fechas, nombres seguros y moneda)
         foreach ($orders as &$order) {

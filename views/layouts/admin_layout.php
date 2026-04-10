@@ -208,7 +208,7 @@
             <li><a href="?route=categories">🏷️ Categorías</a></li> 
             <li><a href="?route=hero_promos">🎨 Hero Promo</a></li>
             <li><a href="?route=settings">⚙️ Ajustes Marca</a></li>
-            <!-- <li><a href="#">👥 Usuarios</a></li> -->
+            <li><a href="?route=users">👥 Staff / Usuarios</a></li>
         </ul>
     </nav>
 

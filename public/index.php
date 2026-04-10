@@ -322,6 +322,43 @@ switch ($route) {
         $controller->assignDelivery();
         break;
 
+    // --- Gestión de Usuarios (Staff) ---
+    case 'users':
+        require_once '../controllers/UserController.php';
+        $controller = new UserController();
+        $controller->index();
+        break;
+    case 'users_create':
+        require_once '../controllers/UserController.php';
+        $controller = new UserController();
+        $controller->create();
+        break;
+    case 'users_store':
+        require_once '../controllers/UserController.php';
+        $controller = new UserController();
+        $controller->store();
+        break;
+    case 'users_edit':
+        require_once '../controllers/UserController.php';
+        $controller = new UserController();
+        $controller->edit();
+        break;
+    case 'users_update':
+        require_once '../controllers/UserController.php';
+        $controller = new UserController();
+        $controller->update();
+        break;
+    case 'users_toggle_status':
+        require_once '../controllers/UserController.php';
+        $controller = new UserController();
+        $controller->toggleStatus();
+        break;
+    case 'users_delete':
+        require_once '../controllers/UserController.php';
+        $controller = new UserController();
+        $controller->delete();
+        break;
+
     default:
         echo "Ruta no encontrada.";
         break;

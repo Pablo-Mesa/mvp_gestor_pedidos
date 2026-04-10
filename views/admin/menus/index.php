@@ -307,6 +307,13 @@
         overflow-y: auto;
         height: 60vh;
     }
+
+    @media (max-width: 768px) { 
+        .menu-assigned-column{
+            width: 100%;
+        }    
+    }
+
 </style>
 
 <h1>Gestión de Menú del Día</h1>

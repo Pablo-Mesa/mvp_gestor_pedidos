@@ -1,31 +1,3 @@
-<!-- titutlo -->
-<div class="header-actions">
-    <h1 class="page-title">Gestión de Pedidos</h1>
-    <!-- Filtros -->
-    <form action="index.php" method="GET" class="filter-form">
-        <input type="hidden" name="route" value="orders">
-        
-        <div class="filter-group">
-            <input type="date" name="date" value="<?php echo $_GET['date'] ?? ''; ?>" title="Filtrar por Fecha">
-            
-            <select name="delivery_type">
-                <option value="">Todas las entregas</option>
-                <option value="delivery" <?php echo ($_GET['delivery_type'] ?? '') == 'delivery' ? 'selected' : ''; ?>>🛵 Delivery</option>
-                <option value="pickup" <?php echo ($_GET['delivery_type'] ?? '') == 'pickup' ? 'selected' : ''; ?>>🛍️ Retiro</option>
-                <option value="local" <?php echo ($_GET['delivery_type'] ?? '') == 'local' ? 'selected' : ''; ?>>🍽️ Mesa Local</option>
-            </select>
-
-            <input type="text" name="client_name" placeholder="Buscar cliente..." value="<?php echo htmlspecialchars($_GET['client_name'] ?? ''); ?>">
-            
-            <button type="submit" class="btn-filter-submit"><i class="fas fa-search"></i></button>
-            
-            <?php if(!empty($_GET['date']) || !empty($_GET['delivery_type']) || !empty($_GET['client_name'])): ?>
-                <a href="?route=orders" class="btn-clear" title="Limpiar Filtros"><i class="fas fa-times"></i></a>
-            <?php endif; ?>
-        </div>
-    </form>
-</div>
-
 <style>
     /* Reutilizamos estilos de products/index.php para consistencia */
     .header-actions {
@@ -82,6 +54,18 @@
             justify-content: center;
             height: 40px;
         }
+
+        .status-counters {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 0.4rem!important;
+            padding: 0.4rem 0.6rem!important;
+            border-radius: 12px!important;
+        }
+
     }
 
     @media (max-width: 576px) {
@@ -230,6 +214,35 @@
     .stat-cancelled { background: #fce8e8; border-color: #dc3545; color: #721c24; }
 </style>
 
+<!-- titulo -->
+<div class="header-actions">
+    <h1 class="page-title">Gestión de Pedidos</h1>
+    <!-- Filtros -->
+    <form action="index.php" method="GET" class="filter-form">
+        <input type="hidden" name="route" value="orders">
+        
+        <div class="filter-group">
+            <input type="date" name="date" value="<?php echo $_GET['date'] ?? ''; ?>" title="Filtrar por Fecha">
+            
+            <select name="delivery_type">
+                <option value="">Todas las entregas</option>
+                <option value="delivery" <?php echo ($_GET['delivery_type'] ?? '') == 'delivery' ? 'selected' : ''; ?>>🛵 Delivery</option>
+                <option value="pickup" <?php echo ($_GET['delivery_type'] ?? '') == 'pickup' ? 'selected' : ''; ?>>🛍️ Retiro</option>
+                <option value="local" <?php echo ($_GET['delivery_type'] ?? '') == 'local' ? 'selected' : ''; ?>>🍽️ Mesa Local</option>
+            </select>
+
+            <input type="text" name="client_name" placeholder="Buscar cliente..." value="<?php echo htmlspecialchars($_GET['client_name'] ?? ''); ?>">
+            
+            <button type="submit" class="btn-filter-submit"><i class="fas fa-search"></i></button>
+            
+            <?php if(!empty($_GET['date']) || !empty($_GET['delivery_type']) || !empty($_GET['client_name'])): ?>
+                <a href="?route=orders" class="btn-clear" title="Limpiar Filtros"><i class="fas fa-times"></i></a>
+            <?php endif; ?>
+        </div>
+    </form>
+</div>
+
+<!-- contenido de la tabla -->
 <div class="contenedor-tabla">
     <table>
         <thead>

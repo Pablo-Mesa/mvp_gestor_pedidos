@@ -300,6 +300,13 @@
         font-size: 0.85rem;
         color: #666;
     }
+    .menu-assigned-column {
+        flex: 1;
+        padding: 0px;
+        margin: 0px;
+        overflow-y: auto;
+        height: 60vh;
+    }
 </style>
 
 <h1>Gestión de Menú del Día</h1>
@@ -313,9 +320,12 @@
     </form>
 </div>
 
+<!-- Estructura de dos columnas: izquierda para los menús asignados, 
+     derecha para el formulario de asignación -->   
 <div class="menu-manager-grid">
+
     <!-- Columna Izquierda: Menús Asignados -->
-    <div>
+    <div class="menu-assigned-column">
         <!-- Menú Principal -->
         <div class="card" style="margin-bottom: 20px;">
             <h2 style="display: flex; align-items: center; gap: 8px;"><i class="fas fa-star" style="color: #f1c40f;"></i> Menú Principal</h2>
@@ -423,6 +433,7 @@
             </button>
         </form>
     </div>
+
 </div>
 
 <!-- Modal de Búsqueda de Productos -->

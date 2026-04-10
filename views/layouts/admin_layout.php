@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,8 +13,18 @@
     <link rel="stylesheet" href="css/toast.css"> <!-- Estilos de Alertas -->
     <style> 
         /* Reset y Estilos Base */
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; min-height: 100vh; background-color: #f4f6f9; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            min-height: 100vh;
+            background-color: #f4f6f9;
+        }
 
         /* Sidebar (Menú Lateral) */
         .sidebar {
@@ -47,6 +58,7 @@
             display: flex; 
             flex-direction: column; 
             min-width: 0; /* Evita que el contenido desborde el flex container */
+            background-color: transparent;
         }
 
         /* Topbar (Barra Superior) */
@@ -177,6 +189,7 @@
         }
     </style>
 </head>
+
 <body>
 
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>

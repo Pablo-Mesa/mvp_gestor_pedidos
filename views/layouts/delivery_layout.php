@@ -105,6 +105,13 @@
         .menu-item:hover { background: #f8f9fa; }
         .menu-item i { width: 20px; color: var(--delivery-subtext); }
         
+        /* Estilos de Submenú */
+        .submenu { list-style: none; padding-left: 0; background: rgba(0,0,0,0.03); display: none; }
+        .submenu.open { display: block; }
+        .submenu .menu-item { padding-left: 50px; font-size: 0.9rem; border-bottom: none; }
+        .menu-item i.arrow { margin-left: auto; transition: transform 0.3s ease; font-size: 0.8rem; }
+        .menu-item.active i.arrow { transform: rotate(180deg); }
+
         .menu-footer {
             padding: 20px;
             border-top: 1px solid #eee;
@@ -184,6 +191,19 @@
         </div>
         <nav class="menu-nav">
             <a href="?route=delivery" class="menu-item"><i class="fas fa-clipboard-list"></i> Pedidos Activos</a>
+            
+            <!-- Grupo de Asistencias -->
+            <div class="menu-group">
+                <a href="javascript:void(0)" class="menu-item" onclick="toggleSubmenu('submenu-asistencias', this)">
+                    <i class="fas fa-user-clock"></i> Asistencias
+                    <i class="fas fa-chevron-down arrow"></i>
+                </a>
+                <div id="submenu-asistencias" class="submenu">
+                    <a href="#" class="menu-item"><i class="fas fa-map-marker-alt"></i> Marcar llegada</a>
+                    <a href="#" class="menu-item"><i class="fas fa-list-ul"></i> Historial de asistencias</a>
+                </div>
+            </div>
+
             <a href="?route=delivery_history" class="menu-item"><i class="fas fa-history"></i> Historial y Cuentas</a>
             <a href="#" id="btnInstallDelivery" class="menu-item" style="display: none; color: var(--delivery-primary);">
                 <i class="fas fa-mobile-alt"></i> Instalar App en Celular
@@ -238,6 +258,12 @@
         function toggleMenu() {
             document.getElementById('sideMenu').classList.toggle('open');
             document.getElementById('menuOverlay').classList.toggle('open');
+        }
+
+        // Lógica de Submenús
+        function toggleSubmenu(id, el) {
+            el.classList.toggle('active');
+            document.getElementById(id).classList.toggle('open');
         }
 
         // Lógica de filtrado en tiempo real

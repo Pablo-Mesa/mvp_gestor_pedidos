@@ -56,7 +56,7 @@ Este documento establece el norte estratégico del ecosistema **Solver**, dividi
 *Última actualización: 31/03/2026*
 
 
-*Última actualización: 310/04/2026*
+*Última actualización: 10/04/2026*
 Nota sobre Clientes: Si deseas aplicar esta misma política a los Clientes (Comensales), deberás ejecutar un script similar para agregar la columna is_active a la tabla clients y actualizar el método login en models/Client.php. Por ahora, siguiendo tu solicitud previa, nos hemos enfocado en el control del Staff.
 
 ¿Deseas que repliquemos esta lógica de "bloqueo" para el registro de clientes o pasamos directamente al diseño de las tablas para el Arqueo de Caja?

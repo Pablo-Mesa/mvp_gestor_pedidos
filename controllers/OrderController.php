@@ -185,6 +185,22 @@ class OrderController {
         echo json_encode(['success' => $success]);
     }
 
+    /**
+     * Endpoint para el badge de la sidebar (Polling)
+     */
+    public function pendingCountApi() {
+        header('Content-Type: application/json');
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            echo json_encode(['count' => 0]);
+            exit;
+        }
+
+        $orderModel = new Order();
+        $stats = $orderModel->getDashboardStats();
+        echo json_encode(['count' => (int)$stats['pending_orders']]);
+        exit;
+    }
+
     // --- Métodos de CLIENTE ---
 
     public function checkout() {

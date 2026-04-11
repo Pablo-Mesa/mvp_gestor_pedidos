@@ -51,7 +51,18 @@
         }
 
         .sidebar-menu { list-style: none; padding: 0; margin-top: 1rem; }
-        .sidebar-menu li a { display: block; padding: 1rem 1.5rem; color: #c2c7d0; text-decoration: none; border-bottom: 1px solid #4b545c; transition: 0.3s; }
+        .sidebar-menu li a, .sidebar-menu li .menu-header-link { 
+            display: block; 
+            padding: 0.8rem 1.5rem; 
+            color: #c2c7d0; 
+            text-decoration: none; 
+            border-bottom: 1px solid rgba(255,255,255,0.05); 
+            transition: 0.3s; 
+            cursor: pointer;
+        }
+        .submenu { list-style: none; padding-left: 0; background: rgba(0,0,0,0.2); }
+        .submenu li a { padding: 0.6rem 1.5rem 0.6rem 2.5rem; font-size: 0.9rem; border-bottom: none; }
+        
         .sidebar-menu li a:hover { background-color: #495057; color: #fff; padding-left: 2rem; }
 
         /* Contenido Principal */
@@ -189,6 +200,13 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        .sidebar-menu li a.active-link {
+            background-color: #495057;
+            color: #fff;
+            border-left: 4px solid #007bff;
+            padding-left: 1.25rem;
+        }
+        
     </style>
 </head>
 
@@ -201,16 +219,72 @@
         <div class="sidebar-header">
             <div id="here_cube" class="h1-cf-dark"></div>
         </div>
+        <?php
+        // Definición de la estructura del menú (Escalable)
+        $current_route = $_GET['route'] ?? 'admin';
+        $user_role = $_SESSION['user_role'] ?? 'staff';
+
+        $menu_structure = [
+            ['route' => 'admin',       'label' => 'Dashboard',        'icon' => 'fas fa-chart-pie'],
+            ['route' => 'pos',         'label' => 'Punto de Venta',    'icon' => 'fas fa-desktop'],
+            ['route' => 'orders',      'label' => 'Pedidos',           'icon' => 'fas fa-box', 'badge_id' => 'badge-orders-count'],
+            [
+                'label' => 'Gestión Menú',
+                'icon' => 'fas fa-utensils',
+                'id' => 'menuCat',
+                'children' => [
+                    ['route' => 'menus',       'label' => 'Planificar Día',  'icon' => 'fas fa-calendar-alt'],
+                    ['route' => 'products',    'label' => 'Productos',       'icon' => 'fas fa-hamburger'],
+                    ['route' => 'categories',  'label' => 'Categorías',      'icon' => 'fas fa-tags'],
+                ]
+            ],
+            ['route' => 'hero_promos', 'label' => 'Hero Promo',        'icon' => 'fas fa-palette'],
+            ['route' => 'settings',    'label' => 'Ajustes Marca',     'icon' => 'fas fa-cog'],
+            ['route' => 'users',       'label' => 'Staff / Usuarios',  'icon' => 'fas fa-users', 'roles' => ['admin']],
+        ];
+        ?>
         <ul class="sidebar-menu">
-            <li><a href="?route=admin">📊 Dashboard</a></li>
-            <li><a href="?route=pos">🖥️ Punto de Venta</a></li>
-            <li><a href="?route=orders">📦 Pedidos</a></li>
-            <li><a href="?route=menus">📅 Menú del Día</a></li>
-            <li><a href="?route=products">🍔 Menú / Productos</a></li>
-            <li><a href="?route=categories">🏷️ Categorías</a></li> 
-            <li><a href="?route=hero_promos">🎨 Hero Promo</a></li>
-            <li><a href="?route=settings">⚙️ Ajustes Marca</a></li>
-            <li><a href="?route=users">👥 Staff / Usuarios</a></li>
+            <?php foreach ($menu_structure as $item): 
+                // 1. Verificar Permisos de Rol
+                if (isset($item['roles']) && !in_array($user_role, $item['roles'])) continue;
+
+                // 2. Verificar si tiene submenú (children)
+                if (isset($item['children'])): 
+                    $is_child_active = false;
+                    foreach($item['children'] as $child) {
+                        if ($current_route === $child['route']) $is_child_active = true;
+                    }
+                ?>
+                    <li>
+                        <a class="menu-header-link <?php echo $is_child_active ? 'active-link' : ''; ?>" 
+                           data-bs-toggle="collapse" href="#sub_<?php echo $item['id']; ?>">
+                            <i class="<?php echo $item['icon']; ?> me-2"></i> <?php echo $item['label']; ?>
+                            <i class="fas fa-chevron-down float-end mt-1" style="font-size: 0.7rem;"></i>
+                        </a>
+                        <ul class="collapse submenu <?php echo $is_child_active ? 'show' : ''; ?>" id="sub_<?php echo $item['id']; ?>">
+                            <?php foreach ($item['children'] as $child): ?>
+                                <li>
+                                    <a href="?route=<?php echo $child['route']; ?>" 
+                                       class="<?php echo $current_route === $child['route'] ? 'active-link' : ''; ?>">
+                                        <i class="<?php echo $child['icon']; ?> me-2"></i> <?php echo $child['label']; ?>
+                                    </a>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </li>
+                <?php else: 
+                    $active_class = ($current_route === ($item['route'] ?? '')) ? 'active-link' : '';
+                ?>
+                    <li>
+                        <a href="?route=<?php echo $item['route']; ?>" class="<?php echo $active_class; ?>">
+                            <i class="<?php echo $item['icon']; ?> me-2"></i> <?php echo $item['label']; ?>
+                            <?php if(isset($item['badge_id'])): ?>
+                                <span id="<?php echo $item['badge_id']; ?>" class="badge rounded-pill bg-danger float-end mt-1" style="display:none; font-size: 0.7rem;">0</span>
+                            <?php endif; ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+            <?php endforeach; ?>
         </ul>
     </nav>
 
@@ -298,6 +372,65 @@
             const modal = document.getElementById('globalConfirmModal');
             if (e.target === modal) closeConfirmModal();
         });
+
+        // Estado global para rastrear cambios en el conteo
+        let lastOrderCount = null;
+
+        /**
+         * Genera un sonido de notificación sintético (Ping)
+         */
+        function playNotificationSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime); // Nota La (A5)
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.5);
+            } catch (e) {
+                console.warn("El navegador bloqueó el audio. Se requiere interacción previa del usuario.");
+            }
+        }
+
+        /**
+         * Actualiza dinámicamente el contador de pedidos pendientes
+         */
+        async function updateOrderBadge() {
+            try {
+                const response = await fetch('?route=orders_pending_count');
+                const data = await response.json();
+                
+                const badge = document.getElementById('badge-orders-count');
+                if (badge) {
+                    // Si el conteo aumentó respecto a la última consulta, sonar alerta
+                    if (lastOrderCount !== null && data.count > lastOrderCount) {
+                        playNotificationSound();
+                    }
+                    lastOrderCount = data.count;
+
+                    if (data.count > 0) {
+                        badge.innerText = data.count;
+                        badge.style.display = 'block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error("Error al actualizar el contador de pedidos:", error);
+            }
+        }
+
+        // Iniciar el contador y actualizar cada 30 segundos
+        updateOrderBadge();
+        setInterval(updateOrderBadge, 30000);
     </script>
 </body>
 </html>

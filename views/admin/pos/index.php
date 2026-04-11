@@ -43,7 +43,7 @@
     }
     .pos-category-pills::-webkit-scrollbar { display: none; }
     
-    .pos-category-pills button {
+    .btn-pos-filter {
         padding: 8px 18px;
         border-radius: 20px;
         border: 1px solid #e2e8f0;
@@ -55,7 +55,8 @@
         color: #64748b;
         transition: all 0.2s;
     }
-    .pos-category-pills button.active {
+
+    .btn-pos-filter.active {
         background: #2d3436;
         color: white;
         border-color: #2d3436;
@@ -198,27 +199,34 @@
     }
 </style>
 
+<!-- Vista para el Punto de Venta (POS) -->
 <div class="pos-container">
+
     <!-- Panel de Selección -->
     <div class="pos-products">
+        
+        <!-- Barra de búsqueda y filtros -->
         <div class="pos-search-bar">
             <input type="text" id="posSearch" placeholder="Buscar plato por nombre..." onkeyup="filterPOS()">
             <button class="btn btn-std" onclick="clearPOS()"><i class="fas fa-sync"></i></button>
         </div>
-
+        
+        <!-- Filtros por categoría -->
         <div class="pos-category-pills">
-            <button class="active" onclick="filterByCat('all', this)">Todos</button>
+            <button class="btn-pos-filter active" onclick="filterByCat('all', this)">Todos</button>
             <?php foreach($categories as $cat): ?>
-                <button onclick="filterByCat('<?php echo $cat['id']; ?>', this)">
+                <button class="btn-pos-filter" onclick="filterByCat('<?php echo $cat['id']; ?>', this)">
                     <?php echo htmlspecialchars($cat['name']); ?>
                 </button>
             <?php endforeach; ?>
         </div>
 
+        <!-- Grid de productos -->        
         <div class="pos-grid" id="posGrid">
             <?php foreach($products as $p): 
                 $hasHalf = !empty($p['price_half']) && $p['price_half'] > 0;
             ?>
+                <!-- Si el producto tiene opción de medio plato, se muestra un diseño diferente con botones para cada porción -->
                 <div class="pos-item-card"
                      style="<?php echo $hasHalf ? 'cursor: default;' : ''; ?>"
                      data-name="<?php echo strtolower(htmlspecialchars($p['name'])); ?>"
@@ -247,6 +255,7 @@
                 </div>
             <?php endforeach; ?>
         </div>
+        
     </div>
 
     <!-- Panel de Ticket -->
@@ -277,7 +286,7 @@
                 <span>TOTAL:</span>
                 <span id="posTotal">Gs. 0</span>
             </div>
-            <button class="btn-confirm-sale" onclick="submitPOS()">
+            <button id="btnSubmitPOS" class="btn-confirm-sale" onclick="submitPOS()">
                 CONFIRMAR VENTA <i class="fas fa-check-circle"></i>
             </button>
         </div>
@@ -342,7 +351,7 @@
     }
 
     function filterByCat(catId, btn) {
-        document.querySelectorAll('.pos-category-pills button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.btn-pos-filter').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         document.querySelectorAll('.pos-item-card').forEach(card => {
             card.style.display = (catId === 'all' || card.dataset.cat === catId) ? 'block' : 'none';

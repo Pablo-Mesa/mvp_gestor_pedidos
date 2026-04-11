@@ -61,7 +61,7 @@
             justify-content: center;
             align-items: center;
             gap: 10px;
-            margin-top: 0.4rem!important;
+            margin-top: 1rem!important;
             padding: 0.4rem 0.6rem!important;
             border-radius: 12px!important;
         }
@@ -81,7 +81,7 @@
     
     /* Tabla con Scroll */
     .contenedor-tabla {
-        max-height: 400px;
+        max-height: 380px;
         overflow-y: auto;
         border-radius: 8px; 
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);

@@ -328,6 +328,12 @@ switch ($route) {
         $controller->assignDelivery();
         break;
 
+    case 'orders_pending_count':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->pendingCountApi();
+        break;
+
     // --- Gestión de Usuarios (Staff) ---
     case 'users':
         require_once '../controllers/UserController.php';

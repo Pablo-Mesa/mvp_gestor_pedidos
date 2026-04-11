@@ -8,13 +8,17 @@
         background: var(--delivery-card);
         border-radius: 15px;
         padding: 1.5rem;
-        margin-bottom: 1rem;
-        border: 1px solid #333;
+        margin-bottom: 1.2rem;
+        border: 1px solid rgba(0,0,0,0.05);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
+    .order-card:active { transform: scale(0.98); }
+    
     .order-card.shipped {
-        border: 2px solid var(--delivery-primary);
-        background-color: #e3f2fd;
+        border-left: 5px solid var(--delivery-primary);
     }
+
     /* Estilo para Pedidos Entregados */
     .order-card.completed {
         border: 1px solid #c8e6c9;
@@ -66,12 +70,13 @@
     .status-badge-header {
         font-size: 0.65rem;
         font-weight: 800;
-        padding: 3px 8px;
-        border-radius: 12px;
+        padding: 4px 10px;
+        border-radius: 20px;
         text-transform: uppercase;
         display: flex;
         align-items: center;
         gap: 4px;
+        box-shadow: inset 0 -1px 0 rgba(0,0,0,0.1);
     }
     .status-badge-header.completed { background: #c8e6c9; color: #2e7d32; }
     .status-badge-header.shipped { background: #e3f2fd; color: #1976d2; }
@@ -102,34 +107,23 @@
 
     /* Información de Cobro */
     .payment-summary {
-        background: #f8f9fa;
-        border: 1px dashed #dcdde1;
+        background: #fcfcfc;
+        border: 1px solid #f0f0f0;
         border-radius: 10px;
         padding: 12px;
         margin: 10px 0;
     }
-    .payment-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 5px;
-    }
-    .payment-label { font-size: 0.8rem; color: var(--delivery-subtext); text-transform: uppercase; }
-    .payment-value { font-weight: bold; color: var(--delivery-text); }
-    .amount-to-collect {
-        font-size: 1.4rem;
-        color: var(--delivery-primary);
-        font-weight: 900;
-    }
+    
+    .amount-to-collect { font-size: 1.4rem; color: #2d3436; font-weight: 900; letter-spacing: -1px; }
+    
     .badge-payment {
-        padding: 4px 8px;
-        border-radius: 4px;
+        padding: 5px 10px;
+        border-radius: 8px;
         font-size: 0.7rem;
-        font-weight: bold;
-        text-transform: uppercase;
+        font-weight: 800;
     }
-    .bg-collect { background: #ff7675; color: #fff; }
-    .bg-paid { background: #55efc4; color: #000; }
+    .bg-collect { background: #fff5f5; color: #e03131; border: 1px solid #ffa8a8; }
+    .bg-paid { background: #ebfbee; color: #099268; border: 1px solid #b2f2bb; }
 
     .address-box {
         padding: 10px 0;
@@ -192,20 +186,29 @@
     }
     .btn-logistics {
         width: 100%;
-        padding: 18px;
-        border-radius: 12px;
+        padding: 20px;
+        border-radius: 16px;
         font-weight: 900;
-        font-size: 1rem;
+        font-size: 1.1rem;
         border: none;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 12px;
         text-transform: uppercase;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transition: all 0.2s;
     }
+    .btn-logistics:active { transform: translateY(2px); box-shadow: none; }
     .btn-start { background: var(--delivery-primary); color: #000; }
-    .btn-complete { background: #2979ff; color: white; }
+    .btn-complete { background: #007bff; color: white; }
     .empty-state { text-align: center; padding: 5rem 2rem; color: var(--delivery-subtext); }
+
+    #delivery-orders-container {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
 </style>
 
 <div id="delivery-orders-container">
@@ -343,6 +346,7 @@ function renderOrderCardHTML($order) {
 /**
  * Estado global del repartidor para evitar recargas innecesarias
  */
+let lastInteractedOrderId = null;
 let currentOrdersData = <?php echo json_encode($orders); ?>;
 const currentUserId = <?php echo $_SESSION['user_id']; ?>;
 
@@ -402,13 +406,25 @@ function updateOrdersUI(orders) {
 
     container.innerHTML = orders.map(order => renderOrderCardJS(order)).join('');
     
-    // Reinicializar mapas para las nuevas tarjetas
-    // Agregamos un pequeño delay para asegurar que el DOM esté listo
+    // Lazy Loading: Reinicializar mapas solo para tarjetas que se muestran expandidas inicialmente
     setTimeout(() => {
         orders.forEach(order => {
-            if (order.delivery_lat && order.delivery_lng) initMapForOrder(order);
+            const card = document.getElementById(`card-${order.id}`);
+            // Solo cargamos si la tarjeta NO está colapsada y tiene coordenadas
+            if (card && !card.classList.contains('collapsed') && order.delivery_lat) {
+                initMapForOrder(order);
+            }
         });
-    });
+
+        // Centrar la vista en el pedido que acaba de ser actualizado
+        if (lastInteractedOrderId) {
+            const target = document.getElementById(`card-${lastInteractedOrderId}`);
+            if (target && target.style.display !== 'none') {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            lastInteractedOrderId = null; // Limpiar para que no salte en el próximo polling automático
+        }
+    }, 100);
 
     // Re-aplicar filtros si el usuario tiene alguno seleccionado
     const activeFilter = document.getElementById('statusFilter').value;
@@ -523,10 +539,13 @@ function initMapForOrder(order) {
 // Iniciar polling inteligente cada 15 segundos
 setInterval(refreshDeliveryOrders, 15000);
 
-// Carga inicial de mapas
+// Carga inicial de mapas (solo para los que arrancan expandidos)
 document.addEventListener('DOMContentLoaded', () => {
     currentOrdersData.forEach(order => {
-        if (order.delivery_lat && order.delivery_lng) initMapForOrder(order);
+        const card = document.getElementById(`card-${order.id}`);
+        if (card && !card.classList.contains('collapsed') && order.delivery_lat) {
+            initMapForOrder(order);
+        }
     });
 });
 
@@ -535,6 +554,15 @@ document.addEventListener('DOMContentLoaded', () => {
  */
 function toggleCardSection(cardElement) {
     cardElement.classList.toggle('collapsed');
+
+    // Lazy Loading: Inicializar mapa al expandir si existe la data y no ha sido inicializado aún
+    if (!cardElement.classList.contains('collapsed')) {
+        const orderId = cardElement.id.replace('card-', '');
+        const order = currentOrdersData.find(o => String(o.id) === String(orderId));
+        if (order && order.delivery_lat && order.delivery_lng) {
+            initMapForOrder(order);
+        }
+    }
 }
 
 /**
@@ -603,9 +631,18 @@ function updateOrderStatus(orderId, newStatus) {
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
+                    // Haptic Feedback: Vibración doble corta al completar con éxito
+                    if (newStatus === 'completed' && "vibrate" in navigator) {
+                        navigator.vibrate([100, 50, 100]);
+                    }
+
+                // Guardamos el ID para re-centrar la vista tras el renderizado
+                lastInteractedOrderId = orderId;
+                
+                // Solo refrescamos y centramos después de que el usuario cierre el SweetAlert
+                Swal.fire("¡Actualizado!", "El estado del pedido ha sido actualizado.", "success").then(() => {
                     refreshDeliveryOrders(true);
-                    // Revertimos al uso original de Toast.fire para mantener el estilo consistente
-                    Swal.fire("¡Actualizado!", "El estado del pedido ha sido actualizado.", "success");
+                });
                 }
             });
         }

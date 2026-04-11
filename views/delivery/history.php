@@ -4,6 +4,7 @@
         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
         gap: 10px;
         margin-bottom: 20px;
+        flex-shrink: 0;
     }
     .kpi-card {
         background: white;
@@ -21,8 +22,10 @@
     .history-table-container {
         background: white;
         border-radius: 15px;
-        overflow: hidden;
         border: 1px solid #eee;
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
     }
     .history-row {
         display: flex;
@@ -49,15 +52,24 @@
         align-items: center;
         gap: 10px;
         border: 1px solid #eee;
+        flex-shrink: 0;
     }
     .date-input { border: none; font-weight: 700; color: var(--delivery-text); outline: none; flex: 1; }
+
+    /* Fijar el resumen final al fondo */
+    .history-footer-summary {
+        margin-top: 20px;
+        flex-shrink: 0;
+    }
 </style>
 
+<!-- campo selector de fecha -->
 <div class="date-selector-container">
     <i class="fas fa-calendar-alt" style="color: var(--delivery-primary);"></i>
     <input type="date" class="date-input" value="<?php echo $selectedDate; ?>" onchange="location.href='?route=delivery_history&date='+this.value">
 </div>
 
+<!-- resumen de entregas -->
 <div class="history-kpi-grid">
     <div class="kpi-card">
         <label>Entregados</label>
@@ -73,6 +85,7 @@
     </div>
 </div>
 
+<!-- tabla de entregas -->
 <div class="history-table-container">
     <?php if(empty($orders)): ?>
         <div style="padding: 40px; text-align: center; color: #888;">
@@ -105,7 +118,8 @@
     <?php endif; ?>
 </div>
 
-<div style="margin-top: 20px; padding: 15px; background: #2d3436; border-radius: 12px; color: white; display: flex; justify-content: space-between; align-items: center;">
+<!-- resumen final -->
+<div class="history-footer-summary" style="padding: 15px; background: #2d3436; border-radius: 12px; color: white; display: flex; justify-content: space-between; align-items: center;">
     <span style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase;">Total Facturado</span>
     <span style="font-size: 1.2rem; font-weight: 900;">Gs. <?php echo number_format($summary['total'], 0, ',', '.'); ?></span>
 </div>

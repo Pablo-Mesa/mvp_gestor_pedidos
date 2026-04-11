@@ -1,3 +1,4 @@
+<?php $baseUrl = str_replace('index.php', '', $_SERVER['SCRIPT_NAME']); ?>
 <!DOCTYPE html>
 <html lang="es">
 
@@ -5,12 +6,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solver - Panel de Control</title>
-    <link rel="icon" type="image/png" href="assets/icono_solver_nobg.png">
-    <link rel="stylesheet" href="css/css_cubo.css">
+    <link rel="icon" type="image/png" href="<?php echo $baseUrl; ?>assets/icono_solver_nobg.png">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/css_cubo.css">
     <!-- Bootstrap 5 para la interfaz administrativa -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/toast.css"> <!-- Estilos de Alertas -->
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/toast.css"> <!-- Estilos de Alertas -->
     <style> 
         /* Reset y Estilos Base */
         * {
@@ -257,10 +258,10 @@
         </div>
     </div>
 
-    <script src="js/tool-kit-v002.js"></script>
+    <script src="<?php echo $baseUrl; ?>js/tool-kit-v002.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="js/toast.js"></script> <!-- JS de Alertas -->
+    <script src="<?php echo $baseUrl; ?>js/toast.js"></script> <!-- JS de Alertas -->
     <script>
         if(document.getElementById('here_cube')) {
             // En el admin, si no hay logo, dibujamos el cubo un poco más pequeño para el sidebar

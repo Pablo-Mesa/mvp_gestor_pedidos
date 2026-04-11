@@ -1,5 +1,8 @@
 <!DOCTYPE html>
 <?php
+// Calcular la ruta base para que los recursos carguen siempre bien en PC y Móvil
+$baseUrl = str_replace('index.php', '', $_SERVER['SCRIPT_NAME']);
+
 // Lógica para obtener categorías disponibles para la navegación
 if (!class_exists('Setting')) {
     $path = 'models/Setting.php';
@@ -46,7 +49,7 @@ $showCategories = ($currentRoute === 'home');
 $settingModel = new Setting();
 $siteSettings = $settingModel->getAll();
 $siteName = !empty($siteSettings['site_name']) ? $siteSettings['site_name'] : 'Solver';
-$siteLogo = !empty($siteSettings['site_logo']) ? 'uploads/' . $siteSettings['site_logo'] : 'assets/icono_solver_nobg.png';
+$siteLogo = !empty($siteSettings['site_logo']) ? $baseUrl . 'uploads/' . $siteSettings['site_logo'] : $baseUrl . 'assets/icono_solver_nobg.png';
 ?>
 <html lang="es">
 
@@ -56,12 +59,12 @@ $siteLogo = !empty($siteSettings['site_logo']) ? 'uploads/' . $siteSettings['sit
     <title>Solver - Home</title>
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#2d3436">
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="assets/icono_solver_nobg.png">
-    <link rel="icon" type="image/png" href="assets/icono_solver_nobg.png">    
-    <link rel="stylesheet" href="css/css_cubo.css">
-    <link rel="stylesheet" href="css/client_layout.css">   
-    <link rel="stylesheet" href="css/toast.css"> <!-- Estilos de Alertas -->
+    <link rel="manifest" href="<?php echo $baseUrl; ?>manifest.json">
+    <link rel="apple-touch-icon" href="<?php echo $baseUrl; ?>assets/icono_solver_nobg.png">
+    <link rel="icon" type="image/png" href="<?php echo $baseUrl; ?>assets/icono_solver_nobg.png">    
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/css_cubo.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/client_layout.css">   
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/toast.css"> <!-- Estilos de Alertas -->
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -275,9 +278,9 @@ $siteLogo = !empty($siteSettings['site_logo']) ? 'uploads/' . $siteSettings['sit
     </div>
 
     <!-- Lógica del Carrito (JS Puro) -->
-    <script src="js/tool-kit-v002.js"></script>
+    <script src="<?php echo $baseUrl; ?>js/tool-kit-v002.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="js/toast.js"></script> <!-- JS de Alertas -->
+    <script src="<?php echo $baseUrl; ?>js/toast.js"></script> <!-- JS de Alertas -->
 
     <script>
         // Variable para capturar el evento de instalación
@@ -286,7 +289,7 @@ $siteLogo = !empty($siteSettings['site_logo']) ? 'uploads/' . $siteSettings['sit
         // Registrar el Service Worker para habilitar PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
+                navigator.serviceWorker.register('<?php echo $baseUrl; ?>sw.js')
                     .then(reg => console.log('Solver PWA: Service Worker registrado con éxito'))
                     .catch(err => console.log('Error registro SW', err));
             });
@@ -406,7 +409,7 @@ $siteLogo = !empty($siteSettings['site_logo']) ? 'uploads/' . $siteSettings['sit
                 total += item.price * item.quantity;
                 // Reemplazo de placeholder externo por SVG local para evitar errores de red/PWA
                 const placeholder = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2250%22%20height%3D%2250%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2050%2050%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23eeeeee%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%23aaaaaa%22%20font-family%3D%22sans-serif%22%20font-size%3D%2210%22%20dy%3D%22.3em%22%20text-anchor%3D%22middle%22%3E🍴%3C%2Ftext%3E%3C%2Fsvg%3E";
-                const imgPath = item.image ? 'uploads/' + encodeURIComponent(item.image) : placeholder;
+                const imgPath = item.image ? '<?php echo $baseUrl; ?>uploads/' + encodeURIComponent(item.image) : placeholder;
                 
                 html += `
                 <div class="cart-item">

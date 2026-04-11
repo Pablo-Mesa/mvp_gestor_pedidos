@@ -1,3 +1,4 @@
+<?php $baseUrl = str_replace('index.php', '', $_SERVER['SCRIPT_NAME']); ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -6,8 +7,8 @@
     <title>Solver Logística - <?php echo $view_title ?? 'Panel'; ?></title>
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#00c853">
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" href="assets/icono_solver_nobg.png">
+    <link rel="manifest" href="<?php echo $baseUrl; ?>manifest.json">
+    <link rel="icon" type="image/png" href="<?php echo $baseUrl; ?>assets/icono_solver_nobg.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -120,9 +121,10 @@
         
         .delivery-main { 
             flex: 1; /* Ocupa todo el espacio restante */
-            overflow-y: auto; /* Único contenedor scrolleable */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* El scroll lo controlan las vistas internamente */
             padding: 15px;
-            -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
             background: var(--delivery-bg);
         }
 
@@ -201,14 +203,14 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="js/toast.js"></script>
+    <script src="<?php echo $baseUrl; ?>js/toast.js"></script>
 
     <script>
         let deferredPrompt;
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
+                navigator.serviceWorker.register('<?php echo $baseUrl; ?>sw.js')
                     .then(reg => console.log('Solver Logística PWA activo'))
                     .catch(err => console.log('Error registro SW Logística', err));
             });

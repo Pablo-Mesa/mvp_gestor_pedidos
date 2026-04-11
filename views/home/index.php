@@ -472,7 +472,7 @@ $localPlaceholder = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22
                                 <button class="slider-arrow prev" onclick="scrollSlider(this, -200)"><i class="fas fa-chevron-left"></i></button>
                                 <div class="horizontal-slider">
                                     <?php foreach($recommended_items as $rec): 
-                                        $recImg = (!empty($rec['image']) && file_exists('uploads/'.$rec['image'])) ? 'uploads/'.rawurlencode($rec['image']) : $localPlaceholder;
+                                        $recImg = (!empty($rec['image']) && file_exists('uploads/'.$rec['image'])) ? $baseUrl . 'uploads/'.rawurlencode($rec['image']) : $localPlaceholder;
                                     ?>
                                         <div class="mini-card">
                                             <img src="<?php echo $recImg; ?>" alt="img">
@@ -497,7 +497,7 @@ $localPlaceholder = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22
             <?php $delay = 0; foreach($menu_items as $item): ?>
                 <?php 
                     $physicPath = 'uploads/' . $item['image'];                
-                    $displayImg = (!empty($item['image']) && file_exists($physicPath)) ? 'uploads/' . rawurlencode($item['image']) . '?v=' . time() : $localPlaceholder;
+                    $displayImg = (!empty($item['image']) && file_exists($physicPath)) ? $baseUrl . 'uploads/' . rawurlencode($item['image']) . '?v=' . time() : $localPlaceholder;
                     // Validar si tiene medio plato
                     $hasHalf = !empty($item['price_half']) && $item['price_half'] > 0;
                 ?>

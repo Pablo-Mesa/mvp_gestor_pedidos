@@ -521,43 +521,34 @@ body.is-compact {
     box-shadow: 0 8px 20px rgba(0,0,0,0.1);
 }
 
-.btn-icon-highlight-blue {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%; /* Esto crea el círculo */
-    border: none;
-    background: #007bff; /* Color moderno (azul)*/
-    color: white;            
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
+.btn-icon-highlight-blue,
 .btn-icon-highlight-green {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%; /* Esto crea el círculo */
     border: none;
-    background: #10b981; /* Color moderno (verde) azul->#007bff */
     color: white;            
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-.btn-icon-highlight i {
+.btn-icon-highlight-blue i,
+.btn-icon-highlight-green i {
     font-size: 1.2rem; /* Tamaño del ícono */
     transition: transform 0.3s ease;
 }
 
 /* Efecto al pasar el mouse */
-.btn-icon-highlight:hover {
+.btn-icon-highlight-blue:hover,
+.btn-icon-highlight-green:hover {
     background: #4f46e5;
     transform: translateY(-2px); /* Pequeño salto */
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
 }
 
-.btn-icon-highlight:hover i {
+.btn-icon-highlight-blue:hover i,
+.btn-icon-highlight-green:hover i {
     transform: scale(1.1); /* Resalta el ícono */
 }
 
@@ -573,10 +564,11 @@ body.is-compact {
     background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(4px);
     display: none; /* Se activa con JS */
-    justify-content: center;
-    align-items: center;
+    justify-content: center; /* Centra horizontalmente */
+    align-items: flex-start; /* Permite que el modal empiece desde arriba si es muy largo */
     z-index: 2000;
-    padding: 20px;
+    padding: 20px 10px;
+    overflow-y: auto; /* El overlay permite scroll si el modal es gigante */
 }
 
 .modal-card {
@@ -584,7 +576,7 @@ body.is-compact {
     width: 100%;
     max-width: 450px;
     border-radius: 16px;
-    overflow-y: auto !important; /* Forzamos el scroll vertical */
+    overflow: hidden; /* El scroll lo manejamos internamente si es necesario o en el overlay */
     max-height: calc(100vh - 40px); /* Establece una altura máxima para el modal, dejando 20px de padding arriba y abajo del overlay */
     position: relative;
     box-shadow: 0 20px 40px rgba(0,0,0,0.1);
@@ -615,7 +607,11 @@ body.is-compact {
 }
 
 /* Formularios */
-.modal-content { padding: 30px; }
+.modal-content { 
+    padding: 30px; 
+    overflow-y: auto; 
+    max-height: 70vh; /* Limita el contenido interno para forzar scroll dentro del modal */
+}
 
 .auth-form { display: none; }
 .auth-form.active { 

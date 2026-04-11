@@ -5,6 +5,7 @@ date_default_timezone_set('America/Asuncion');
 require_once '../models/Order.php';
 require_once '../models/User.php';
 require_once '../models/ClientLocation.php';
+require_once '../models/Setting.php';
 
 class OrderController {
 
@@ -308,6 +309,44 @@ class OrderController {
         exit;
     }
 
+    /**
+     * Calcula el costo de delivery basado en la distancia (Haversine)
+     */
+    private function calculateDeliveryCost($clientLat, $clientLng) {
+        $settingModel = new Setting();
+        $settings = $settingModel->getAll();
+        
+        $storeLat = $settings['store_lat'] ?? -25.3006;
+        $storeLng = $settings['store_lng'] ?? -57.6359;
+
+        // Radio de la tierra en KM
+        $earthRadius = 6371;
+
+        $dLat = deg2rad($clientLat - $storeLat);
+        $dLon = deg2rad($clientLng - $storeLng);
+
+        $a = sin($dLat/2) * sin($dLat/2) +
+             cos(deg2rad($storeLat)) * cos(deg2rad($clientLat)) *
+             sin($dLon/2) * sin($dLon/2);
+        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+        $distance = $earthRadius * $c; // Distancia en KM
+
+        // Regla de Negocio Dinámica basada en rangos JSON
+        $rawRates = $settings['delivery_rates_json'] ?? null;
+        
+        if ($rawRates) {
+            $rates = json_decode($rawRates, true);
+            foreach ($rates as $rate) {
+                if ($distance >= $rate['start'] && $distance <= $rate['end']) {
+                    return $rate['price'];
+                }
+            }
+        }
+
+        // Si no hay rangos configurados o no coincide ninguno, devolvemos 0 o un valor por defecto
+        return 0;
+    }
+
     public function store() {
         header('Content-Type: application/json');
         
@@ -334,11 +373,16 @@ class OrderController {
         $order->delivery_type = $input['delivery_type'] ?? 'pickup';
         $order->observation = $input['observation'] ?? ''; // Guardamos la observación
         
+        $deliveryCost = 0;
         // Datos de delivery
         if ($order->delivery_type === 'delivery') {
             $order->delivery_address = $input['delivery_address'] ?? '';
             $order->delivery_lat = $input['delivery_lat'] ?? null;
             $order->delivery_lng = $input['delivery_lng'] ?? null;
+            
+            if ($order->delivery_lat && $order->delivery_lng) {
+                $deliveryCost = $this->calculateDeliveryCost($order->delivery_lat, $order->delivery_lng);
+            }
         } else {
             // Si no es delivery, enviamos cadena vacía para evitar el error de integridad en la DB
             $order->delivery_address = ''; 
@@ -356,7 +400,7 @@ class OrderController {
                 'price' => $item['price']
             ];
         }
-        $order->total = $total;
+        $order->total = $total + $deliveryCost;
 
         // Guardar en DB
         if ($order->create()) {

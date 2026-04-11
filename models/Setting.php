@@ -41,6 +41,13 @@ class Setting {
         return $stmt->execute();
     }
 
+    /**
+     * Actualiza un valor específico en la tabla de configuraciones.
+     */
+    public function updateValue($key, $value) {
+        return $this->update($key, $value);
+    }
+
     public static function getValue($key) {
         $db = (new Database())->getConnection();
         $query = "SELECT setting_value FROM settings WHERE setting_key = :key LIMIT 1";

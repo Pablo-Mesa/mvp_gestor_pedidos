@@ -126,7 +126,11 @@
         }
 
         /* Área de Contenido */
-        .content-wrapper { padding: 1rem; overflow-y: auto; }
+        .content-wrapper {
+            height: calc(100vh - 70px); /* Altura total menos la altura del topbar */
+            padding: 1rem;            
+            overflow-y: auto;            
+        }
         
         /* Utilidades para Dashboard (Cards) */
         .card-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 1rem; }
@@ -239,10 +243,20 @@
                 ]
             ],
             ['route' => 'hero_promos', 'label' => 'Hero Promo',        'icon' => 'fas fa-palette'],
-            ['route' => 'settings',    'label' => 'Ajustes Marca',     'icon' => 'fas fa-cog'],
-            ['route' => 'users',       'label' => 'Staff / Usuarios',  'icon' => 'fas fa-users', 'roles' => ['admin']],
+            [
+                'label' => 'Configuraciones',
+                'icon' => 'fas fa-cog',
+                'id' => 'menuSettings',
+                'children' => [
+                    ['route' => 'settings',          'label' => 'Ajustes de Marca',     'icon' => 'fas fa-brush'],
+                    ['route' => 'settings_location', 'label' => 'Ajustes de Ubicación', 'icon' => 'fas fa-map-marker-alt'],
+                    ['route' => 'settings_delivery', 'label' => 'Tarifas de Delivery', 'icon' => 'fas fa-truck-loading'],
+                    ['route' => 'users',             'label' => 'Staff / Usuarios',     'icon' => 'fas fa-users', 'roles' => ['admin']],
+                ]
+            ],
         ];
         ?>
+        <!-- menu lateral -->
         <ul class="sidebar-menu">
             <?php foreach ($menu_structure as $item): 
                 // 1. Verificar Permisos de Rol
@@ -262,7 +276,10 @@
                             <i class="fas fa-chevron-down float-end mt-1" style="font-size: 0.7rem;"></i>
                         </a>
                         <ul class="collapse submenu <?php echo $is_child_active ? 'show' : ''; ?>" id="sub_<?php echo $item['id']; ?>">
-                            <?php foreach ($item['children'] as $child): ?>
+                            <?php foreach ($item['children'] as $child): 
+                                // Validar permisos también para elementos hijos
+                                if (isset($child['roles']) && !in_array($user_role, $child['roles'])) continue;
+                            ?>
                                 <li>
                                     <a href="?route=<?php echo $child['route']; ?>" 
                                        class="<?php echo $current_route === $child['route'] ? 'active-link' : ''; ?>">

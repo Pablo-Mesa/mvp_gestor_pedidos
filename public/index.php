@@ -273,6 +273,30 @@ switch ($route) {
         $controller->index();
         break;
 
+    case 'settings_location':
+        require_once '../controllers/SettingController.php';
+        $controller = new SettingController();
+        $controller->location();
+        break;
+
+    case 'settings_location_update':
+        require_once '../controllers/SettingController.php';
+        $controller = new SettingController();
+        $controller->updateLocation();
+        break;
+
+    case 'settings_delivery':
+        require_once '../controllers/SettingController.php';
+        $controller = new SettingController();
+        $controller->deliveryRates();
+        break;
+
+    case 'settings_delivery_update':
+        require_once '../controllers/SettingController.php';
+        $controller = new SettingController();
+        $controller->updateDeliveryRates();
+        break;
+
     case 'settings_update':
         require_once '../controllers/SettingController.php';
         $controller = new SettingController();
@@ -290,6 +314,18 @@ switch ($route) {
         require_once '../controllers/DeliveryController.php';
         $controller = new DeliveryController();
         $controller->history();
+        break;
+
+    case 'delivery_checkin':
+        require_once '../controllers/DeliveryController.php';
+        $controller = new DeliveryController();
+        $controller->checkin();
+        break;
+
+    case 'delivery_checkin_save':
+        require_once '../controllers/DeliveryController.php';
+        $controller = new DeliveryController();
+        $controller->saveCheckinApi();
         break;
 
     case 'orders':

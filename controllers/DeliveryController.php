@@ -1,5 +1,7 @@
 <?php
 require_once '../models/Order.php';
+require_once '../models/DeliveryCheckin.php';
+require_once '../models/Setting.php';
 
 class DeliveryController {
 
@@ -100,6 +102,50 @@ class DeliveryController {
         $view_title = "Historial y Rendición";
         $content_view = '../views/delivery/history.php';
         require_once '../views/layouts/delivery_layout.php';
+    }
+
+    public function checkin() {
+        $settingModel = new Setting();
+        $settings = $settingModel->getAll();
+        
+        $view_title = "Marcar Llegada al Local";
+        $content_view = '../views/delivery/checkin.php';
+        require_once '../views/layouts/delivery_layout.php';
+    }
+
+    public function saveCheckinApi() {
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+            exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        if (empty($input['lat']) || empty($input['lng'])) {
+            echo json_encode(['success' => false, 'message' => 'Coordenadas no recibidas']);
+            exit;
+        }
+
+        try {
+            $checkinModel = new DeliveryCheckin();
+            $success = $checkinModel->create([
+                'user_id'  => $_SESSION['user_id'],
+                'lat'      => $input['lat'],
+                'lng'      => $input['lng'],
+                'distance' => $input['distance']
+            ]);
+
+            if ($success) {
+                echo json_encode(['success' => true, 'message' => 'Llegada registrada con éxito']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Error al guardar en base de datos']);
+            }
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        exit;
     }
 }
 ?>

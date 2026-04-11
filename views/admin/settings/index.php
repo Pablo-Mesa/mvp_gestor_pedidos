@@ -1,6 +1,6 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="h3 mb-0 text-gray-800">⚙️ Ajustes de Identidad (Cliente)</h2>
+        <h2 class="h3 mb-0 text-gray-800">🎨 Ajustes de Marca e Identidad</h2>
     </div>
 
     <?php if(isset($_GET['success'])): 

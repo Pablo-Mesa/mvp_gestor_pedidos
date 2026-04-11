@@ -127,6 +127,11 @@
                     <!-- Items inyectados por JS -->
                 </div>
                 
+                <div id="delivery-cost-row" class="summary-item" style="display: none; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <span>Costo de Envío (Est.)</span>
+                    <span id="checkout-delivery-price">Gs. 0</span>
+                </div>
+
                 <div class="summary-total">
                     <span>Total a Pagar</span>
                     <span id="checkout-total">Gs. 0</span>
@@ -263,6 +268,27 @@
 </style>
 
 <script>
+    // Configuración del local y tarifas cargadas desde el sistema
+    const storeConfig = {
+        lat: <?= $siteSettings['store_lat'] ?? -25.3006 ?>,
+        lng: <?= $siteSettings['store_lng'] ?? -57.6359 ?>,
+        rates: <?= $siteSettings['delivery_rates_json'] ?? '[]' ?>
+    };
+
+    /**
+     * Calcula la distancia en KM entre dos puntos (Fórmula de Haversine)
+     */
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Radio de la tierra en km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    }
+
     // --- 1. Lógica del Mapa (Leaflet) ---
     let map, marker;
 
@@ -318,6 +344,7 @@
         document.getElementById('lat').disabled = !show;
         document.getElementById('lng').disabled = !show;
         document.getElementById('selected_address').disabled = !show;
+        loadCheckoutItems(); // Recalcular subtotales al cambiar tipo de entrega
     }
 
     function openLocationModal(isEdit = false) {
@@ -400,6 +427,7 @@
         document.getElementById('selected_address').value = card.dataset.addr;
         
         if (!silent) Toast.fire("Dirección seleccionada", "success");
+        loadCheckoutItems(); // Recalcular total con delivery
     }
 
     async function confirmDeleteLocation(id, title) {
@@ -570,12 +598,8 @@
         const cart = JSON.parse(localStorage.getItem('comedor_cart')) || [];
         const container = document.getElementById('checkout-items');
         const totalEl = document.getElementById('checkout-total');
-        
-        // Auto-seleccionar la primera ubicación si existe al cargar la página
-        const firstLocationCard = document.querySelector('.location-card');
-        if (firstLocationCard) {
-            selectLocation(firstLocationCard, true); // Seleccionar silenciosamente
-        }
+        const deliveryRow = document.getElementById('delivery-cost-row');
+        const deliveryPriceEl = document.getElementById('checkout-delivery-price');
 
         if (cart.length === 0) {
             container.innerHTML = '<p>Tu carrito está vacío.</p>';
@@ -585,6 +609,32 @@
 
         let html = '';
         let total = 0;
+        let deliveryCost = 0;
+
+        // Si es delivery y hay coordenadas seleccionadas
+        const deliveryType = document.querySelector('input[name="delivery_type"]:checked')?.value;
+        const lat = document.getElementById('lat').value;
+        const lng = document.getElementById('lng').value;
+
+        if (deliveryType === 'delivery' && lat && lng) {
+            const dist = calculateDistance(storeConfig.lat, storeConfig.lng, parseFloat(lat), parseFloat(lng));
+            
+            // Buscar el precio correspondiente en los rangos configurados
+            let foundPrice = 0;
+            if (storeConfig.rates && storeConfig.rates.length > 0) {
+                for (const rate of storeConfig.rates) {
+                    if (dist >= rate.start && dist <= rate.end) {
+                        foundPrice = rate.price;
+                        break;
+                    }
+                }
+            }
+            deliveryCost = foundPrice;
+            deliveryRow.style.display = 'flex';
+            deliveryPriceEl.innerText = 'Gs. ' + new Intl.NumberFormat('es-PY').format(deliveryCost);
+        } else {
+            deliveryRow.style.display = 'none';
+        }
 
         cart.forEach(item => {
             const subtotal = item.price * item.quantity;
@@ -600,7 +650,7 @@
         });
 
         container.innerHTML = html;
-        totalEl.innerText = 'Gs. ' + new Intl.NumberFormat('es-PY').format(total);
+        totalEl.innerText = 'Gs. ' + new Intl.NumberFormat('es-PY').format(total + deliveryCost);
     }
 
     async function submitOrder() {

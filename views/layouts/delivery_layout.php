@@ -199,7 +199,7 @@
                     <i class="fas fa-chevron-down arrow"></i>
                 </a>
                 <div id="submenu-asistencias" class="submenu">
-                    <a href="#" class="menu-item"><i class="fas fa-map-marker-alt"></i> Marcar llegada</a>
+                    <a href="?route=delivery_checkin" class="menu-item"><i class="fas fa-map-marker-alt"></i> Marcar llegada</a>
                     <a href="#" class="menu-item"><i class="fas fa-list-ul"></i> Historial de asistencias</a>
                 </div>
             </div>
@@ -216,6 +216,21 @@
             </a>
         </div>
     </div>
+
+    <!-- Filtro de Pedidos -->
+    <?php if (($_GET['route'] ?? 'delivery') === 'delivery'): ?>
+    <div class="filter-container">
+        <div class="delivery-select-wrapper">
+            <i class="fas fa-filter"></i>
+            <select id="statusFilter" class="delivery-select">
+                <option value="all">Ver Todos los Pedidos</option>
+                <option value="pending_group">Pendientes y En Camino</option>
+                <option value="completed">Entregados</option>
+                <option value="rejected">Rechazados / Cancelados</option>
+            </select>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Contenedor Principal -->
     <main class="delivery-main">
@@ -267,22 +282,25 @@
         }
 
         // Lógica de filtrado en tiempo real
-        document.getElementById('statusFilter').addEventListener('change', function() {
-            const status = this.value;
-            const cards = document.querySelectorAll('.order-card');
-            
-            cards.forEach(card => {
-                const cardStatus = card.getAttribute('data-status');
-                if (status === 'all') {
-                    card.style.display = ''; // Restablece al estilo original (flex/block)
-                } else if (status === 'pending_group') {
-                    // Muestra 'confirmed' (asignado) y 'shipped' (en camino)
-                    card.style.display = (cardStatus === 'confirmed' || cardStatus === 'shipped') ? '' : 'none';
-                } else {
-                    card.style.display = (cardStatus === status) ? '' : 'none';
-                }
+        const statusFilter = document.getElementById('statusFilter');
+        if (statusFilter) {
+            statusFilter.addEventListener('change', function() {
+                const status = this.value;
+                const cards = document.querySelectorAll('.order-card');
+                
+                cards.forEach(card => {
+                    const cardStatus = card.getAttribute('data-status');
+                    if (status === 'all') {
+                        card.style.display = ''; // Restablece al estilo original
+                    } else if (status === 'pending_group') {
+                        // Muestra 'confirmed' (asignado) y 'shipped' (en camino)
+                        card.style.display = (cardStatus === 'confirmed' || cardStatus === 'shipped') ? '' : 'none';
+                    } else {
+                        card.style.display = (cardStatus === status) ? '' : 'none';
+                    }
+                });
             });
-        });
+        }
     </script>
     
 </body>

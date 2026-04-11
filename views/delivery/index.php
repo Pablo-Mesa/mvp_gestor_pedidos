@@ -138,7 +138,7 @@
     /* Botones de Contacto */
     .contact-actions {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(3, 1fr);
         gap: 10px;
         margin: 15px 0;
     }
@@ -223,6 +223,7 @@
     <?php foreach($orders as $order): ?>
         <?php echo renderOrderCardHTML($order); ?>
     <?php endforeach; ?>
+
 </div>
 
 <?php
@@ -286,6 +287,9 @@ function renderOrderCardHTML($order) {
             <!-- Área 2: Operaciones y Logística (Se oculta al completar) -->
             <div class="card-operative-section">
                 <div class="contact-actions">
+                    <button onclick="showPhoneModal('<?php echo $phone; ?>')" class="btn-contact btn-call" style="background: #0984e3; border:none; cursor:pointer;" title="Ver número">
+                        <i class="fas fa-eye"></i>
+                    </button>
                     <a href="tel:<?php echo $phone; ?>" class="btn-contact btn-call">
                         <i class="fas fa-phone-alt"></i> Llamar
                     </a>
@@ -483,6 +487,9 @@ function renderOrderCardJS(order) {
             <div class="card-operative-section">
                 <div class="contact-actions">
                     <a href="tel:${phone}" class="btn-contact btn-call"><i class="fas fa-phone-alt"></i> Llamar</a>
+                    <button onclick="showPhoneModal('${phone}')" class="btn-contact btn-call" style="background: #0984e3; border:none; cursor:pointer;" title="Ver número">
+                        <i class="fas fa-eye"></i>
+                    </button>
                     <button onclick="openWhatsAppMenu('${phone}', '${order.id}')" class="btn-contact btn-whatsapp"><i class="fab fa-whatsapp"></i> WhatsApp</button>
                 </div>
                 ${order.delivery_lat ? `<div class="map-wrapper"><div id="map-${order.id}" class="map-preview"></div><a href="https://www.google.com/maps/search/?api=1&query=${order.delivery_lat},${order.delivery_lng}" target="_blank" class="map-overlay-btn"><i class="fas fa-directions"></i> GPS</a></div>` : ''}
@@ -563,6 +570,22 @@ function toggleCardSection(cardElement) {
             initMapForOrder(order);
         }
     }
+}
+
+/**
+ * Muestra el número de teléfono en un modal para chequeo rápido
+ */
+function showPhoneModal(phone) {
+    if (!phone) {
+        Toast.fire("No hay número registrado", "error");
+        return;
+    }
+    Swal.fire({
+        title: 'Número de Contacto',
+        html: `<h2 style="letter-spacing: 2px; color: #2d3436;">${phone}</h2>`,
+        confirmButtonText: 'Cerrar',
+        confirmButtonColor: '#2d3436'
+    });
 }
 
 /**

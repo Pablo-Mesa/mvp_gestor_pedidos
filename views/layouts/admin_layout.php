@@ -242,13 +242,13 @@
                     ['route' => 'categories',  'label' => 'Categorías',      'icon' => 'fas fa-tags'],
                 ]
             ],
-            ['route' => 'hero_promos', 'label' => 'Hero Promo',        'icon' => 'fas fa-palette'],
             [
                 'label' => 'Configuraciones',
                 'icon' => 'fas fa-cog',
                 'id' => 'menuSettings',
                 'children' => [
                     ['route' => 'settings',          'label' => 'Ajustes de Marca',     'icon' => 'fas fa-brush'],
+                    ['route' => 'hero_promos',       'label' => 'Hero Promo',           'icon' => 'fas fa-palette'],
                     ['route' => 'settings_location', 'label' => 'Ajustes de Ubicación', 'icon' => 'fas fa-map-marker-alt'],
                     ['route' => 'settings_delivery', 'label' => 'Tarifas de Delivery', 'icon' => 'fas fa-truck-loading'],
                     ['route' => 'users',             'label' => 'Staff / Usuarios',     'icon' => 'fas fa-users', 'roles' => ['admin']],

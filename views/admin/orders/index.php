@@ -1,4 +1,11 @@
 <style>
+    /* Ajuste del contenedor principal para permitir crecimiento dinámico */
+    .content-wrapper {
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important; /* Evita el scroll doble en la página */
+    }
+
     /* Reutilizamos estilos de products/index.php para consistencia */
     .header-actions {
         display: flex;
@@ -81,11 +88,13 @@
     
     /* Tabla con Scroll */
     .contenedor-tabla {
-        max-height: 380px;
+        flex: 1;
+        min-height: 0; /* Permite que el contenedor se reduzca y active el scroll interno */
         overflow-y: auto;
         border-radius: 8px; 
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         background: white;
+        margin-bottom: 1rem;
     }
     table {
         width: 100%;
@@ -171,12 +180,11 @@
         padding: 0.8rem 1.5rem;
         background: #ffffff;
         border-radius: 12px 12px 0 0;
-        box-shadow: 0 -5px 20px rgba(0,0,0,0.08);
-        position: sticky;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
         z-index: 100;
         border: 1px solid #dee2e6;
-        border-bottom: none;
         width: 100%;
+        flex-shrink: 0; /* Evita que la barra de estados se aplaste */
     }
 
     .stat-card {

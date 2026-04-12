@@ -1,47 +1,3 @@
-<div class="header-actions">
-    <div class="header-main">
-        <h1 class="page-title">Gestión de Productos</h1>
-        <a href="?route=products_create" class="btn-add-product">
-            <i class="fas fa-plus"></i> <span class="d-none d-sm-inline">Nuevo Producto</span>
-        </a>
-    </div>
-
-    <div class="filter-container-admin">
-        <form id="adminProductSearchForm" action="index.php" method="GET" class="search-box-admin">
-            <input type="hidden" name="route" value="products">
-            <?php if(isset($_GET['category'])): ?>
-                <input type="hidden" name="category" value="<?php echo htmlspecialchars($_GET['category']); ?>">
-            <?php endif; ?>
-            <i class="fas fa-search"></i>
-            <input type="text" 
-                   id="adminProductSearch" 
-                   name="search" 
-                   placeholder="Buscar por nombre o ID..." 
-                   value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>" 
-                   autocomplete="off">
-            <?php if(!empty($_GET['search'])): ?>
-                <a href="?route=products<?php echo isset($_GET['category']) ? '&category='.$_GET['category'] : ''; ?>" class="clear-search">
-                    <i class="fas fa-times-circle"></i>
-                </a>
-            <?php endif; ?>
-        </form>
-
-        <div class="category-scroll-admin">
-            <?php 
-            $current_cat = $_GET['category'] ?? 'all';
-            $search_val = !empty($_GET['search']) ? '&search='.urlencode($_GET['search']) : '';
-            ?>
-            <a href="?route=products&category=all<?php echo $search_val; ?>" class="pill-admin <?php echo $current_cat === 'all' ? 'active' : ''; ?>">Todos</a>
-            <?php foreach ($categories as $cat): ?>
-                <a href="?route=products&category=<?php echo $cat['id']; ?><?php echo $search_val; ?>" 
-                   class="pill-admin <?php echo $current_cat == $cat['id'] ? 'active' : ''; ?>">
-                   <?php echo htmlspecialchars($cat['name']); ?>
-                </a>
-            <?php endforeach; ?>
-        </div>
-    </div>
-</div>
-
 <style>
     /* Estilos Generales de Tabla */
     table { width: 100%; border-collapse: collapse; background: white; }
@@ -205,6 +161,50 @@
         .header-main { order: 1; }
     }
 </style>
+
+<div class="header-actions">
+    <div class="header-main">
+        <h1 class="page-title">Gestión de Productos</h1>
+        <a href="?route=products_create" class="btn-add-product">
+            <i class="fas fa-plus"></i> <span class="d-none d-sm-inline">Nuevo Producto</span>
+        </a>
+    </div>
+
+    <div class="filter-container-admin">
+        <form id="adminProductSearchForm" action="index.php" method="GET" class="search-box-admin">
+            <input type="hidden" name="route" value="products">
+            <?php if(isset($_GET['category'])): ?>
+                <input type="hidden" name="category" value="<?php echo htmlspecialchars($_GET['category']); ?>">
+            <?php endif; ?>
+            <i class="fas fa-search"></i>
+            <input type="text" 
+                   id="adminProductSearch" 
+                   name="search" 
+                   placeholder="Buscar por nombre o ID..." 
+                   value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>" 
+                   autocomplete="off">
+            <?php if(!empty($_GET['search'])): ?>
+                <a href="?route=products<?php echo isset($_GET['category']) ? '&category='.$_GET['category'] : ''; ?>" class="clear-search">
+                    <i class="fas fa-times-circle"></i>
+                </a>
+            <?php endif; ?>
+        </form>
+
+        <div class="category-scroll-admin">
+            <?php 
+            $current_cat = $_GET['category'] ?? 'all';
+            $search_val = !empty($_GET['search']) ? '&search='.urlencode($_GET['search']) : '';
+            ?>
+            <a href="?route=products&category=all<?php echo $search_val; ?>" class="pill-admin <?php echo $current_cat === 'all' ? 'active' : ''; ?>">Todos</a>
+            <?php foreach ($categories as $cat): ?>
+                <a href="?route=products&category=<?php echo $cat['id']; ?><?php echo $search_val; ?>" 
+                   class="pill-admin <?php echo $current_cat == $cat['id'] ? 'active' : ''; ?>">
+                   <?php echo htmlspecialchars($cat['name']); ?>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</div>
 
 <div class="contenedor-tabla">
     <table>

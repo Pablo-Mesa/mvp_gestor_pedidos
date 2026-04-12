@@ -499,6 +499,7 @@
 </div>
 
 <script>
+    const baseUrl = '<?php echo $baseUrl; ?>';
     const assignedIds = <?php echo json_encode(array_column($assigned_menus, 'product_id')); ?>;
     const allProducts = <?php echo json_encode($available_products); ?>;
     
@@ -595,7 +596,7 @@
         container.innerHTML = visibleProducts.map((p, index) => `
             <div class="product-row ${index === selectedIndex ? 'selected' : ''}" onclick="selectProductByIndex(${index})">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <img src="${p.image ? 'uploads/' + p.image : 'assets/placeholder-food.png'}" 
+                    <img src="${p.image ? baseUrl + 'uploads/' + encodeURIComponent(p.image) : baseUrl + 'assets/placeholder-food.png'}" 
                          style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover;">
                     <span><strong>#${p.id}</strong> ${p.name}</span>
                 </div>

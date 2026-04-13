@@ -243,6 +243,15 @@
                 ]
             ],
             [
+                'label' => 'Logística',
+                'icon' => 'fas fa-truck',
+                'id' => 'menuLogistics',
+                'children' => [
+                    ['route' => 'admin_delivery_assists', 'label' => 'Asistencias Repartidores', 'icon' => 'fas fa-user-check'],
+                    ['route' => 'settings_delivery',     'label' => 'Tarifas de Delivery',      'icon' => 'fas fa-money-bill-wave'],
+                ]
+            ],
+            [
                 'label' => 'Configuraciones',
                 'icon' => 'fas fa-cog',
                 'id' => 'menuSettings',
@@ -250,7 +259,6 @@
                     ['route' => 'settings',          'label' => 'Ajustes de Marca',     'icon' => 'fas fa-brush'],
                     ['route' => 'hero_promos',       'label' => 'Hero Promo',           'icon' => 'fas fa-palette'],
                     ['route' => 'settings_location', 'label' => 'Ajustes de Ubicación', 'icon' => 'fas fa-map-marker-alt'],
-                    ['route' => 'settings_delivery', 'label' => 'Tarifas de Delivery', 'icon' => 'fas fa-truck-loading'],
                     ['route' => 'users',             'label' => 'Staff / Usuarios',     'icon' => 'fas fa-users', 'roles' => ['admin']],
                 ]
             ],

@@ -103,12 +103,12 @@ class DeliveryController {
         $content_view = '../views/delivery/history.php';
         require_once '../views/layouts/delivery_layout.php';
     }
-
+    
     /**
      * Muestra el historial de asistencias del repartidor filtrado por fecha
      */
     public function assists() {
-        $selectedDate = $_GET['date'] ?? date('Y-m-d');
+        $selectedMonth = $_GET['month'] ?? date('Y-m');
         $userId = $_SESSION['user_id'];
 
         // Conexión directa para manejar los campos específicos de delivery_checkins
@@ -118,12 +118,13 @@ class DeliveryController {
 
         $query = "SELECT * FROM delivery_checkins 
                   WHERE user_id = :user_id 
-                  AND DATE(checkin_time) = :date 
+                  AND checkin_time LIKE :month 
                   ORDER BY checkin_time DESC";
         
         $stmt = $db->prepare($query);
         $stmt->bindParam(':user_id', $userId);
-        $stmt->bindParam(':date', $selectedDate);
+        $monthParam = $selectedMonth . '%';
+        $stmt->bindParam(':month', $monthParam);
         $stmt->execute();
         $assists = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

@@ -15,6 +15,7 @@
         border: 1px solid #eee;
         box-shadow: 0 2px 5px rgba(0,0,0,0.02);
     }
+
     .date-input { 
         border: none; 
         font-weight: 700; 
@@ -40,8 +41,14 @@
         border-bottom: 1px solid #f8f9fa;
         gap: 12px;
     }
-    .assist-row:last-child { border-bottom: none; }
-    .assist-row:nth-child(even) { background-color: #fafafa; }
+    
+    .assist-row:last-child {
+        border-bottom: none;
+    }
+
+    .assist-row:nth-child(even) {
+        background-color: #fafafa;
+    }
 
     .assist-icon {
         width: 40px;
@@ -88,8 +95,8 @@
 <!-- Selector de Fecha -->
 <div class="date-selector-container">
     <i class="fas fa-calendar-day" style="color: var(--delivery-primary);"></i>
-    <input type="date" class="date-input" value="<?php echo $selectedDate ?? date('Y-m-d'); ?>" 
-           onchange="location.href='?route=delivery_assists&date='+this.value">
+    <input type="month" class="date-input" value="<?php echo $selectedMonth ?? date('Y-m'); ?>" 
+           onchange="location.href='?route=delivery_assists&month='+this.value">
 </div>
 
 <div class="assists-container">

@@ -310,6 +310,12 @@ switch ($route) {
         $controller->index();
         break;
 
+    case 'admin_delivery_assists':
+        require_once '../controllers/AdminController.php';
+        $controller = new AdminController();
+        $controller->deliveryAssists();
+        break;
+
     case 'delivery_history':
         require_once '../controllers/DeliveryController.php';
         $controller = new DeliveryController();

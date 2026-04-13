@@ -239,6 +239,15 @@
                 <option value="local" <?php echo ($_GET['delivery_type'] ?? '') == 'local' ? 'selected' : ''; ?>>🍽️ Mesa Local</option>
             </select>
 
+            <select name="status">
+                <option value="">Todos los estados</option>
+                <option value="pending" <?php echo ($_GET['status'] ?? '') == 'pending' ? 'selected' : ''; ?>>🟡 Pendientes</option>
+                <option value="confirmed" <?php echo ($_GET['status'] ?? '') == 'confirmed' ? 'selected' : ''; ?>>🔵 Confirmados</option>
+                <option value="completed" <?php echo ($_GET['status'] ?? '') == 'completed' ? 'selected' : ''; ?>>🟢 Entregados</option>
+                <option value="cancelled" <?php echo ($_GET['status'] ?? '') == 'cancelled' ? 'selected' : ''; ?>>🔴 Cancelados</option>
+                <option value="rejected" <?php echo ($_GET['status'] ?? '') == 'rejected' ? 'selected' : ''; ?>>⚪ Rechazados</option>
+            </select>
+
             <input type="text" name="client_name" placeholder="Buscar cliente..." value="<?php echo htmlspecialchars($_GET['client_name'] ?? ''); ?>">
             
             <button type="submit" class="btn-filter-submit"><i class="fas fa-search"></i></button>

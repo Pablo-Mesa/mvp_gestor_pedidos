@@ -1,5 +1,6 @@
 <?php
 date_default_timezone_set('America/Asuncion');
+require_once '../config/db.php';
 
 class AdminController {
 
@@ -82,6 +83,37 @@ class AdminController {
         $data = ['title' => 'Punto de Venta (POS)'];
         
         $content_view = '../views/admin/pos/index.php';
+        require_once '../views/layouts/admin_layout.php';
+    }
+
+    /**
+     * Muestra el historial global de asistencias de los repartidores
+     */
+    public function deliveryAssists() {
+        $date = $_GET['date'] ?? date('Y-m-d');
+        $assists = [];
+        $error_message = null;
+
+        try {
+            $db = (new Database())->getConnection();
+            if (!$db) throw new Exception("Error de conexión a la base de datos");
+
+            $query = "SELECT a.*, u.name as delivery_name 
+                      FROM delivery_checkins a 
+                      JOIN users u ON a.user_id = u.id 
+                      WHERE DATE(a.checkin_time) = :date 
+                      ORDER BY a.checkin_time DESC";
+            
+            $stmt = $db->prepare($query);
+            $stmt->bindParam(':date', $date);
+            $stmt->execute();
+            $assists = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            $error_message = "Error en el sistema de logística: " . $e->getMessage();
+            $assists = [];
+        }
+
+        $content_view = '../views/admin/delivery/assists.php';
         require_once '../views/layouts/admin_layout.php';
     }
 }

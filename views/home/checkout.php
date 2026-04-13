@@ -1,3 +1,91 @@
+<style>
+    /* Layout General */
+    .checkout-wrapper { max-width: 1000px; margin: 0 auto; padding: 1rem; }
+    .page-title { margin-bottom: 1.5rem; color: #333; font-size: 1.8rem; }
+    
+    .checkout-grid { display: grid; grid-template-columns: 1fr 350px; gap: 2rem; }
+    
+    @media (max-width: 768px) {
+        .checkout-grid { grid-template-columns: 1fr; }
+        .checkout-wrapper { padding: 0.5rem; }
+    }
+
+    /* Tarjetas de Sección */
+    .section-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 1.5rem; border: 1px solid #eee; }
+    .section-card h3 { margin-bottom: 1rem; color: #444; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
+    .hint-text { font-size: 0.85rem; color: #666; margin-bottom: 0.5rem; }
+
+    /* Grid de Direcciones */
+    .locations-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1rem; }
+    .location-card { 
+        border: 1px solid #eee; padding: 12px; border-radius: 10px; cursor: pointer; 
+        display: flex; flex-direction: column; gap: 4px; transition: 0.2s; font-size: 0.85rem;
+    }
+    .location-card i { font-size: 1.2rem; color: #aaa; margin-bottom: 5px; }
+    .location-card.selected { border-color: #28a745; background: #f0fdf4; border-width: 2px; }
+    .btn-add-location { background: #007bff; color: white; border: none; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
+    
+    .btn-delete-checkout {
+        position: absolute; top: 5px; right: 5px; background: transparent; border: none;
+        color: #ff4757; cursor: pointer; opacity: 0; transition: 0.3s; padding: 5px;
+    }
+    .location-card:hover .btn-delete-checkout { opacity: 1; }
+
+    .btn-edit-inline { 
+        position: absolute; top: 5px; right: 5px; background: #f8f9fa; border: 1px solid #ddd; 
+        width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; 
+        justify-content: center; font-size: 0.7rem; color: #666; cursor: pointer; transition: 0.2s;
+    }
+    .btn-edit-inline:hover { background: #e9ecef; color: #007bff; border-color: #007bff; }
+    .location-card { position: relative; }
+
+    /* Radio Buttons Visuales */
+    .delivery-options, .payment-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; }
+    .radio-card input { display: none; } /* Ocultar radio real */
+    .card-content { 
+        border: 2px solid #eee; border-radius: 8px; padding: 1rem; 
+        text-align: center; cursor: pointer; transition: 0.2s;
+        display: flex; flex-direction: column; align-items: center; gap: 8px;
+        color: #666;
+    }
+    .card-content i { font-size: 1.5rem; }
+    /* Estado seleccionado */
+    .radio-card input:checked + .card-content { border-color: #28a745; background-color: #f0fdf4; color: #28a745; font-weight: bold; }
+
+    /* Mapa */
+    .map-container { height: 300px; width: 100%; border-radius: 8px; z-index: 1; }
+
+    /* Inputs */
+    .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; outline: none; }
+    .form-control:focus { border-color: #007bff; }
+    .mt-3 { margin-top: 1rem; }
+
+    /* Resumen */
+    .summary-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); position: sticky; top: 100px; }
+    .summary-list { max-height: 300px; overflow-y: auto; margin-bottom: 1rem; border-bottom: 2px dashed #eee; }
+    .summary-item { display: flex; justify-content: space-between; margin-bottom: 1rem; font-size: 0.9rem; }
+    .summary-total { display: flex; justify-content: space-between; font-size: 1.3rem; font-weight: bold; margin-bottom: 1.5rem; color: #333; }
+    
+    .btn-confirm { width: 100%; padding: 14px; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn-confirm:hover { background: #218838; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(40,167,69,0.3); }
+    
+    .btn-back { 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        gap: 8px; 
+        margin-top: 1.2rem; 
+        color: #636e72; 
+        text-decoration: none; 
+        font-size: 0.95rem; 
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    .btn-back:hover { color: #2d3436; }
+    .btn-back i { transition: transform 0.3s ease; }
+    .btn-back:hover i { transform: translateX(-5px); }
+</style>
+
 <!-- Leaflet CSS & JS (Mapas OpenSource) -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -178,94 +266,6 @@
         </div>
     </div>
 </div>
-
-<style>
-    /* Layout General */
-    .checkout-wrapper { max-width: 1000px; margin: 0 auto; padding: 1rem; }
-    .page-title { margin-bottom: 1.5rem; color: #333; font-size: 1.8rem; }
-    
-    .checkout-grid { display: grid; grid-template-columns: 1fr 350px; gap: 2rem; }
-    
-    @media (max-width: 768px) {
-        .checkout-grid { grid-template-columns: 1fr; }
-        .checkout-wrapper { padding: 0.5rem; }
-    }
-
-    /* Tarjetas de Sección */
-    .section-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 1.5rem; border: 1px solid #eee; }
-    .section-card h3 { margin-bottom: 1rem; color: #444; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
-    .hint-text { font-size: 0.85rem; color: #666; margin-bottom: 0.5rem; }
-
-    /* Grid de Direcciones */
-    .locations-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1rem; }
-    .location-card { 
-        border: 1px solid #eee; padding: 12px; border-radius: 10px; cursor: pointer; 
-        display: flex; flex-direction: column; gap: 4px; transition: 0.2s; font-size: 0.85rem;
-    }
-    .location-card i { font-size: 1.2rem; color: #aaa; margin-bottom: 5px; }
-    .location-card.selected { border-color: #28a745; background: #f0fdf4; border-width: 2px; }
-    .btn-add-location { background: #007bff; color: white; border: none; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
-    
-    .btn-delete-checkout {
-        position: absolute; top: 5px; right: 5px; background: transparent; border: none;
-        color: #ff4757; cursor: pointer; opacity: 0; transition: 0.3s; padding: 5px;
-    }
-    .location-card:hover .btn-delete-checkout { opacity: 1; }
-
-    .btn-edit-inline { 
-        position: absolute; top: 5px; right: 5px; background: #f8f9fa; border: 1px solid #ddd; 
-        width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; 
-        justify-content: center; font-size: 0.7rem; color: #666; cursor: pointer; transition: 0.2s;
-    }
-    .btn-edit-inline:hover { background: #e9ecef; color: #007bff; border-color: #007bff; }
-    .location-card { position: relative; }
-
-    /* Radio Buttons Visuales */
-    .delivery-options, .payment-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; }
-    .radio-card input { display: none; } /* Ocultar radio real */
-    .card-content { 
-        border: 2px solid #eee; border-radius: 8px; padding: 1rem; 
-        text-align: center; cursor: pointer; transition: 0.2s;
-        display: flex; flex-direction: column; align-items: center; gap: 8px;
-        color: #666;
-    }
-    .card-content i { font-size: 1.5rem; }
-    /* Estado seleccionado */
-    .radio-card input:checked + .card-content { border-color: #28a745; background-color: #f0fdf4; color: #28a745; font-weight: bold; }
-
-    /* Mapa */
-    .map-container { height: 300px; width: 100%; border-radius: 8px; z-index: 1; }
-
-    /* Inputs */
-    .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; outline: none; }
-    .form-control:focus { border-color: #007bff; }
-    .mt-3 { margin-top: 1rem; }
-
-    /* Resumen */
-    .summary-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); position: sticky; top: 100px; }
-    .summary-list { max-height: 300px; overflow-y: auto; margin-bottom: 1rem; border-bottom: 2px dashed #eee; }
-    .summary-item { display: flex; justify-content: space-between; margin-bottom: 1rem; font-size: 0.9rem; }
-    .summary-total { display: flex; justify-content: space-between; font-size: 1.3rem; font-weight: bold; margin-bottom: 1.5rem; color: #333; }
-    
-    .btn-confirm { width: 100%; padding: 14px; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
-    .btn-confirm:hover { background: #218838; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(40,167,69,0.3); }
-    
-    .btn-back { 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-        gap: 8px; 
-        margin-top: 1.2rem; 
-        color: #636e72; 
-        text-decoration: none; 
-        font-size: 0.95rem; 
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-    .btn-back:hover { color: #2d3436; }
-    .btn-back i { transition: transform 0.3s ease; }
-    .btn-back:hover i { transform: translateX(-5px); }
-</style>
 
 <script>
     // Configuración del local y tarifas cargadas desde el sistema

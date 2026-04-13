@@ -104,6 +104,34 @@ class DeliveryController {
         require_once '../views/layouts/delivery_layout.php';
     }
 
+    /**
+     * Muestra el historial de asistencias del repartidor filtrado por fecha
+     */
+    public function assists() {
+        $selectedDate = $_GET['date'] ?? date('Y-m-d');
+        $userId = $_SESSION['user_id'];
+
+        // Conexión directa para manejar los campos específicos de delivery_checkins
+        require_once '../config/db.php';
+        $database = new Database();
+        $db = $database->getConnection();
+
+        $query = "SELECT * FROM delivery_checkins 
+                  WHERE user_id = :user_id 
+                  AND DATE(checkin_time) = :date 
+                  ORDER BY checkin_time DESC";
+        
+        $stmt = $db->prepare($query);
+        $stmt->bindParam(':user_id', $userId);
+        $stmt->bindParam(':date', $selectedDate);
+        $stmt->execute();
+        $assists = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $view_title = "Historial de Asistencias";
+        $content_view = '../views/delivery/assists.php';
+        require_once '../views/layouts/delivery_layout.php';
+    }
+
     public function checkin() {
         $settingModel = new Setting();
         $settings = $settingModel->getAll();

@@ -430,6 +430,11 @@ function updateOrdersUI(orders) {
         }
     }, 100);
 
+    // Actualizar contadores en el select del layout
+    if (typeof updateFilterCounts === 'function') {
+        updateFilterCounts(orders);
+    }
+
     // Re-aplicar filtros si el usuario tiene alguno seleccionado
     const activeFilter = document.getElementById('statusFilter').value;
     if (activeFilter !== 'all') {

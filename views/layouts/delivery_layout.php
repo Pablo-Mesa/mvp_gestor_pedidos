@@ -10,6 +10,11 @@
     <link rel="manifest" href="<?php echo $baseUrl; ?>manifest.json">
     <link rel="icon" type="image/png" href="<?php echo $baseUrl; ?>assets/icono_solver_nobg.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/css_cubo.css" />
+    <script src="<?php echo $baseUrl; ?>js/tool-kit-v002.js"></script>
+
+
     <style>
         :root {
             --delivery-bg: #f4f7f6;
@@ -17,6 +22,11 @@
             --delivery-primary: #00c853;
             --delivery-text: #2d3436;
             --delivery-subtext: #636e72;
+        }
+        *{
+            margin: 0px;
+            padding: 0px;
+            box-sizing: border-box;
         }
         html, body {
             height: 100%;
@@ -42,7 +52,38 @@
             z-index: 100;
             flex-shrink: 0; /* No permite que el header se encoja */
         }
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
         .delivery-header h1 { font-size: 1.2rem; margin: 0; font-weight: 800; color: var(--delivery-primary); }
+
+        /* Barra de Usuario */
+        .user-info-bar {
+            background-color: #ffffff;
+            padding: 6px 15px;
+            border-bottom: 1px solid #eee;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            min-height: 45px;
+        }
+        .user-info-content {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--delivery-subtext);
+            text-transform: uppercase;
+        }
+        .user-info-content i {
+            color: var(--delivery-primary);
+            font-size: 0.85rem;
+        }
         
         /* Botón de Menú */
         .menu-trigger {
@@ -136,29 +177,29 @@
         }
 
         /* Estilos del Filtro */
-        .filter-container {
-            padding: 10px 15px;
-            background-color: var(--delivery-bg);
-        }
         .delivery-select-wrapper {
             position: relative;
             display: flex;
             align-items: center;
+            flex: 1;
+            max-width: 200px;
         }
         .delivery-select-wrapper i {
             position: absolute;
-            left: 12px;
+            left: 10px;
+            font-size: 0.8rem;
             color: var(--delivery-primary);
             pointer-events: none;
         }
         .delivery-select {
             width: 100%;
-            padding: 12px 12px 12px 40px;
+            padding: 6px 10px 6px 30px;
             background-color: var(--delivery-card);
             color: var(--delivery-text);
-            border: 1px solid #dcdde1;
-            border-radius: 10px;
-            font-size: 0.95rem;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
             appearance: none;
             outline: none;
             transition: border-color 0.3s;
@@ -171,15 +212,62 @@
 </head>
 <body>
 
+    <div id="offline-banner" style="display:none; background:#ff5252; color:white; text-align:center; padding:8px; font-size:0.85rem; font-weight:bold; flex-shrink:0; z-index:2000;">
+        <i class="fas fa-exclamation-triangle"></i> Sin conexión a internet. Revisa tu señal.
+    </div>
+
     <!-- Encabezado Principal -->
     <header class="delivery-header">
-        <h1><i class="fas fa-route"></i> SOLVER LOGÍSTICA</h1>
-        <div>
-            <button class="menu-trigger" onclick="toggleMenu()" title="Menú">
-                <i class="fas fa-bars"></i>
-            </button>
+    
+        <div class="header-brand">
+            <div id="here_cube"></div>   
+            <h1>SOLVER LOGÍSTICA</h1>
+            <!--<i class="fas fa-route"></i>-->
         </div>
+
+        <button class="menu-trigger" onclick="toggleMenu()" title="Menú">
+            <i class="fas fa-bars"></i>
+        </button>
     </header>
+
+    <!-- Barra de Usuario Identificado -->
+    <?php
+        $c_all = 0; $c_p = 0; $c_e = 0; $c_c = 0; $c_r = 0;
+        if (isset($orders) && is_array($orders)) {
+            $c_all = count($orders);
+            foreach ($orders as $o) {
+                $st = $o['status'] ?? '';
+                if ($st === 'confirmed' || $st === 'shipped') $c_p++;
+                elseif ($st === 'completed') $c_e++;
+                elseif ($st === 'cancelled') $c_c++;
+                elseif ($st === 'rejected') $c_r++;
+            }
+        }
+    ?>
+    <div class="user-info-bar">
+        <!-- Filtro de Pedidos (Lado Izquierdo) -->
+        <div class="filter-side">
+            <?php if (($_GET['route'] ?? 'delivery') === 'delivery'): ?>
+            <div class="delivery-select-wrapper">
+                <i class="fas fa-filter"></i>
+                <select id="statusFilter" class="delivery-select">
+                    <option value="all">Todos (<?php echo $c_all; ?>)</option>
+                    <option value="pending_group">Pendientes (<?php echo $c_p; ?>)</option>
+                    <option value="completed">Entregados (<?php echo $c_e; ?>)</option>
+                    <option value="cancelled">Cancelados (<?php echo $c_c; ?>)</option>
+                    <option value="rejected">Rechazados (<?php echo $c_r; ?>)</option>
+                </select>
+            </div>
+            <?php else: ?>
+                <div style="flex:1"></div>
+            <?php endif; ?>
+        </div>
+
+        <div class="user-info-content">
+            <i class="fas fa-user-circle"></i>
+            <span><?php echo htmlspecialchars($_SESSION['user_name']); ?></span>
+        </div>
+    </div>
 
     <!-- Menú Lateral -->
     <div id="menuOverlay" class="menu-overlay" onclick="toggleMenu()"></div>
@@ -200,7 +288,7 @@
                 </a>
                 <div id="submenu-asistencias" class="submenu">
                     <a href="?route=delivery_checkin" class="menu-item"><i class="fas fa-map-marker-alt"></i> Marcar llegada</a>
-                    <a href="#" class="menu-item"><i class="fas fa-list-ul"></i> Historial de asistencias</a>
+                    <a href="?route=delivery_assists" class="menu-item"><i class="fas fa-list-ul"></i> Historial de asistencias</a>
                 </div>
             </div>
 
@@ -217,29 +305,15 @@
         </div>
     </div>
 
-    <!-- Filtro de Pedidos -->
-    <?php if (($_GET['route'] ?? 'delivery') === 'delivery'): ?>
-    <div class="filter-container">
-        <div class="delivery-select-wrapper">
-            <i class="fas fa-filter"></i>
-            <select id="statusFilter" class="delivery-select">
-                <option value="all">Ver Todos los Pedidos</option>
-                <option value="pending_group">Pendientes y En Camino</option>
-                <option value="completed">Entregados</option>
-                <option value="rejected">Rechazados / Cancelados</option>
-            </select>
-        </div>
-    </div>
-    <?php endif; ?>
-
     <!-- Contenedor Principal -->
     <main class="delivery-main">
         <?php if (isset($content_view) && file_exists($content_view)) require_once $content_view; ?>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="<?php echo $baseUrl; ?>js/toast.js"></script>
-
+    <script src="<?php echo $baseUrl; ?>js/toast.js"></script>    
+    <script> drawCube("here_cube", false, "28px"); </script>
+    
     <script>
         let deferredPrompt;
 
@@ -266,6 +340,43 @@
                 });
             }
         });
+
+        // Detector de conexión a internet
+        function updateOnlineStatus() {
+            const banner = document.getElementById('offline-banner');
+            if (navigator.onLine) {
+                banner.style.display = 'none';
+            } else {
+                banner.style.display = 'block';
+            }
+        }
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        updateOnlineStatus();
+    </script>
+
+    <script>
+        /**
+         * Actualiza dinámicamente los contadores del selector de estados
+         */
+        function updateFilterCounts(orders) {
+            const filter = document.getElementById('statusFilter');
+            if (!filter) return;
+
+            const counts = { all: orders.length, p: 0, e: 0, c: 0, r: 0 };
+            orders.forEach(o => {
+                if (o.status === 'confirmed' || o.status === 'shipped') counts.p++;
+                else if (o.status === 'completed') counts.e++;
+                else if (o.status === 'cancelled') counts.c++;
+                else if (o.status === 'rejected') counts.r++;
+            });
+
+            filter.options[0].text = `Todos (${counts.all})`;
+            filter.options[1].text = `Pendientes (${counts.p})`;
+            filter.options[2].text = `Entregados (${counts.e})`;
+            filter.options[3].text = `Cancelados (${counts.c})`;
+            filter.options[4].text = `Rechazados (${counts.r})`;
+        }
     </script>
 
     <script>

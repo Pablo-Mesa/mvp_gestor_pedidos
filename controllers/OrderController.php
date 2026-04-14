@@ -55,6 +55,28 @@ class OrderController {
     }
 
     /**
+     * Muestra la lista de todos los pedidos pendientes sin importar la fecha.
+     */
+    public function pendingOrders() {
+        $this->checkAdminAccess();
+
+        $orderModel = new Order();
+        
+        // Forzamos los filtros necesarios para obtener solo lo pendiente históricamente
+        $_GET['status'] = 'pending';
+        $_GET['date'] = ''; 
+
+        $stmt = $orderModel->readAll($_GET);
+        $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Obtenemos los contadores de hoy para mantener la coherencia de la barra inferior
+        $statusCounts = $orderModel->getStatusCountsByDate(date('Y-m-d'));
+
+        $content_view = '../views/admin/orders/index.php';
+        require_once '../views/layouts/admin_layout.php';
+    }
+
+    /**
      * Endpoint AJAX que devuelve los pedidos en formato JSON para auto-actualización.
      */
     public function apiIndex() {
@@ -433,12 +455,12 @@ class OrderController {
         $order->client_id = $input['client_id'] ?? 1; 
         $order->channel_id = 2; // 2 = Mostrador
         $order->payment_method = $input['payment_method'] ?? 'efectivo';
-        $order->delivery_type = 'local';
+        $order->delivery_type = $input['delivery_type'] ?? 'local';
         $order->observation = $input['observation'] ?? '';
         $order->status = 'confirmed'; // Los pedidos de mostrador suelen estar confirmados de entrada
-        $order->delivery_address = ''; // Evita error de integridad SQL
-        $order->delivery_lat = null;
-        $order->delivery_lng = null;
+        $order->delivery_address = $input['delivery_type'] === 'delivery' ? 'Ubicación vía POS' : '';
+        $order->delivery_lat = $input['lat'] ?? null;
+        $order->delivery_lng = $input['lng'] ?? null;
 
         $total = 0;
         foreach ($input['cart'] as $item) {

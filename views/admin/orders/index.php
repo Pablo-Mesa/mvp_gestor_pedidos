@@ -485,6 +485,26 @@ if (empty($orders) && $hasFilter):
     function refreshOrders() {
         const isFirstLoad = (lastMaxId === 0);
         const urlParams = new URLSearchParams(window.location.search);
+        // Lógica para ocultar/mostrar dinámicamente el acceso a "Solo Pendientes" en el menú lateral
+        const pendingBadge = document.getElementById('badge-orders-count');
+        const pendingMenuItem = document.querySelector('a[href="?route=orders_pending"]')?.closest('li');
+        
+        if (pendingBadge && pendingMenuItem) {
+            const count = parseInt(pendingBadge.innerText) || 0;
+            if (count > 0) {
+                pendingMenuItem.style.display = 'block';
+            } else {
+                pendingMenuItem.style.display = 'none';
+            }
+        }
+        
+        // CORRECCIÓN: Si estamos en la vista de "Solo Pendientes", debemos forzar
+        // estos parámetros en la petición AJAX para que el API mantenga el filtro histórico.
+        if (urlParams.get('route') === 'orders_pending') {
+            urlParams.set('status', 'pending');
+            urlParams.set('date', ''); // Enviamos vacío para que el controlador no fuerce "hoy"
+        }
+
         // Cambiamos el parámetro route para apuntar al endpoint JSON
         urlParams.set('route', 'orders_api');
         

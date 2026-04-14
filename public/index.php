@@ -346,6 +346,12 @@ switch ($route) {
         $controller->index();
         break;
 
+    case 'orders_pending':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->pendingOrders();
+        break;
+
     case 'orders_show':
         require_once '../controllers/OrderController.php';
         $controller = new OrderController();
@@ -417,6 +423,31 @@ switch ($route) {
         require_once '../controllers/UserController.php';
         $controller = new UserController();
         $controller->delete();
+        break;
+
+    // --- Gestión de Clientes (Admin/POS) ---
+    case 'admin_clients_search':
+        require_once '../controllers/ClientController.php';
+        $controller = new ClientController();
+        $controller->search();
+        break;
+
+    case 'admin_clients_check_phone':
+        require_once '../controllers/ClientController.php';
+        $controller = new ClientController();
+        $controller->checkPhoneApi();
+        break;
+
+    case 'admin_clients_store_api':
+        require_once '../controllers/ClientController.php';
+        $controller = new ClientController();
+        $controller->storeApi();
+        break;
+
+    case 'admin_resolve_map_url':
+        require_once '../controllers/ClientController.php';
+        $controller = new ClientController();
+        $controller->resolveMapUrl();
         break;
 
     default:

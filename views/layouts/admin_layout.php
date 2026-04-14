@@ -231,7 +231,16 @@
         $menu_structure = [
             ['route' => 'admin',       'label' => 'Dashboard',        'icon' => 'fas fa-chart-pie'],
             ['route' => 'pos',         'label' => 'Punto de Venta',    'icon' => 'fas fa-desktop'],
-            ['route' => 'orders',      'label' => 'Pedidos',           'icon' => 'fas fa-box', 'badge_id' => 'badge-orders-count'],
+            [
+                'label' => 'Pedidos',
+                'icon' => 'fas fa-box',
+                'id' => 'menuOrders',
+                'badge_id' => 'badge-orders-count',
+                'children' => [
+                    ['route' => 'orders',         'label' => 'Todos los Pedidos', 'icon' => 'fas fa-list'],
+                    ['route' => 'orders_pending', 'label' => 'Solo Pendientes',  'icon' => 'fas fa-clock'],
+                ]
+            ],
             [
                 'label' => 'Gestión Menú',
                 'icon' => 'fas fa-utensils',
@@ -282,6 +291,9 @@
                            data-bs-toggle="collapse" href="#sub_<?php echo $item['id']; ?>">
                             <i class="<?php echo $item['icon']; ?> me-2"></i> <?php echo $item['label']; ?>
                             <i class="fas fa-chevron-down float-end mt-1" style="font-size: 0.7rem;"></i>
+                            <?php if(isset($item['badge_id'])): ?>
+                                <span id="<?php echo $item['badge_id']; ?>" class="badge rounded-pill bg-danger float-end mt-1 me-2" style="display:none; font-size: 0.7rem;">0</span>
+                            <?php endif; ?>
                         </a>
                         <ul class="collapse submenu <?php echo $is_child_active ? 'show' : ''; ?>" id="sub_<?php echo $item['id']; ?>">
                             <?php foreach ($item['children'] as $child): 

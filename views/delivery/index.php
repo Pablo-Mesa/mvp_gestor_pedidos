@@ -491,10 +491,10 @@ function renderOrderCardJS(order) {
             </div>
             <div class="card-operative-section">
                 <div class="contact-actions">
-                    <a href="tel:${phone}" class="btn-contact btn-call"><i class="fas fa-phone-alt"></i> Llamar</a>
                     <button onclick="showPhoneModal('${phone}')" class="btn-contact btn-call" style="background: #0984e3; border:none; cursor:pointer;" title="Ver número">
                         <i class="fas fa-eye"></i>
                     </button>
+                    <a href="tel:${phone}" class="btn-contact btn-call"><i class="fas fa-phone-alt"></i> Llamar</a>                    
                     <button onclick="openWhatsAppMenu('${phone}', '${order.id}')" class="btn-contact btn-whatsapp"><i class="fab fa-whatsapp"></i> WhatsApp</button>
                 </div>
                 ${order.delivery_lat ? `<div class="map-wrapper"><div id="map-${order.id}" class="map-preview"></div><a href="https://www.google.com/maps/search/?api=1&query=${order.delivery_lat},${order.delivery_lng}" target="_blank" class="map-overlay-btn"><i class="fas fa-directions"></i> GPS</a></div>` : ''}

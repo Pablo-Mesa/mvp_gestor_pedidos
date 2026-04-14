@@ -37,6 +37,24 @@
             flex-direction: column;
             transition: all 0.3s ease;
             z-index: 1050;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        /* Personalización de la barra de desplazamiento para la Sidebar */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: #212529;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #495057;
+            border-radius: 10px;
+        }
+        .sidebar {
+            scrollbar-width: thin;
+            scrollbar-color: #495057 #212529;
         }
 
         .sidebar-header {

@@ -41,9 +41,9 @@
         display: flex;
         gap: 8px;
         overflow-x: auto;
-        padding-bottom: 10px;
-        margin-bottom: 15px;
         scrollbar-width: none;
+        flex-shrink: 0;
+        padding-bottom: 12px;
     }
     .pos-category-pills::-webkit-scrollbar { display: none; }
     
@@ -58,12 +58,23 @@
         font-weight: 600;
         color: #64748b;
         transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 38px;
+        line-height: 1;
+        flex-shrink: 0;
+    }
+
+    .btn-pos-filter:focus, .btn-pos-filter.active {
+        box-shadow: none !important;
+        outline: none !important;
     }
 
     .btn-pos-filter.active {
-        background: #2d3436;
-        color: white;
-        border-color: #2d3436;
+        background: #2d3436 !important;
+        color: white !important;
+        border-color: #2d3436 !important;
     }
 
     .pos-grid {
@@ -72,6 +83,9 @@
         gap: 15px;
         overflow-y: auto;
         padding-right: 8px;
+        flex: 1;
+        min-height: 0;
+        align-items: start; /* Evita que las tarjetas se estiren verticalmente */
     }
     .pos-grid::-webkit-scrollbar { width: 5px; }
     .pos-grid::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
@@ -84,11 +98,14 @@
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
         background: #fff;
+        display: flex; /* Convierte la tarjeta en un contenedor flex */
+        flex-direction: column; /* Apila los elementos internos verticalmente */
+        min-height: 120px; /* Altura mínima para mantener consistencia */
     }
     .pos-item-card:hover { border-color: #0984e3; transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
     
     .pos-item-name { font-weight: 600; font-size: 0.9rem; margin-bottom: 5px; display: block; }
-    .pos-item-price { color: #00b894; font-weight: 700; font-size: 0.9rem; }
+    .pos-item-price { color: #00b894; font-weight: 700; font-size: 0.9rem; display: block; } /* Asegura que el precio ocupe su propia línea */
 
     /* Acciones de Porción */
     .pos-item-actions {
@@ -226,9 +243,9 @@
         
         <!-- Filtros por categoría -->
         <div class="pos-category-pills">
-            <button class="btn-pos-filter active" onclick="filterByCat('all', this)">Todos</button>
+            <button type="button" class="btn btn-pos-filter active" onclick="filterByCat('all', this)">Todos</button>
             <?php foreach($categories as $cat): ?>
-                <button class="btn-pos-filter" onclick="filterByCat('<?php echo $cat['id']; ?>', this)">
+                <button type="button" class="btn btn-pos-filter" onclick="filterByCat('<?php echo $cat['id']; ?>', this)">
                     <?php echo htmlspecialchars($cat['name']); ?>
                 </button>
             <?php endforeach; ?>
@@ -304,6 +321,7 @@
             </button>
         </div>
     </div>
+    
 </div>
 
 <script>
@@ -442,7 +460,7 @@
                             <button class="btn btn-dark btn-sm" type="button" onclick="searchClientInModal()" title="Buscar">
                                 <i class="fas fa-search"></i>
                             </button>
-                            <button class="btn btn-success btn-sm" type="button" onclick="quickCreateClient()" title="Nuevo Cliente">
+                            <button class="btn btn-success btn-sm" type="button" onclick="quickCreateClient()" title="Nuevo Cliente (F4)">
                                 <i class="fas fa-user-plus"></i>
                             </button>
                         </div>
@@ -498,7 +516,16 @@
             confirmButtonColor: '#00b894',
             focusConfirm: false,
             didOpen: () => {
-                document.getElementById('swal-client-search')?.focus();
+                const searchInput = document.getElementById('swal-client-search');
+                searchInput?.focus();
+
+                // Al presionar Enter, saltar al siguiente campo (Tipo de Entrega)
+                searchInput?.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        document.getElementById('swal-delivery-type')?.focus();
+                    }
+                });
                 
                 // Inicialización con un retraso de seguridad para que el DOM esté 100% listo
                 setTimeout(() => {
@@ -680,7 +707,7 @@
         const currentDelivery = document.getElementById('swal-delivery-type')?.value || 'local';
         const currentPayment = document.getElementById('swal-payment-method')?.value || 'efectivo';
 
-        const { value: formValues } = await Swal.fire({
+        const result = await Swal.fire({
             title: 'Nuevo Cliente',
             html: `
                 <div class="text-start">
@@ -697,13 +724,27 @@
             `,
             focusConfirm: false,
             didOpen: () => {
-                // Enfocar el campo de nombre automáticamente al abrir el registro rápido
-                document.getElementById('q-name')?.focus();
-
+                const nameInput = document.getElementById('q-name');
                 const phoneInput = document.getElementById('q-phone');
+                const emailInput = document.getElementById('q-email');
                 const feedback = document.getElementById('phone-feedback');
+
+                nameInput?.focus();
+
+                // Flujo de navegación con Enter
+                nameInput?.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); phoneInput?.focus(); }
+                });
+
+                phoneInput?.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); emailInput?.focus(); }
+                });
+
+                emailInput?.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); Swal.clickConfirm(); }
+                });
                 
-                phoneInput.addEventListener('input', async (e) => {
+                phoneInput?.addEventListener('input', async (e) => {
                     const phone = e.target.value;
                     if (phone.length >= 6) {
                         const resp = await fetch(`?route=admin_clients_check_phone&phone=${phone}`);
@@ -736,7 +777,8 @@
             }
         });
 
-        if (formValues && formValues.name && formValues.phone) {
+        if (result.isConfirmed) {
+            const formValues = result.value;
             try {
                 const resp = await fetch('?route=admin_clients_store_api', {
                     method: 'POST',
@@ -759,6 +801,13 @@
                     Swal.fire("Error", res.message, "error");
                 }
             } catch(e) { console.error(e); }
+        } else {
+            // Si se cancela o presiona Esc, volvemos al modal de Finalizar preservando los datos
+            openFinalizeModal({
+                observation: currentObs,
+                deliveryType: currentDelivery,
+                paymentMethod: currentPayment
+            });
         }
     }
 
@@ -789,10 +838,18 @@
     /**
      * Atajo de teclado F2 para abrir el modal de finalización rápidamente
      */
-    window.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function(e) {
         if (e.key === 'F2') {
             e.preventDefault();
             openFinalizeModal();
         }
-    });
+        // F4 para Registrar Nuevo Cliente
+        if (e.key === 'F4' || e.code === 'F4') {
+            e.preventDefault();
+            quickCreateClient();
+        }
+    }, true); // Usamos capture para asegurar que el evento se detecte antes de que el modal lo bloquee
+
+    // Autofocus en el buscador al cargar la vista
+    document.getElementById('posSearch').focus();
 </script>

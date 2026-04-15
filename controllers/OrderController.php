@@ -6,6 +6,7 @@ require_once '../models/Order.php';
 require_once '../models/User.php';
 require_once '../models/ClientLocation.php';
 require_once '../models/Setting.php';
+require_once '../models/CashRegister.php'; // Nuevo Modelo
 
 class OrderController {
 
@@ -187,6 +188,15 @@ class OrderController {
             $order->id = $_POST['id'];
             $order->status = $_POST['status'];
             $success = $order->updateStatus();
+
+            // Si el pedido se completa y es en efectivo, registrar ingreso en caja
+            if ($success && $_POST['status'] === 'completed') {
+                $orderData = $order->readOne();
+                if ($orderData['payment_method'] === 'efectivo') {
+                    $cashModel = new CashRegister();
+                    $cashModel->addOrderMovement($orderData['id'], $orderData['total']);
+                }
+            }
 
             // Si es una petición AJAX (como al imprimir), respondemos JSON
             if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
@@ -493,6 +503,12 @@ class OrderController {
         $order->total = $total;
 
         if ($order->create()) {
+            // Si es POS y es efectivo, registrar ingreso inmediato
+            if ($order->payment_method === 'efectivo') {
+                $cashModel = new CashRegister();
+                $cashModel->addOrderMovement($order->id, $order->total, 'Venta POS');
+            }
+
             echo json_encode([
                 'success' => true, 
                 'order_id' => $order->id,

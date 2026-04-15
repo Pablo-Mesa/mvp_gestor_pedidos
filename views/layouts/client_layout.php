@@ -73,7 +73,9 @@ $siteLogo = !empty($siteSettings['site_logo']) ? $baseUrl . 'uploads/' . $siteSe
 
     <!-- Header fijo que agrupa Navbar y Categorías -->
     <header class="fixed-header">
+        
         <div class="header-content">
+
             <!-- Barra Superior -->
             <nav class="navbar">
                 <div class="container-logo-title">
@@ -104,9 +106,9 @@ $siteLogo = !empty($siteSettings['site_logo']) ? $baseUrl . 'uploads/' . $siteSe
                     </div>
                 </div>              
             </nav>
-
-            <?php if ($showCategories): ?>
+            
             <!-- Lista de Categorías -->
+            <?php if ($showCategories): ?>            
             <div class="scroll-container">
                 <a href="?route=home" class="category-btn <?php echo !isset($_GET['category_id']) ? 'active' : ''; ?>">🏠 Menú del Día</a>
                 
@@ -125,6 +127,7 @@ $siteLogo = !empty($siteSettings['site_logo']) ? $baseUrl . 'uploads/' . $siteSe
                 <?php endforeach; ?>
             </div>
             <?php endif; ?>
+
         </div>
 
         <!-- Sidebar de Usuario (Movido fuera del wrapper de ancho limitado para que sea fixed a la derecha) -->

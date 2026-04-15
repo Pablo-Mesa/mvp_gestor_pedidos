@@ -245,6 +245,7 @@
                 <p class="stat-value"><?php echo $data['platos_vendidos']; ?></p>
             </div>
         </div>
+        
     </div>
 
     <div class="dashboard-visuals">
@@ -263,21 +264,21 @@
         <section class="quick-actions">
             <h2>Acciones Rápidas</h2>
             <div class="actions-grid">
-                <a href="?route=POS" class="action-btn">
+                <a href="?route=pos" class="action-btn">
                     <i class="fas fa-cash-register"></i>
-                    <span>Punto de venta</span>
+                    <span>Punto de venta <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + P]</small></span>
                 </a>
                 <a href="?route=orders" class="action-btn">
                     <i class="fas fa-list-ul"></i>
-                    <span>Ver Pedidos</span>
+                    <span>Ver Pedidos <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + O]</small></span>
                 </a>
                 <a href="?route=menus" class="action-btn">
                     <i class="fas fa-calendar-alt"></i>
-                    <span>Planificar Menú</span>
+                    <span>Planificar Menú <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + K]</small></span>
                 </a>
                 <a href="?route=products_create" class="action-btn">
                     <i class="fas fa-plus-circle"></i>
-                    <span>Nuevo Producto</span>
+                    <span>Nuevo Producto <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + N]</small></span>
                 </a>
             </div>
         </section>

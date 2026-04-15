@@ -317,7 +317,7 @@
                 <span id="posTotal">0</span>
             </div>
             <button id="btnOpenFinalize" class="btn-confirm-sale" onclick="openFinalizeModal()">
-                FINALIZAR <i class="fas fa-chevron-right"></i>
+                FINALIZAR <small style="font-size: 0.7em; opacity: 0.8;">[F2]</small> <i class="fas fa-chevron-right"></i>
             </button>
         </div>
     </div>

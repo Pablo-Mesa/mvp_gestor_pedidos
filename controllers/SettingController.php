@@ -26,6 +26,11 @@ class SettingController {
         require_once '../views/layouts/admin_layout.php';
     }
 
+    public function shortcuts() {
+        $content_view = '../views/admin/settings/shortcuts.php';
+        require_once '../views/layouts/admin_layout.php';
+    }
+
     public function deliveryRates() {
         $model = new Setting();
         $settings = $model->getAll();

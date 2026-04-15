@@ -149,6 +149,28 @@ switch ($route) {
         $controller->posStore();
         break;
 
+    // --- Gestión de Caja ---
+    case 'cash':
+        require_once '../controllers/CashController.php';
+        $controller = new CashController();
+        $controller->index();
+        break;
+    case 'cash_open':
+        require_once '../controllers/CashController.php';
+        $controller = new CashController();
+        $controller->open();
+        break;
+    case 'cash_close':
+        require_once '../controllers/CashController.php';
+        $controller = new CashController();
+        $controller->close();
+        break;
+    case 'cash_movement_store':
+        require_once '../controllers/CashController.php';
+        $controller = new CashController();
+        $controller->storeMovement();
+        break;
+
     // --- Gestión de Productos ---
     case 'products':
         require_once '../controllers/ProductController.php';
@@ -218,6 +240,12 @@ switch ($route) {
         require_once '../controllers/CategoryController.php';
         $controller = new CategoryController();
         $controller->delete();
+        break;
+
+    case 'shortcuts':
+        require_once '../controllers/SettingController.php';
+        $controller = new SettingController();
+        $controller->shortcuts();
         break;
 
     case 'settings_reset':

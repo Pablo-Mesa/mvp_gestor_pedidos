@@ -81,7 +81,12 @@
         .submenu { list-style: none; padding-left: 0; background: rgba(0,0,0,0.2); }
         .submenu li a { padding: 0.6rem 1.5rem 0.6rem 2.5rem; font-size: 0.9rem; border-bottom: none; }
         
-        .sidebar-menu li a:hover { background-color: #495057; color: #fff; padding-left: 2rem; }
+        .sidebar-menu li a:hover, .sidebar-menu li a:focus { 
+            background-color: #495057; 
+            color: #fff; 
+            padding-left: 2rem; 
+            outline: none;
+        }
 
         /* Contenido Principal */
         .main-content { 
@@ -249,6 +254,7 @@
         $menu_structure = [
             ['route' => 'admin',       'label' => 'Dashboard',        'icon' => 'fas fa-chart-pie'],
             ['route' => 'pos',         'label' => 'Punto de Venta',    'icon' => 'fas fa-desktop'],
+            ['route' => 'cash',        'label' => 'Caja / Arqueo',     'icon' => 'fas fa-cash-register'],
             [
                 'label' => 'Pedidos',
                 'icon' => 'fas fa-box',
@@ -287,6 +293,7 @@
                     ['route' => 'hero_promos',       'label' => 'Hero Promo',           'icon' => 'fas fa-palette'],
                     ['route' => 'settings_location', 'label' => 'Ajustes de Ubicación', 'icon' => 'fas fa-map-marker-alt'],
                     ['route' => 'users',             'label' => 'Staff / Usuarios',     'icon' => 'fas fa-users', 'roles' => ['admin']],
+                    ['route' => 'shortcuts',         'label' => 'Atajos de Teclado',    'icon' => 'fas fa-keyboard'],
                 ]
             ],
         ];
@@ -353,7 +360,10 @@
                 </button>
                 <h2>Panel de Control</h2>
             </div>
-            <div class="user-info">                
+            <div class="user-info">
+                <a href="?route=shortcuts" class="btn btn-outline-secondary btn-sm d-none d-md-inline-flex align-items-center me-3" title="Guía de atajos [Alt + H]">
+                    <i class="fas fa-keyboard me-2"></i> Atajos
+                </a>
                 <span class="span-user d-none d-md-inline-flex">Hola, <i class="fas fa-user"></i> <?php echo $_SESSION['user_name'] ?? 'Admin'; ?></span>
                 <a href="?route=logout&type=admin" class="btn-logout ms-2"><i class="fas fa-sign-out-alt"></i> <span class="d-none d-sm-inline">Salir</span></a>
             </div>
@@ -504,6 +514,86 @@
         // Iniciar el contador y actualizar cada 30 segundos
         updateOrderBadge();
         setInterval(updateOrderBadge, 30000);
+
+        /**
+         * Accesibilidad: Navegación por teclado para la Sidebar
+         */
+        document.addEventListener('keydown', function(e) {
+            // ATRIBUTO: Alt + M para enfocar el primer elemento del menú
+            if (e.altKey && e.key.toLowerCase() === 'm') {
+                e.preventDefault();
+                const sidebar = document.getElementById('adminSidebar');
+                // En móviles, si está oculto, lo abrimos
+                if (window.innerWidth <= 992 && !sidebar.classList.contains('active')) {
+                    toggleSidebar();
+                }
+                const firstLink = document.querySelector('.sidebar-menu a');
+                if (firstLink) firstLink.focus();
+                return;
+            }
+
+            // ATAJOS RÁPIDOS: Navegación directa
+            if (e.altKey) {
+                const key = e.key.toLowerCase();
+                const routes = {
+                    'p': '?route=pos',
+                    'o': '?route=orders',
+                    'k': '?route=menus',
+                    'n': '?route=products_create',
+                    'c': '?route=cash',
+                    'h': '?route=shortcuts'
+                };
+                if (routes[key]) {
+                    e.preventDefault();
+                    window.location.href = routes[key];
+                    return;
+                }
+            }
+
+            const activeElement = document.activeElement;
+            if (!activeElement || !activeElement.closest('.sidebar')) return;
+
+            // Obtenemos todos los links actualmente VISIBLES en el menú
+            const menuLinks = Array.from(document.querySelectorAll('.sidebar-menu a')).filter(link => {
+                return !!(link.offsetWidth || link.offsetHeight || link.getClientRects().length);
+            });
+            const currentIndex = menuLinks.indexOf(activeElement);
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const nextIndex = (currentIndex + 1) % menuLinks.length;
+                menuLinks[nextIndex].focus();
+            } 
+            else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const prevIndex = (currentIndex - 1 + menuLinks.length) % menuLinks.length;
+                menuLinks[prevIndex].focus();
+            } 
+            else if (e.key === 'ArrowRight') {
+                // Si es un desplegable y está cerrado, lo abrimos
+                if (activeElement.classList.contains('menu-header-link')) {
+                    const targetId = activeElement.getAttribute('href');
+                    const target = document.querySelector(targetId);
+                    if (target && !target.classList.contains('show')) {
+                        activeElement.click();
+                    }
+                }
+            } 
+            else if (e.key === 'ArrowLeft') {
+                // Si es un desplegable y está abierto, lo cerramos
+                if (activeElement.classList.contains('menu-header-link')) {
+                    const targetId = activeElement.getAttribute('href');
+                    const target = document.querySelector(targetId);
+                    if (target && target.classList.contains('show')) {
+                        activeElement.click();
+                    }
+                } else if (activeElement.closest('.submenu')) {
+                    // Si estamos en un subelemento, volvemos al encabezado padre
+                    const parentHeader = activeElement.closest('.submenu').previousElementSibling;
+                    if (parentHeader) parentHeader.focus();
+                }
+            }
+        });
     </script>
 </body>
 </html>

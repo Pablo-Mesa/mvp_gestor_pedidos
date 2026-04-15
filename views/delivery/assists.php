@@ -4,27 +4,6 @@
         flex-shrink: 0;
     }
     
-    .date-selector-container {
-        background: white;
-        padding: 12px 15px;
-        border-radius: 12px;
-        margin-bottom: 15px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        border: 1px solid #eee;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-    }
-
-    .date-input { 
-        border: none; 
-        font-weight: 700; 
-        color: var(--delivery-text); 
-        outline: none; 
-        flex: 1; 
-        font-size: 0.9rem;
-    }
-
     .assists-container {
         background: white;
         border-radius: 15px;
@@ -90,13 +69,6 @@
 <div class="assist-header-info">
     <h2 style="margin:0; font-size: 1.3rem;">Historial de Asistencias</h2>
     <p style="color: var(--delivery-subtext); font-size: 0.85rem; margin-top: 5px;">Registros de llegada al local</p>
-</div>
-
-<!-- Selector de Fecha -->
-<div class="date-selector-container">
-    <i class="fas fa-calendar-day" style="color: var(--delivery-primary);"></i>
-    <input type="month" class="date-input" value="<?php echo $selectedMonth ?? date('Y-m'); ?>" 
-           onchange="location.href='?route=delivery_assists&month='+this.value">
 </div>
 
 <div class="assists-container">

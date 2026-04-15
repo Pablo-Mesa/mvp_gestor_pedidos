@@ -233,7 +233,8 @@
  */
 function renderOrderCardHTML($order) {
     $phone = preg_replace('/[^0-9]/', '', $order['user_phone'] ?? '');
-    $mustCollect = (isset($order['payment_method']) && strtolower($order['payment_method']) === 'efectivo');
+    // TEMPORAL: Forzamos a cobrar hasta implementar gestión de Caja
+    $mustCollect = true; 
     // Agregamos 'confirmed' a los colapsados por defecto para mejorar rendimiento y orden
     $isCollapsed = in_array($order['status'], ['confirmed', 'completed', 'rejected', 'cancelled']) ? 'collapsed' : '';
     
@@ -386,7 +387,7 @@ async function refreshDeliveryOrders(forceUpdate = false) {
 
             if (hasNewOrders) {
                 notificationSound.play().catch(e => console.log("Audio bloqueado: requiere interacción previa"));
-                Swal.fire("¡Nuevo pedido asignado! 🛵", "success");
+                Swal.fire("¡Nuevo pedido asignado! 🛵", "");
             }
 
             currentOrdersData = newData;
@@ -448,7 +449,8 @@ function updateOrdersUI(orders) {
  */
 function renderOrderCardJS(order) {
     const phone = (order.user_phone || '').replace(/\D/g, '');
-    const mustCollect = (order.payment_method || '').toLowerCase() === 'efectivo';
+    // TEMPORAL: Forzamos a cobrar hasta implementar gestión de Caja
+    const mustCollect = true; 
     const isCollapsed = ['confirmed', 'completed', 'rejected', 'cancelled'].includes(order.status) ? 'collapsed' : '';
     const formattedTotal = new Intl.NumberFormat('es-PY').format(order.total);
     const time = (order.created_at.split(' ')[1] || '').substring(0, 5);

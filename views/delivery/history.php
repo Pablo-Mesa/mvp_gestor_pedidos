@@ -44,24 +44,22 @@
     .row-amount .price { display: block; font-weight: 800; font-size: 0.9rem; }
     .row-amount .badge { font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
 
-    .date-selector-container {
-        background: white;
-        padding: 10px 15px;
-        border-radius: 12px;
-        margin-bottom: 15px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        border: 1px solid #eee;
-        flex-shrink: 0;
-    }
-    .date-input { border: none; font-weight: 700; color: var(--delivery-text); outline: none; flex: 1; }
-
     /* Fijar el resumen final al fondo */
     .history-footer-summary {
         margin-top: 20px;
         flex-shrink: 0;
+        padding: 18px 20px;
+        background: white;
+        border-radius: 15px;
+        border: 1px solid #eee;
+        border-top: 4px solid var(--delivery-primary);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
+    .footer-label { font-size: 0.85rem; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+    .footer-amount { font-size: 1.4rem; font-weight: 900; color: var(--delivery-text); letter-spacing: -0.5px; }
 
     .history-actions-grid {
         display: grid;
@@ -91,6 +89,20 @@
     .print-footer { display: none; }
 
     @media print {
+        /* Forzar que el navegador permita múltiples páginas y flujo natural */
+        html, body {
+            height: auto !important;
+            overflow: visible !important;
+            display: block !important;
+        }
+
+        /* Anular el contenedor flex que bloquea los saltos de página */
+        .delivery-main, .history-table-container {
+            display: block !important;
+            height: auto !important;
+            overflow: visible !important;
+        }
+
         .print-header {
             display: flex !important;
             justify-content: space-between;
@@ -119,8 +131,8 @@
             display: none !important;
         }
         body { background: white; padding: 0; }
-        .history-table-container { overflow: visible !important; border: none; }
-        .history-footer-summary { background: #2d3436 !important; color: white !important; -webkit-print-color-adjust: exact; }
+        .history-table-container { border: none; }
+        .history-footer-summary { border: 2px solid #2d3436 !important; box-shadow: none !important; color: #2d3436 !important; -webkit-print-color-adjust: exact; }
         .kpi-card { border: 1px solid #ddd !important; -webkit-print-color-adjust: exact; }
     }
 </style>
@@ -139,12 +151,6 @@
         <p><strong>Repartidor:</strong> <?php echo htmlspecialchars($_SESSION['user_name']); ?></p>
         <p><strong>Fecha de reporte:</strong> <?php echo date('d/m/Y', strtotime($selectedDate)); ?></p>
     </div>
-</div>
-
-<!-- campo selector de fecha -->
-<div class="date-selector-container">
-    <i class="fas fa-calendar-alt" style="color: var(--delivery-primary);"></i>
-    <input type="date" class="date-input" value="<?php echo $selectedDate; ?>" onchange="location.href='?route=delivery_history&date='+this.value">
 </div>
 
 <!-- botones de exportación -->
@@ -183,7 +189,8 @@
     <?php else: ?>
         <?php foreach($orders as $o): ?>
             <?php 
-                $isEf = strtolower($o['payment_method']) === 'efectivo';
+                // TEMPORAL: Todo figura como "A Cobrar" (isEf = true) por falta de módulo de Caja
+                $isEf = true; 
                 $statusClass = $o['status'] === 'completed' ? 'color: #00b894;' : 'color: #ff7675;';
             ?>
             <div class="history-row">
@@ -197,8 +204,8 @@
                 </div>
                 <div class="row-amount">
                     <span class="price">Gs. <?php echo number_format($o['total'], 0, ',', '.'); ?></span>
-                    <span class="badge" style="background: <?php echo $isEf ? '#fff3cd' : '#e3f2fd'; ?>; color: <?php echo $isEf ? '#856404' : '#0c5460'; ?>;">
-                        <?php echo $o['payment_method']; ?>
+                    <span class="badge" style="background: #fff3cd; color: #856404;">
+                        <?php echo $o['payment_method']; ?> (A Cobrar)
                     </span>
                 </div>
             </div>
@@ -207,9 +214,9 @@
 </div>
 
 <!-- resumen final -->
-<div class="history-footer-summary" style="padding: 15px; background: #2d3436; border-radius: 12px; color: white; display: flex; justify-content: space-between; align-items: center;">
-    <span style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase;">Total Facturado</span>
-    <span style="font-size: 1.2rem; font-weight: 900;">Gs. <?php echo number_format($summary['total'], 0, ',', '.'); ?></span>
+<div class="history-footer-summary">
+    <span class="footer-label">Total Facturado</span>
+    <span class="footer-amount">Gs. <?php echo number_format($summary['total'], 0, ',', '.'); ?></span>
 </div>
 
 <!-- Pie de página exclusivo para impresión -->
@@ -231,15 +238,21 @@ function shareHistoryWA() {
     const date = "<?php echo date('d/m/Y', strtotime($selectedDate)); ?>";
     const name = "<?php echo htmlspecialchars($_SESSION['user_name']); ?>";
     const count = "<?php echo $summary['count']; ?>";
+    const rejected = parseInt("<?php echo $summary['rejected'] ?? 0; ?>");
+    const cancelled = parseInt("<?php echo $summary['cancelled'] ?? 0; ?>");
     const cash = "<?php echo number_format($summary['cash'], 0, ',', '.'); ?>";
     const digital = "<?php echo number_format($summary['digital'], 0, ',', '.'); ?>";
     const total = "<?php echo number_format($summary['total'], 0, ',', '.'); ?>";
 
-    let text = `🚀 *RENDICIÓN DE ENTREGAS - SOLVER*\n`;
+    let text = `🚀 *RENDICIÓN DE ENTREGAS - ${"<?php echo htmlspecialchars($siteName ?? 'SOLVER'); ?>".toUpperCase()}*\n`;
     text += `📅 *Fecha:* ${date}\n`;
     text += `👤 *Repartidor:* ${name}\n`;
     text += `--------------------------------\n`;
     text += `✅ *Entregados:* ${count}\n`;
+    
+    if (rejected > 0) text += `❌ *Rechazados:* ${rejected}\n`;
+    if (cancelled > 0) text += `🚫 *Cancelados:* ${cancelled}\n`;
+
     text += `💵 *Efectivo a Rendir:* Gs. ${cash}\n`;
     text += `💳 *Cobros Digitales:* Gs. ${digital}\n`;
     text += `--------------------------------\n`;

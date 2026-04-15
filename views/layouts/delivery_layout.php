@@ -258,6 +258,18 @@
                     <option value="rejected">Rechazados (<?php echo $c_r; ?>)</option>
                 </select>
             </div>
+            <?php elseif (($_GET['route'] ?? '') === 'delivery_history'): ?>
+            <div class="delivery-select-wrapper">
+                <i class="fas fa-calendar-alt"></i>
+                <input type="date" class="delivery-select" value="<?php echo $selectedDate ?? date('Y-m-d'); ?>" 
+                       onchange="location.href='?route=delivery_history&date='+this.value">
+            </div>
+            <?php elseif (($_GET['route'] ?? '') === 'delivery_assists'): ?>
+            <div class="delivery-select-wrapper">
+                <i class="fas fa-calendar-day"></i>
+                <input type="month" class="delivery-select" value="<?php echo $selectedMonth ?? date('Y-m'); ?>" 
+                       onchange="location.href='?route=delivery_assists&month='+this.value">
+            </div>
             <?php else: ?>
                 <div style="flex:1"></div>
             <?php endif; ?>

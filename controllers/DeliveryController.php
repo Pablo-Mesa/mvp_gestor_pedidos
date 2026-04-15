@@ -84,18 +84,23 @@ class DeliveryController {
             'cash' => 0,      // Lo cobrado en efectivo (debe rendir)
             'digital' => 0,   // Lo pagado por medios digitales
             'total' => 0,
-            'count' => 0
+            'count' => 0,
+            'rejected' => 0,
+            'cancelled' => 0
         ];
 
         foreach ($orders as $o) {
             if ($o['status'] === 'completed') {
                 $summary['count']++;
                 $summary['total'] += $o['total'];
-                if (strtolower($o['payment_method']) === 'efectivo') {
-                    $summary['cash'] += $o['total'];
-                } else {
-                    $summary['digital'] += $o['total'];
-                }
+                
+                // TEMPORAL: Hasta que se implemente el módulo de Caja, todo se considera "Efectivo/A Cobrar"
+                // para asegurar que el repartidor rinda cuentas por cada entrega realizada.
+                $summary['cash'] += $o['total'];
+            } elseif ($o['status'] === 'rejected') {
+                $summary['rejected']++;
+            } elseif ($o['status'] === 'cancelled') {
+                $summary['cancelled']++;
             }
         }
 

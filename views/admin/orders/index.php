@@ -11,15 +11,17 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 0.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 0.75rem;
         background-color: #fff;
         padding: 0.5rem 1rem;
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.03);
     }
 
-    .filter-form { display: flex; align-items: center; }
-    .filter-group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .filter-form { display: flex; align-items: center; flex: 1; justify-content: flex-end; min-width: fit-content; }
+    .filter-group { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; }
     
     .filter-group input, .filter-group select {
         padding: 8px 12px;
@@ -27,15 +29,30 @@
         border-radius: 6px;
         font-size: 0.9rem;
         outline: none;
+        height: 38px;
     }
     .filter-group input:focus, .filter-group select:focus { border-color: #007bff; }
+    .filter-group input[name="client_name"] { width: 180px; }
 
-    .btn-filter-submit { background: #343a40; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+    .btn-filter-submit { background: #343a40; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; height: 38px; display: flex; align-items: center; }
     .btn-filter-submit:hover { background: #212529; }
 
-    .btn-clear { color: #dc3545; background: #fff1f2; padding: 8px 12px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; justify-content: center; }
+    .btn-clear { 
+        color: #dc3545; 
+        background: #fff5f5; 
+        padding: 8px 12px; 
+        border: 1px solid #fecaca;
+        border-radius: 6px; 
+        text-decoration: none; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        height: 38px;
+        transition: all 0.2s;
+    }
+    .btn-clear:hover { background: #fee2e2; border-color: #f87171; }
 
-    .page-title { margin: 0; font-size: 1.5rem; color: #333; }
+    .page-title { margin: 0; font-size: 1.5rem; color: #333; white-space: nowrap; }
     
     /* Optimizaciones Responsive para el Header de Acciones */
     @media (max-width: 992px) {
@@ -53,9 +70,11 @@
             display: grid;
             grid-template-columns: 1fr 1fr; /* Dos columnas en tablets */
             gap: 10px;
+            flex-wrap: wrap;
         }
         .filter-group input[name="client_name"] {
-            grid-column: span 2; /* El buscador ocupa todo el ancho */
+            grid-column: span 2;
+            width: 100%;
         }
         .btn-filter-submit, .btn-clear {
             justify-content: center;
@@ -276,13 +295,13 @@
                 <option value="local" <?php echo ($_GET['delivery_type'] ?? '') == 'local' ? 'selected' : ''; ?>>🍽️ Mesa Local (Alt+4)</option>
             </select>
 
-            <select name="status">
-                <option value="">Todos los estados</option>
-                <option value="pending" <?php echo ($_GET['status'] ?? '') == 'pending' ? 'selected' : ''; ?>>🟡 Pendientes</option>
-                <option value="confirmed" <?php echo ($_GET['status'] ?? '') == 'confirmed' ? 'selected' : ''; ?>>🔵 Confirmados</option>
-                <option value="completed" <?php echo ($_GET['status'] ?? '') == 'completed' ? 'selected' : ''; ?>>🟢 Entregados</option>
-                <option value="cancelled" <?php echo ($_GET['status'] ?? '') == 'cancelled' ? 'selected' : ''; ?>>🔴 Cancelados</option>
-                <option value="rejected" <?php echo ($_GET['status'] ?? '') == 'rejected' ? 'selected' : ''; ?>>⚪ Rechazados</option>
+            <select name="status" title="Atajos: Alt+Q (Todos), Alt+P (Pendiente), Alt+K (Cocina), Alt+E (Entregado), Alt+R (Rechazado), Alt+X (Cancelado)">
+                <option value="">Todos los estados (Alt+Q)</option>
+                <option value="pending" <?php echo ($_GET['status'] ?? '') == 'pending' ? 'selected' : ''; ?>>🟡 Pendientes (Alt+P)</option>
+                <option value="confirmed" <?php echo ($_GET['status'] ?? '') == 'confirmed' ? 'selected' : ''; ?>>🔵 Confirmados (Alt+K)</option>
+                <option value="completed" <?php echo ($_GET['status'] ?? '') == 'completed' ? 'selected' : ''; ?>>🟢 Entregados (Alt+E)</option>
+                <option value="cancelled" <?php echo ($_GET['status'] ?? '') == 'cancelled' ? 'selected' : ''; ?>>🔴 Cancelados (Alt+X)</option>
+                <option value="rejected" <?php echo ($_GET['status'] ?? '') == 'rejected' ? 'selected' : ''; ?>>⚪ Rechazados (Alt+R)</option>
             </select>
 
             <input type="text" name="client_name" placeholder="Buscar cliente..." value="<?php echo htmlspecialchars($_GET['client_name'] ?? ''); ?>">
@@ -624,6 +643,53 @@ if (empty($orders) && $hasFilter):
         const modalEl = document.getElementById('quickActionsModal');
         const isModalOpen = modalEl && modalEl.classList.contains('show');
 
+        // Atajos rápidos de filtrado (Alt + 1 = Todas, Alt + 2 = Delivery, Alt + 3 = Retiro, Alt + 4 = Mesa Local)
+        // Estos funcionan siempre, incluso si la tabla está vacía.
+        if (e.altKey && ['1', '2', '3', '4'].includes(e.key)) {
+            e.preventDefault();
+            const filterForm = document.querySelector('.filter-form');
+            const deliverySelect = filterForm.querySelector('select[name="delivery_type"]');
+            const values = { 
+                '1': '',         // Todas las entregas
+                '2': 'delivery', // Delivery
+                '3': 'pickup',   // Retiro
+                '4': 'local'     // Mesa Local
+            };
+            deliverySelect.value = values[e.key];
+            if (typeof Toast !== 'undefined') {
+                Toast.fire(`Filtrando por: ${deliverySelect.options[deliverySelect.selectedIndex].text}`, "info");
+            }
+            setTimeout(() => filterForm.submit(), 600);
+            return;
+        }
+
+        // Atajos rápidos para Estados (Alt + Letra)
+        const statusKeys = {
+            'q': '',          // Todos
+            'p': 'pending',   // Pendientes
+            'k': 'confirmed', // Confirmados (Cocina)
+            'e': 'completed', // Entregados
+            'r': 'rejected',  // Rechazados
+            'x': 'cancelled'  // Cancelados
+        };
+
+        const keyLower = e.key.toLowerCase();
+        if (e.altKey && statusKeys.hasOwnProperty(keyLower)) {
+            e.preventDefault();
+            const filterForm = document.querySelector('.filter-form');
+            const statusSelect = filterForm.querySelector('select[name="status"]');
+            
+            statusSelect.value = statusKeys[keyLower];
+            
+            if (typeof Toast !== 'undefined') {
+                const selectedText = statusSelect.options[statusSelect.selectedIndex].text;
+                Toast.fire(`Filtrando estado: ${selectedText}`, "info");
+            }
+            
+            setTimeout(() => filterForm.submit(), 600);
+            return;
+        }
+
         // Lógica de navegación dentro del Modal
         if (isModalOpen) {
             const selectors = [
@@ -696,26 +762,6 @@ if (empty($orders) && $hasFilter):
             const target = btns[focusedBtnIndex];
             target.focus();
             target.closest('tr').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-
-        // Atajos rápidos de filtrado (Alt + 1 = Todas, Alt + 2 = Delivery, Alt + 3 = Retiro, Alt + 4 = Mesa Local)
-        if (e.altKey && ['1', '2', '3', '4'].includes(e.key)) {
-            e.preventDefault();
-            const filterForm = document.querySelector('.filter-form');
-            const deliverySelect = filterForm.querySelector('select[name="delivery_type"]');
-            
-            const values = { 
-                '1': '',         // Todas las entregas
-                '2': 'delivery', // Delivery
-                '3': 'pickup',   // Retiro
-                '4': 'local'     // Mesa Local
-            };
-            
-            deliverySelect.value = values[e.key];
-            if (typeof Toast !== 'undefined') {
-                Toast.fire(`Filtrando por: ${deliverySelect.options[deliverySelect.selectedIndex].text}`, "info");
-            }
-            setTimeout(() => filterForm.submit(), 600);
         }
     }
 

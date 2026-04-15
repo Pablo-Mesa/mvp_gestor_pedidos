@@ -139,8 +139,8 @@
     
     /* 1. Cuando pases el mouse sobre la TABLA, desenfoca TODAS las filas */
     table tbody:hover tr {
-        filter: blur(1.5px);
-        opacity: 0.5; /* Opcional: ayuda a que el efecto se vea más limpio */
+        /*filter: blur(0.5px);
+        opacity: 0.75;  Opcional: ayuda a que el efecto se vea más limpio */
         transition: filter 0.3s, opacity 0.3s;
     }
 
@@ -242,6 +242,21 @@
     .stat-confirmed { background: #e3f2fd; border-color: #17a2b8; color: #0c5460; }
     .stat-completed { background: #e8f5e9; border-color: #28a745; color: #155724; }
     .stat-cancelled { background: #fce8e8; border-color: #dc3545; color: #721c24; }
+
+    /* Animaciones de límite de recorrido */
+    @keyframes bounce-limit-down {
+        0% { transform: translateY(0); }
+        50% { transform: translateY(8px); }
+        100% { transform: translateY(0); }
+    }
+    @keyframes bounce-limit-up {
+        0% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+        100% { transform: translateY(0); }
+    }
+    .limit-reached-down { animation: bounce-limit-down 0.25s ease; border-bottom: 2px solid #ffc107 !important; }
+    .limit-reached-up { animation: bounce-limit-up 0.25s ease; border-top: 2px solid #ffc107 !important; }
+
 </style>
 
 <!-- titulo -->
@@ -254,11 +269,11 @@
         <div class="filter-group">
             <input type="date" name="date" value="<?php echo $_GET['date'] ?? ''; ?>" title="Filtrar por Fecha">
             
-            <select name="delivery_type">
-                <option value="">Todas las entregas</option>
-                <option value="delivery" <?php echo ($_GET['delivery_type'] ?? '') == 'delivery' ? 'selected' : ''; ?>>🛵 Delivery</option>
-                <option value="pickup" <?php echo ($_GET['delivery_type'] ?? '') == 'pickup' ? 'selected' : ''; ?>>🛍️ Retiro</option>
-                <option value="local" <?php echo ($_GET['delivery_type'] ?? '') == 'local' ? 'selected' : ''; ?>>🍽️ Mesa Local</option>
+            <select name="delivery_type" title="Atajos: Alt+1 (Todas), Alt+2 (Delivery), Alt+3 (Retiro), Alt+4 (Mesa Local)">
+                <option value="">Todas las entregas (Alt+1)</option>
+                <option value="delivery" <?php echo ($_GET['delivery_type'] ?? '') == 'delivery' ? 'selected' : ''; ?>>🛵 Delivery (Alt+2)</option>
+                <option value="pickup" <?php echo ($_GET['delivery_type'] ?? '') == 'pickup' ? 'selected' : ''; ?>>🛍️ Retiro (Alt+3)</option>
+                <option value="local" <?php echo ($_GET['delivery_type'] ?? '') == 'local' ? 'selected' : ''; ?>>🍽️ Mesa Local (Alt+4)</option>
             </select>
 
             <select name="status">
@@ -645,12 +660,62 @@ if (empty($orders) && $hasFilter):
 
         if (e.key === 'ArrowDown') {
             e.preventDefault();
-            focusedBtnIndex = (focusedBtnIndex + 1) % btns.length;
-            btns[focusedBtnIndex].focus();
+            if (focusedBtnIndex < btns.length - 1) {
+                focusedBtnIndex++;
+                const target = btns[focusedBtnIndex];
+                target.focus();
+                target.closest('tr').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else if (focusedBtnIndex === btns.length - 1) {
+                // Animación de aviso al llegar al final
+                const tr = btns[focusedBtnIndex].closest('tr');
+                tr.classList.add('limit-reached-down');
+                setTimeout(() => tr.classList.remove('limit-reached-down'), 250);
+            }
         } else if (e.key === 'ArrowUp') {
             e.preventDefault();
-            focusedBtnIndex = (focusedBtnIndex - 1 + btns.length) % btns.length;
-            btns[focusedBtnIndex].focus();
+            if (focusedBtnIndex > 0) {
+                focusedBtnIndex--;
+                const target = btns[focusedBtnIndex];
+                target.focus();
+                target.closest('tr').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else if (focusedBtnIndex === 0) {
+                // Animación de aviso al llegar al principio
+                const tr = btns[focusedBtnIndex].closest('tr');
+                tr.classList.add('limit-reached-up');
+                setTimeout(() => tr.classList.remove('limit-reached-up'), 250);
+            }
+        } else if (e.key === 'Home') {
+            e.preventDefault();
+            focusedBtnIndex = 0;
+            const target = btns[focusedBtnIndex];
+            target.focus();
+            target.closest('tr').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else if (e.key === 'End') {
+            e.preventDefault();
+            focusedBtnIndex = btns.length - 1;
+            const target = btns[focusedBtnIndex];
+            target.focus();
+            target.closest('tr').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Atajos rápidos de filtrado (Alt + 1 = Todas, Alt + 2 = Delivery, Alt + 3 = Retiro, Alt + 4 = Mesa Local)
+        if (e.altKey && ['1', '2', '3', '4'].includes(e.key)) {
+            e.preventDefault();
+            const filterForm = document.querySelector('.filter-form');
+            const deliverySelect = filterForm.querySelector('select[name="delivery_type"]');
+            
+            const values = { 
+                '1': '',         // Todas las entregas
+                '2': 'delivery', // Delivery
+                '3': 'pickup',   // Retiro
+                '4': 'local'     // Mesa Local
+            };
+            
+            deliverySelect.value = values[e.key];
+            if (typeof Toast !== 'undefined') {
+                Toast.fire(`Filtrando por: ${deliverySelect.options[deliverySelect.selectedIndex].text}`, "info");
+            }
+            setTimeout(() => filterForm.submit(), 600);
         }
     }
 
@@ -832,7 +897,7 @@ if (empty($orders) && $hasFilter):
                     </tr>`;
             }).join('');
 
-            /**
+            /*
              * Función auxiliar para actualizar con animación
              */
             const updateCountWithAnimation = (id, newValue) => {

@@ -194,7 +194,7 @@ class OrderController {
                 $orderData = $order->readOne();
                 if ($orderData['payment_method'] === 'efectivo') {
                     $cashModel = new CashRegister();
-                    $cashModel->addOrderMovement($orderData['id'], $orderData['total']);
+                    $cashModel->addOrderMovement($orderData['id'], $orderData['total'], $_SESSION['user_id']);
                 }
             }
 
@@ -506,7 +506,7 @@ class OrderController {
             // Si es POS y es efectivo, registrar ingreso inmediato
             if ($order->payment_method === 'efectivo') {
                 $cashModel = new CashRegister();
-                $cashModel->addOrderMovement($order->id, $order->total, 'Venta POS');
+                $cashModel->addOrderMovement($order->id, $order->total, $_SESSION['user_id'], 'Venta POS');
             }
 
             echo json_encode([

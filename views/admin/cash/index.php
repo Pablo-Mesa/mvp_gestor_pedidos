@@ -2,7 +2,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-cash-register me-2"></i>Gestión de Caja</h1>
-            <p class="text-muted">Control de ingresos, egresos y arqueo diario.</p>
+            <p class="text-muted">Operando como: <strong><?php echo htmlspecialchars($_SESSION['user_name']); ?></strong></p>
         </div>
         <?php if (!$activeSession): ?>
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalOpenCash">
@@ -26,7 +26,7 @@
                 <div class="card border-left-primary shadow h-100 py-2">
                     <div class="card-body">
                         <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Monto de Apertura</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">Gs. <?php echo number_format($activeSession['opening_balance'], 0, ',', '.'); ?></div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">Gs. <?php echo number_format($activeSession['opening_amount'], 0, ',', '.'); ?></div>
                     </div>
                 </div>
             </div>
@@ -50,7 +50,7 @@
                 <div class="card border-left-info shadow h-100 py-2">
                     <div class="card-body">
                         <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Saldo Esperado</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">Gs. <?php echo number_format($activeSession['opening_balance'] + $totals['ingress'] - $totals['egress'], 0, ',', '.'); ?></div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">Gs. <?php echo number_format($activeSession['opening_amount'] + $totals['ingress'] - $totals['egress'], 0, ',', '.'); ?></div>
                     </div>
                 </div>
             </div>
@@ -66,6 +66,7 @@
                         <thead class="table-light">
                             <tr>
                                 <th>Hora</th>
+                                <th>Usuario</th>
                                 <th>Descripción</th>
                                 <th>Origen</th>
                                 <th>Tipo</th>
@@ -76,6 +77,7 @@
                             <?php foreach ($movements as $m): ?>
                                 <tr>
                                     <td><?php echo date('H:i', strtotime($m['created_at'])); ?></td>
+                                    <td><small class="text-muted"><?php echo htmlspecialchars($m['user_name'] ?? $_SESSION['user_name']); ?></small></td>
                                     <td><?php echo htmlspecialchars($m['description']); ?></td>
                                     <td><span class="badge bg-light text-dark"><?php echo strtoupper($m['source']); ?></span></td>
                                     <td>
@@ -97,6 +99,50 @@
             <p class="text-muted">Debes abrir una sesión de caja para registrar movimientos y ventas en efectivo.</p>
         </div>
     <?php endif; ?>
+
+    <!-- Historial de Sesiones (Arqueos Recientes) -->
+    <?php if (isset($recentSessions) && !empty($recentSessions)): ?>
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-secondary"><i class="fas fa-history me-2"></i>Historial de Sesiones / Arqueos</h6>
+                <small class="text-muted">Últimas 10 sesiones</small>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered table-hover align-middle" style="font-size: 0.85rem;">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th>Cajero</th>
+                                <th>Apertura</th>
+                                <th>Cierre</th>
+                                <th class="text-end">Monto Inicial</th>
+                                <th class="text-end">Esperado</th>
+                                <th class="text-end">Real (Arqueo)</th>
+                                <th class="text-center">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($recentSessions as $session): ?>
+                                <tr>
+                                    <td><strong><?php echo htmlspecialchars($session['user_name']); ?></strong></td>
+                                    <td><?php echo date('d/m H:i', strtotime($session['opened_at'])); ?></td>
+                                    <td><?php echo $session['closed_at'] ? date('d/m H:i', strtotime($session['closed_at'])) : '<span class="text-primary">En curso...</span>'; ?></td>
+                                    <td class="text-end">Gs. <?php echo number_format($session['opening_amount'] ?? 0, 0, ',', '.'); ?></td>
+                                    <td class="text-end">Gs. <?php echo number_format($session['expected_amount'] ?? 0, 0, ',', '.'); ?></td>
+                                    <td class="text-end">Gs. <?php echo number_format($session['closing_amount'] ?? 0, 0, ',', '.'); ?></td>
+                                    <td class="text-center">
+                                        <span class="badge <?php echo $session['status'] === 'open' ? 'bg-success' : 'bg-secondary'; ?>">
+                                            <?php echo strtoupper($session['status']); ?>
+                                        </span>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
 </div>
 
 <!-- Modal Abrir Caja -->
@@ -108,8 +154,12 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Cajero Responsable</label>
+                    <input type="text" class="form-control bg-light" value="<?php echo htmlspecialchars($_SESSION['user_name']); ?>" readonly>
+                </div>
                 <label class="form-label">Monto Inicial (Gs.)</label>
-                <input type="number" name="opening_balance" class="form-control" placeholder="0" required autofocus>
+                <input type="number" name="opening_amount" class="form-control" placeholder="0" required autofocus>
                 <small class="text-muted">Monto físico disponible en caja al iniciar el turno.</small>
             </div>
             <div class="modal-footer">
@@ -165,7 +215,7 @@
                 
                 <div class="alert alert-info">
                     El sistema espera que tengas: <br>
-                    <strong>Gs. <?php echo number_format($activeSession['opening_balance'] + $totals['ingress'] - $totals['egress'], 0, ',', '.'); ?></strong>
+                    <strong>Gs. <?php echo number_format($activeSession['opening_amount'] + $totals['ingress'] - $totals['egress'], 0, ',', '.'); ?></strong>
                 </div>
                 
                 <label class="form-label font-weight-bold">Monto Físico Real (Gs.)</label>

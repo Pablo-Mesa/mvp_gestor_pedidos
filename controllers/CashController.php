@@ -12,8 +12,9 @@ class CashController {
 
     public function index() {
         $model = new CashRegister();
-        $activeSession = $model->getActiveSession();
+        $activeSession = $model->getActiveSession($_SESSION['user_id']);
         $movements = [];
+        $recentSessions = $model->getRecentSessions();
         $totals = ['ingress' => 0, 'egress' => 0];
 
         if ($activeSession) {
@@ -30,7 +31,7 @@ class CashController {
     public function open() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $model = new CashRegister();
-            $amount = $_POST['opening_balance'] ?? 0;
+            $amount = $_POST['opening_amount'] ?? 0;
             
             if ($model->open($_SESSION['user_id'], $amount)) {
                 header('Location: ?route=cash&success=opened');
@@ -44,7 +45,7 @@ class CashController {
     public function storeMovement() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $model = new CashRegister();
-            $session = $model->getActiveSession();
+            $session = $model->getActiveSession($_SESSION['user_id']);
             
             if ($session) {
                 $model->addMovement(
@@ -65,11 +66,11 @@ class CashController {
     public function close() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $model = new CashRegister();
-            $session = $model->getActiveSession();
+            $session = $model->getActiveSession($_SESSION['user_id']);
             
             if ($session) {
                 $physical = $_POST['physical_balance'] ?? 0;
-                $expected = $session['opening_balance'] + $_POST['ingress_total'] - $_POST['egress_total'];
+                $expected = $session['opening_amount'] + $_POST['ingress_total'] - $_POST['egress_total'];
                 
                 if ($model->close($session['id'], $physical, $expected)) {
                     header('Location: ?route=cash&success=closed');

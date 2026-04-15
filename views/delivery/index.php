@@ -234,7 +234,8 @@
 function renderOrderCardHTML($order) {
     $phone = preg_replace('/[^0-9]/', '', $order['user_phone'] ?? '');
     $mustCollect = (isset($order['payment_method']) && strtolower($order['payment_method']) === 'efectivo');
-    $isCollapsed = ($order['status'] === 'completed' || $order['status'] === 'rejected' || $order['status'] === 'cancelled') ? 'collapsed' : '';
+    // Agregamos 'confirmed' a los colapsados por defecto para mejorar rendimiento y orden
+    $isCollapsed = in_array($order['status'], ['confirmed', 'completed', 'rejected', 'cancelled']) ? 'collapsed' : '';
     
     ob_start(); ?>
     <div class="order-card <?php echo $order['status'] . ' ' . $isCollapsed; ?>" data-status="<?php echo $order['status']; ?>" id="card-<?php echo $order['id']; ?>">
@@ -448,7 +449,7 @@ function updateOrdersUI(orders) {
 function renderOrderCardJS(order) {
     const phone = (order.user_phone || '').replace(/\D/g, '');
     const mustCollect = (order.payment_method || '').toLowerCase() === 'efectivo';
-    const isCollapsed = ['completed', 'rejected', 'cancelled'].includes(order.status) ? 'collapsed' : '';
+    const isCollapsed = ['confirmed', 'completed', 'rejected', 'cancelled'].includes(order.status) ? 'collapsed' : '';
     const formattedTotal = new Intl.NumberFormat('es-PY').format(order.total);
     const time = (order.created_at.split(' ')[1] || '').substring(0, 5);
     
@@ -499,7 +500,7 @@ function renderOrderCardJS(order) {
                 </div>
                 ${order.delivery_lat ? `<div class="map-wrapper"><div id="map-${order.id}" class="map-preview"></div><a href="https://www.google.com/maps/search/?api=1&query=${order.delivery_lat},${order.delivery_lng}" target="_blank" class="map-overlay-btn"><i class="fas fa-directions"></i> GPS</a></div>` : ''}
                 <div class="delivery-actions">
-                    ${order.status === 'confirmed' ? `<button class="btn-logistics btn-start" style="background: #ffc107; color: #000; cursor: pointer;" onclick="updateOrderStatus(${order.id}, 'shipped')"><i class="fas fa-play"></i> Iniciar Entrega</button>` : ''}
+                    ${order.status === 'confirmed' ? `<button class="btn-logistics btn-start" style="background: #ffc107; color: #000; cursor: pointer;" onclick="event.stopPropagation(); updateOrderStatus(${order.id}, 'shipped')"><i class="fas fa-play"></i> Iniciar Entrega</button>` : ''}
                     ${order.status === 'shipped' ? `
                         <div style="display: flex; flex-direction: column; gap: 10px;">
                             <button class="btn-logistics btn-complete" style="cursor: pointer;" onclick="updateOrderStatus(${order.id}, 'completed')"><i class="fas fa-check-circle"></i> CONFIRMAR ENTREGA</button>

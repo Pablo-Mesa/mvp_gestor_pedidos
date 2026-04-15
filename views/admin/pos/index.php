@@ -827,6 +827,8 @@
         const res = await response.json();
         if(res.success) {
             Toast.fire(res.message, "success");
+            // Impresión automática de la comanda
+            printOrderDirectly(res.order_id, '80mm');
             posCart = [];
             document.getElementById('posObservation').value = "";
             renderTicket();

@@ -50,6 +50,10 @@ class OrderController {
         // Obtener los contadores de estado para la fecha actual del filtro
         $statusCounts = $orderModel->getStatusCountsByDate($_GET['date']);
 
+        // Obtener repartidores para asignación rápida en la tabla
+        $userModel = new User();
+        $deliveryUsers = $userModel->getDeliveryUsers();
+
         $content_view = '../views/admin/orders/index.php';
         require_once '../views/layouts/admin_layout.php';
     }
@@ -68,6 +72,10 @@ class OrderController {
 
         $stmt = $orderModel->readAll($_GET);
         $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Obtener repartidores para asignación rápida en la tabla
+        $userModel = new User();
+        $deliveryUsers = $userModel->getDeliveryUsers();
 
         // Obtenemos los contadores de hoy para mantener la coherencia de la barra inferior
         $statusCounts = $orderModel->getStatusCountsByDate(date('Y-m-d'));
@@ -205,6 +213,17 @@ class OrderController {
 
         $orderModel = new Order();
         $success = $orderModel->assignDelivery($orderId, $deliveryId);
+
+        // Si la asignación fue exitosa, confirmamos el pedido automáticamente si estaba pendiente
+        if ($success) {
+            $orderModel->id = $orderId;
+            $currentOrder = $orderModel->readOne();
+            if ($currentOrder && $currentOrder['status'] === 'pending') {
+                $orderModel->status = 'confirmed';
+                $orderModel->updateStatus();
+            }
+        }
+
         echo json_encode(['success' => $success]);
     }
 

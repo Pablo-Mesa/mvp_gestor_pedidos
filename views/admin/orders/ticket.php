@@ -12,6 +12,7 @@ $containerPadding = $is58mm ? '2px' : '0px';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solver | Ticket #<?php echo $order['id']; ?></title>
     <link rel="icon" type="image/png" href="assets/icono_solver_nobg.png">
+    
     <style>
         body {
             font-family: 'Courier New', Courier, monospace;
@@ -53,6 +54,7 @@ $containerPadding = $is58mm ? '2px' : '0px';
             .no-print { display: none; }
         }
     </style>
+
 </head>
 <body onload="window.print()">
 

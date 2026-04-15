@@ -84,6 +84,28 @@
         }
     }
     
+    /* Botón de Acciones Simplificado */
+    .btn-actions-trigger {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 1px solid #dee2e6;
+        background: #fff;
+        color: #333;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-actions-trigger:hover, .btn-actions-trigger:focus {
+        background: #007bff;
+        color: #fff;
+        border-color: #007bff;
+        outline: none;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+    }
+
     /**/
     
     /* Tabla con Scroll */
@@ -329,18 +351,20 @@
                                 <option value="rejected" <?php echo $order['status']=='rejected'?'selected':''; ?>>Rechazado</option>
                                 <option value="cancelled" <?php echo $order['status']=='cancelled'?'selected':''; ?>>Cancelado</option>
                             </select>
-                            <?php if ($order['status'] === 'confirmed' && $order['delivery_user_id']): ?>
+                            <?php if ($order['delivery_user_id'] && !in_array($order['status'], ['completed', 'rejected', 'cancelled'])): ?>
                                 <div style="font-size: 0.7rem; color: #28a745; font-weight: bold; margin-top: 4px;">
                                     <i class="fas fa-user-check"></i> DELIVERY ASIGNADO
                                 </div>
                             <?php endif; ?>
                         </td>
                         <td>
-                            <div style="display: flex; gap: 4px;">
-                                <a href="?route=orders_show&id=<?php echo $order['id']; ?>" class="btn-view" title="Ver Detalle"><i class="fas fa-eye"></i></a>
-                                <a href="?route=orders_ticket&id=<?php echo $order['id']; ?>&format=80mm" target="_blank" class="btn-print-table btn-print-80" title="Imprimir 80mm" onclick="confirmOrderOnPrint(<?php echo $order['id']; ?>)"><i class="fas fa-print"></i> 80</a>
-                                <a href="?route=orders_ticket&id=<?php echo $order['id']; ?>&format=58mm" target="_blank" class="btn-print-table btn-print-58" title="Imprimir 58mm" onclick="confirmOrderOnPrint(<?php echo $order['id']; ?>)"><i class="fas fa-print"></i> 58</a>
-                            </div>
+                            <button type="button" 
+                                    class="btn-actions-trigger" 
+                                    title="Acciones" 
+                                    onfocus="focusedBtnIndex = Array.from(document.querySelectorAll('.btn-actions-trigger')).indexOf(this)"
+                                    onclick='openQuickActions(<?php echo json_encode($order); ?>)'>
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -390,6 +414,43 @@
     
 </div>
 
+<!-- Modal de Acciones Rápidas -->
+<div class="modal fade" id="quickActionsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title" id="qa-title">Pedido #000</h6>
+                <button type="button" class="btn-close" id="qa-btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-3">
+                <div class="d-grid gap-2 mb-3">
+                    <button type="button" class="btn btn-primary" id="qa-btn-80">
+                        <i class="fas fa-print"></i> Imprimir 80mm
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="qa-btn-58">
+                        <i class="fas fa-print"></i> Imprimir 58mm
+                    </button>
+                    <a href="#" class="btn btn-outline-info" id="qa-btn-view">
+                        <i class="fas fa-eye"></i> Ver Detalle Completo
+                    </a>
+                </div>
+                
+                <div id="qa-delivery-section" style="display: none;">
+                    <hr>
+                    <label class="form-label small fw-bold">Asignar Repartidor:</label>
+                    <select id="qa-delivery-select" class="form-select form-select-sm mb-2">
+                        <option value="">-- Seleccionar --</option>
+                        <?php foreach($deliveryUsers as $d): ?>
+                            <option value="<?php echo $d['id']; ?>"><?php echo htmlspecialchars($d['name']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button type="button" class="btn btn-success btn-sm w-100" id="qa-btn-assign">Asignar y Despachar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?php 
 // Verificamos si la lista está vacía Y si el usuario intentó filtrar algo
 $hasFilter = !empty($_GET['date']) || !empty($_GET['delivery_type']) || !empty($_GET['client_name']);
@@ -406,9 +467,12 @@ if (empty($orders) && $hasFilter):
 
 <script>
     // Almacenamos el ID más alto actual para saber cuáles son nuevos
+    let currentOrdersData = <?php echo json_encode($orders); ?>;
     let lastMaxId = <?php echo !empty($orders) ? max(array_column($orders, 'id')) : 0; ?>;
     // Mapa para rastrear cambios de estado de pedidos visibles
     let orderStatusMap = {};
+    // Índice para navegación por teclado
+    let focusedBtnIndex = -1;
     // Huella digital de los datos para evitar re-renderizados (parpadeo) innecesarios
     let lastOrdersFingerprint = '';
     const notificationSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
@@ -452,10 +516,15 @@ if (empty($orders) && $hasFilter):
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
-        .then(response => {
+        .then(async response => {
             if (!response.ok) throw new Error('Error al actualizar');
-            Toast.fire("Estado actualizado", "success");
-            refreshOrders(); // Esto recargará la tabla y actualizará contadores y colores
+            const res = await response.json();
+            if (res.success) {
+                // Actualizamos el mapa local para evitar que el polling detecte esto como un cambio externo
+                orderStatusMap[orderId] = newStatus;
+                Toast.fire("Estado actualizado", "success");
+                refreshOrders(); 
+            }
         })
         .catch(err => {
             Toast.fire("Error al cambiar estado", "error");
@@ -477,6 +546,154 @@ if (empty($orders) && $hasFilter):
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
         .then(() => refreshOrders()); // Refrescar la tabla inmediatamente
+    }
+
+    /**
+     * Manejo del Modal de Acciones Rápidas
+     */
+    let qaModal = null;
+    function openQuickActionsById(id) {
+        const order = currentOrdersData.find(o => o.id == id);
+        if (order) openQuickActions(order);
+    }
+
+    function openQuickActions(order) {
+        if (!qaModal) {
+            const modalEl = document.getElementById('quickActionsModal');
+            qaModal = new bootstrap.Modal(modalEl);
+            
+            // Requerimiento: Al abrir, el foco debe estar en el botón de 80mm
+            modalEl.addEventListener('shown.bs.modal', () => {
+                document.getElementById('qa-btn-80').focus();
+            });
+        }
+        
+        document.getElementById('qa-title').innerText = `Pedido #${order.id} - ${order.user_name}`;
+        document.getElementById('qa-btn-view').href = `?route=orders_show&id=${order.id}`;
+        
+        document.getElementById('qa-btn-80').onclick = () => { printOrderDirectly(order.id, '80mm'); confirmOrderOnPrint(order.id); qaModal.hide(); };
+        document.getElementById('qa-btn-58').onclick = () => { printOrderDirectly(order.id, '58mm'); confirmOrderOnPrint(order.id); qaModal.hide(); };
+
+        const deliverySection = document.getElementById('qa-delivery-section');
+        if (order.delivery_type === 'delivery') {
+            deliverySection.style.display = 'block';
+            const select = document.getElementById('qa-delivery-select');
+            select.value = order.delivery_user_id || "";
+            
+            document.getElementById('qa-btn-assign').onclick = async () => {
+                const deliveryId = select.value;
+                if (!deliveryId) return Toast.fire("Selecciona un repartidor", "warning");
+                
+                const formData = new FormData();
+                formData.append('order_id', order.id);
+                formData.append('delivery_id', deliveryId);
+                
+                const resp = await fetch('?route=orders_assign_delivery', { method: 'POST', body: formData });
+                const res = await resp.json();
+                if (res.success) {
+                    Toast.fire("Asignado correctamente", "success");
+                    qaModal.hide();
+                    refreshOrders();
+                }
+            };
+        } else {
+            deliverySection.style.display = 'none';
+        }
+        qaModal.show();
+    }
+
+    /**
+     * Navegación por Teclado
+     */
+    function handleKeyboardNav(e) {
+        const modalEl = document.getElementById('quickActionsModal');
+        const isModalOpen = modalEl && modalEl.classList.contains('show');
+
+        // Lógica de navegación dentro del Modal
+        if (isModalOpen) {
+            const selectors = [
+                '#qa-btn-80', '#qa-btn-58', '#qa-btn-view', 
+                '#qa-delivery-select', '#qa-btn-assign', '#qa-btn-close'
+            ];
+            const modalNavElements = selectors
+                .map(s => modalEl.querySelector(s))
+                .filter(el => el && el.offsetParent !== null); // Solo los visibles actualmente
+
+            let currentIdx = modalNavElements.indexOf(document.activeElement);
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                currentIdx = (currentIdx + 1) % modalNavElements.length;
+                modalNavElements[currentIdx].focus();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                currentIdx = (currentIdx - 1 + modalNavElements.length) % modalNavElements.length;
+                modalNavElements[currentIdx].focus();
+            } else if (e.key === 'Enter' && document.activeElement.id === 'qa-delivery-select') {
+                // Sensibilidad al enter: saltar al botón de acción tras seleccionar
+                const assignBtn = document.getElementById('qa-btn-assign');
+                if (assignBtn && assignBtn.offsetParent !== null) {
+                    setTimeout(() => assignBtn.focus(), 50);
+                }
+            }
+            return;
+        }
+
+        // Lógica de navegación en la Tabla principal
+        const btns = document.querySelectorAll('.btn-actions-trigger');
+        if (btns.length === 0) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            focusedBtnIndex = (focusedBtnIndex + 1) % btns.length;
+            btns[focusedBtnIndex].focus();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            focusedBtnIndex = (focusedBtnIndex - 1 + btns.length) % btns.length;
+            btns[focusedBtnIndex].focus();
+        }
+    }
+
+    document.addEventListener('keydown', handleKeyboardNav);
+
+    // Foco inicial al cargar
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            const firstBtn = document.querySelector('.btn-actions-trigger');
+            if (firstBtn) {
+                firstBtn.focus();
+                focusedBtnIndex = 0;
+            }
+        }, 600);
+    });
+
+    /**
+     * Mantiene el foco después de refrescar la tabla vía AJAX
+     */
+    function restoreFocusAfterRefresh() {
+        // Si hay un modal abierto, no tocamos el foco de la tabla para no interrumpir el uso del modal
+        if (document.querySelector('.modal.show')) return;
+
+        // Detectamos si el foco estaba en un select de estado antes del refresco
+        const activeEl = document.activeElement;
+        const wasInSelect = activeEl && activeEl.classList.contains('status-select');
+        // Extraemos el ID del pedido del atributo onchange si es posible
+        const orderIdMatch = wasInSelect ? activeEl.getAttribute('onchange').match(/\d+/) : null;
+        const orderId = orderIdMatch ? orderIdMatch[0] : null;
+
+        const btns = document.querySelectorAll('.btn-actions-trigger');
+        
+        if (wasInSelect && orderId) {
+            // Restauramos el foco al select del mismo pedido (evita saltos bruscos)
+            const newSelect = document.querySelector(`.status-select[onchange*="${orderId}"]`);
+            if (newSelect) newSelect.focus();
+        } else {
+            // Restauramos el foco al botón de acciones donde estaba el usuario
+            if (btns.length > 0 && focusedBtnIndex !== -1) {
+                if (focusedBtnIndex >= btns.length) focusedBtnIndex = btns.length - 1;
+                btns[focusedBtnIndex].focus();
+            }
+        }
     }
 
     /**
@@ -523,6 +740,7 @@ if (empty($orders) && $hasFilter):
             if (!tbody || data.error) return;
 
             // Crear huella combinando ID y Estado de todos los pedidos
+            currentOrdersData = data;
             const newFingerprint = data.map(o => `${o.id}-${o.status}`).join('|');
             // Si la huella es idéntica a la anterior, no hacemos nada (evita el parpadeo)
             if (newFingerprint === lastOrdersFingerprint) return;
@@ -572,7 +790,7 @@ if (empty($orders) && $hasFilter):
                 // Variables de control de estado para JS
                 const isErrorState = (order.status === 'rejected' || order.status === 'cancelled');
                 const isLocked = (order.status === 'completed');
-                const deliveryAssignedBadge = (order.status === 'confirmed' && order.delivery_user_id) 
+                const deliveryAssignedBadge = (order.delivery_user_id && !['completed', 'rejected', 'cancelled'].includes(order.status)) 
                     ? `<div style="font-size: 0.7rem; color: #28a745; font-weight: bold; margin-top: 4px;"><i class="fas fa-user-check"></i> DELIVERY ASIGNADO</div>` 
                     : '';
 
@@ -603,11 +821,13 @@ if (empty($orders) && $hasFilter):
                             ${deliveryAssignedBadge}
                         </td>
                         <td>
-                            <div style="display: flex; gap: 4px;">
-                                <a href="?route=orders_show&id=${order.id}" class="btn-view" title="Ver Detalle"><i class="fas fa-eye"></i></a>
-                                <a href="?route=orders_ticket&id=${order.id}&format=80mm" target="_blank" class="btn-print-table btn-print-80" title="Imprimir 80mm" onclick="confirmOrderOnPrint(${order.id})"><i class="fas fa-print"></i> 80</a>
-                                <a href="?route=orders_ticket&id=${order.id}&format=58mm" target="_blank" class="btn-print-table btn-print-58" title="Imprimir 58mm" onclick="confirmOrderOnPrint(${order.id})"><i class="fas fa-print"></i> 58</a>
-                            </div>
+                            <button type="button" 
+                                    class="btn-actions-trigger" 
+                                    title="Acciones" 
+                                    onfocus="focusedBtnIndex = Array.from(document.querySelectorAll('.btn-actions-trigger')).indexOf(this)"
+                                    onclick='openQuickActionsById(${order.id})'>
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
                         </td>
                     </tr>`;
             }).join('');
@@ -631,6 +851,9 @@ if (empty($orders) && $hasFilter):
             updateCountWithAnimation('count-shipped', newCounts.shipped || 0);
             updateCountWithAnimation('count-completed', newCounts.completed);
             updateCountWithAnimation('count-cancelled', newCounts.cancelled);
+
+            // Restaurar el foco para que el usuario no pierda su posición
+            restoreFocusAfterRefresh();
 
             // Si hay pedidos nuevos, disparamos alertas
             if (hasNewOrders) {

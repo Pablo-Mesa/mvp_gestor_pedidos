@@ -387,6 +387,24 @@
         </div>
     </div>
 
+    <!-- Iframe oculto para impresión directa -->
+    <iframe id="printFrame" style="display:none;"></iframe>
+
+    <script>
+        function printOrderDirectly(orderId, format = '80mm') {
+            const printFrame = document.getElementById('printFrame');
+            
+            // Definimos qué hacer cuando el contenido cargue
+            printFrame.onload = function() {
+                printFrame.contentWindow.focus();
+                printFrame.contentWindow.print();
+            };
+
+            // Iniciamos la carga del ticket
+            printFrame.src = `?route=orders_ticket&id=${orderId}&format=${format}`;
+        }
+    </script>
+
     <script src="<?php echo $baseUrl; ?>js/tool-kit-v002.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

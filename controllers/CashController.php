@@ -1,5 +1,6 @@
 <?php
 require_once '../models/CashRegister.php';
+require_once '../models/User.php';
 
 class CashController {
 
@@ -12,9 +13,12 @@ class CashController {
 
     public function index() {
         $model = new CashRegister();
+        $userModel = new User();
+
         $activeSession = $model->getActiveSession($_SESSION['user_id']);
         $movements = [];
         $recentSessions = $model->getRecentSessions();
+        $cashiers = $userModel->readAll()->fetchAll(PDO::FETCH_ASSOC);
         $totals = ['ingress' => 0, 'egress' => 0];
 
         if ($activeSession) {
@@ -32,8 +36,23 @@ class CashController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $model = new CashRegister();
             $amount = $_POST['opening_amount'] ?? 0;
+            $station = $_POST['cash_station'] ?? 'Principal';
+            // Priorizamos el user_id del formulario (enviado por admin) o usamos el propio de la sesión
+            $userId = $_POST['user_id'] ?? $_SESSION['user_id'];
             
-            if ($model->open($_SESSION['user_id'], $amount)) {
+            // Validar que el usuario seleccionado no tenga ya una sesión abierta
+            if ($model->getActiveSession($userId)) {
+                header('Location: ?route=cash&error=user_has_active_session');
+                exit;
+            }
+
+            // Validar que la caja física no esté abierta por otro
+            if ($model->isStationOpen($station)) {
+                header('Location: ?route=cash&error=station_occupied');
+                exit;
+            }
+
+            if ($model->open($userId, $amount, $station)) {
                 header('Location: ?route=cash&success=opened');
             } else {
                 header('Location: ?route=cash&error=open_failed');
@@ -66,13 +85,17 @@ class CashController {
     public function close() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $model = new CashRegister();
-            $session = $model->getActiveSession($_SESSION['user_id']);
+            $sessionId = $_POST['session_id'] ?? null;
+            $session = $model->getSessionById($sessionId);
             
-            if ($session) {
+            if ($session && $session['status'] === 'open') {
                 $physical = $_POST['physical_balance'] ?? 0;
-                $expected = $session['opening_amount'] + $_POST['ingress_total'] - $_POST['egress_total'];
                 
-                if ($model->close($session['id'], $physical, $expected)) {
+                // Calculamos el saldo esperado real desde el servidor (más seguro)
+                $totals = $model->getSessionTotals($sessionId);
+                $expected = $session['opening_amount'] + ($totals['ingress'] ?? 0) - ($totals['egress'] ?? 0);
+                
+                if ($model->close($sessionId, $physical, $expected)) {
                     header('Location: ?route=cash&success=closed');
                 } else {
                     header('Location: ?route=cash&error=close_failed');

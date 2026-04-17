@@ -370,9 +370,9 @@ class OrderController {
     }
 
     /**
-     * Calcula el costo de delivery basado en la distancia (Haversine)
+     * Calcula el costo de delivery y retorna el ID de la tarifa y el precio aplicado
      */
-    private function calculateDeliveryCost($clientLat, $clientLng) {
+    private function getDeliveryPricing($clientLat, $clientLng) {
         $settingModel = new Setting();
         $settings = $settingModel->getAll();
         
@@ -391,9 +391,15 @@ class OrderController {
         $c = 2 * atan2(sqrt($a), sqrt(1-$a));
         $distance = $earthRadius * $c; // Distancia en KM
 
-        // Nuevo Cálculo vía Base de Datos
-        $rateModel = new DeliveryRate();
-        return $rateModel->getPriceForDistance($distance);
+        $db = (new Database())->getConnection();
+        $query = "SELECT d.delivery_rate_id, d.price FROM delivery_rate_details d
+                  JOIN delivery_rates r ON d.delivery_rate_id = r.id
+                  WHERE r.is_active = 1 AND :dist BETWEEN d.km_from AND d.km_to LIMIT 1";
+        $stmt = $db->prepare($query);
+        $stmt->execute([':dist' => $distance]);
+        $res = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return $res ?: ['delivery_rate_id' => null, 'price' => 0];
     }
 
     public function store() {
@@ -415,14 +421,18 @@ class OrderController {
 
         // Crear Orden
         $order = new Order();
+        $order->user_id = null; // Web no tiene usuario de staff
         $order->client_id = $_SESSION['client_id'];
         $order->channel_id = 1; // 1 = Web
         $order->status = 'pending';
         $order->payment_method = $input['payment_method'] ?? 'efectivo';
         $order->delivery_type = $input['delivery_type'] ?? 'pickup';
         $order->observation = $input['observation'] ?? ''; // Guardamos la observación
+        $order->client_location_id = $input['location_id'] ?? null; // Nueva relación
         
         $deliveryCost = 0;
+        $order->delivery_rate_id = null;
+
         // Datos de delivery
         if ($order->delivery_type === 'delivery') {
             $order->delivery_address = $input['delivery_address'] ?? '';
@@ -430,7 +440,13 @@ class OrderController {
             $order->delivery_lng = $input['delivery_lng'] ?? null;
             
             if ($order->delivery_lat && $order->delivery_lng) {
-                $deliveryCost = $this->calculateDeliveryCost($order->delivery_lat, $order->delivery_lng);
+                $pricing = $this->getDeliveryPricing($order->delivery_lat, $order->delivery_lng);
+                if ($pricing['delivery_rate_id'] === null) {
+                    echo json_encode(['success' => false, 'message' => 'Ubicación fuera de zona de cobertura.']);
+                    exit;
+                }
+                $deliveryCost = $pricing['price'];
+                $order->delivery_rate_id = $pricing['delivery_rate_id'];
             }
         } else {
             // Si no es delivery, enviamos cadena vacía para evitar el error de integridad en la DB
@@ -478,6 +494,7 @@ class OrderController {
         }
 
         $order = new Order();
+        $order->user_id = $_SESSION['user_id']; // Quién está en el POS
         // Si no se envía client_id, usamos 0 o un ID de sistema para "Cliente Ocasional"
         $order->client_id = $input['client_id'] ?? 1; 
         $order->channel_id = 2; // 2 = Mostrador
@@ -485,9 +502,24 @@ class OrderController {
         $order->delivery_type = $input['delivery_type'] ?? 'local';
         $order->observation = $input['observation'] ?? '';
         $order->status = 'confirmed'; // Los pedidos de mostrador suelen estar confirmados de entrada
-        $order->delivery_address = $input['delivery_type'] === 'delivery' ? 'Ubicación vía POS' : '';
-        $order->delivery_lat = $input['lat'] ?? null;
-        $order->delivery_lng = $input['lng'] ?? null;
+        
+        $order->client_location_id = $input['location_id'] ?? null;
+        $order->delivery_address = $input['delivery_address'] ?? ($input['delivery_type'] === 'delivery' ? 'Ubicación vía POS' : '');
+        $order->delivery_lat = $input['delivery_lat'] ?? $input['lat'] ?? null;
+        $order->delivery_lng = $input['delivery_lng'] ?? $input['lng'] ?? null;
+
+        $deliveryCost = 0;
+        $order->delivery_rate_id = null;
+
+        if ($order->delivery_type === 'delivery' && $order->delivery_lat && $order->delivery_lng) {
+            $pricing = $this->getDeliveryPricing($order->delivery_lat, $order->delivery_lng);
+            if ($pricing['delivery_rate_id'] === null) {
+                echo json_encode(['success' => false, 'message' => 'La ubicación está fuera de zona. Verifique coordenadas o link.']);
+                exit;
+            }
+            $deliveryCost = $pricing['price'];
+            $order->delivery_rate_id = $pricing['delivery_rate_id'];
+        }
 
         $total = 0;
         foreach ($input['cart'] as $item) {
@@ -498,7 +530,7 @@ class OrderController {
                 'price' => $item['price']
             ];
         }
-        $order->total = $total;
+        $order->total = $total + $deliveryCost;
 
         if ($order->create()) {
             // Si es POS y es efectivo, registrar ingreso inmediato

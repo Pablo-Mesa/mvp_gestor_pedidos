@@ -9,6 +9,7 @@ class Order {
 
     // Propiedades de la Orden
     public $id;
+    public $user_id;     // Quien registra el pedido (Staff)
     public $client_id;
     public $channel_id;
     public $total;
@@ -17,9 +18,11 @@ class Order {
     public $observation; // Nueva propiedad
     public $payment_method;
     public $delivery_type;
-    public $delivery_address;
-    public $delivery_lat;
-    public $delivery_lng;
+    public $client_location_id; // Relación con envíos
+    public $delivery_rate_id;   // Relación con envíos
+    public $delivery_address;   // Propiedad para snapshot (no persistente en orders)
+    public $delivery_lat;       // Propiedad para snapshot (no persistente en orders)
+    public $delivery_lng;       // Propiedad para snapshot (no persistente en orders)
     public $created_at;
     public $error; // Para capturar mensajes de error SQL
 
@@ -36,17 +39,25 @@ class Order {
      */
     public function create() {
         try {
+            // 0. Validación de integridad para envíos
+            if ($this->delivery_type === 'delivery') {
+                if (empty($this->delivery_address) || is_null($this->delivery_lat) || is_null($this->delivery_lng)) {
+                    throw new Exception("Error de integridad: El pedido es delivery pero faltan datos de ubicación (Dirección/Coordenadas).");
+                }
+            }
+
             // Iniciar transacción: Todo se guarda o nada se guarda
             $this->conn->beginTransaction();
 
             // 1. Insertar Cabecera (Order)
             $query = "INSERT INTO " . $this->table . " 
-                      (client_id, channel_id, total, status, observation, payment_method, delivery_type, delivery_address, delivery_lat, delivery_lng) 
-                      VALUES (:client_id, :channel_id, :total, :status, :observation, :payment_method, :delivery_type, :delivery_address, :delivery_lat, :delivery_lng)";
+                      (user_id, client_id, channel_id, total, status, observation, payment_method, delivery_type) 
+                      VALUES (:user_id, :client_id, :channel_id, :total, :status, :observation, :payment_method, :delivery_type)";
             
             $stmt = $this->conn->prepare($query);
             
             // Bind params
+            $stmt->bindParam(':user_id', $this->user_id);
             $stmt->bindParam(':client_id', $this->client_id);
             $stmt->bindParam(':channel_id', $this->channel_id);
             $stmt->bindParam(':total', $this->total);
@@ -54,13 +65,25 @@ class Order {
             $stmt->bindParam(':observation', $this->observation);
             $stmt->bindParam(':payment_method', $this->payment_method);
             $stmt->bindParam(':delivery_type', $this->delivery_type);
-            $stmt->bindParam(':delivery_address', $this->delivery_address);
-            // Si no hay coordenadas, se guardará NULL automáticamente si la propiedad es null
-            $stmt->bindParam(':delivery_lat', $this->delivery_lat);
-            $stmt->bindParam(':delivery_lng', $this->delivery_lng);
 
             $stmt->execute();
             $this->id = $this->conn->lastInsertId();
+
+            // 2. Si es delivery, insertar en order_shipments
+            if ($this->delivery_type === 'delivery') {
+                $queryShip = "INSERT INTO order_shipments 
+                              (order_id, client_location_id, delivery_rate_id, address_snapshot, lat_snapshot, lng_snapshot) 
+                              VALUES (:order_id, :location_id, :rate_id, :address, :lat, :lng)";
+                $stmtShip = $this->conn->prepare($queryShip);
+                
+                $stmtShip->bindValue(':order_id', $this->id);
+                $stmtShip->bindValue(':location_id', $this->client_location_id);
+                $stmtShip->bindValue(':rate_id', $this->delivery_rate_id);
+                $stmtShip->bindValue(':address', $this->delivery_address); // Propiedad temporal para snapshot
+                $stmtShip->bindValue(':lat', $this->delivery_lat);
+                $stmtShip->bindValue(':lng', $this->delivery_lng);
+                $stmtShip->execute();
+            }
 
             // 2. Insertar Detalles
             $queryDetail = "INSERT INTO orders_items (order_id, product_id, quantity, price) VALUES (:order_id, :product_id, :quantity, :price)";
@@ -97,11 +120,14 @@ class Order {
             $filters = ['date' => $date];
         }
 
-        $query = "SELECT o.*, c.name as user_name, c.phone as user_phone, ch.name as channel_name, ch.icon as channel_icon, d.name as delivery_name
+        $query = "SELECT o.*, c.name as user_name, c.phone as user_phone, ch.name as channel_name, ch.icon as channel_icon, 
+                         s.address_snapshot as delivery_address, s.lat_snapshot as delivery_lat, s.lng_snapshot as delivery_lng, 
+                         s.delivery_user_id, d.name as delivery_name
                   FROM " . $this->table . " o
                   LEFT JOIN clients c ON o.client_id = c.id 
                   LEFT JOIN order_channels ch ON o.channel_id = ch.id
-                  LEFT JOIN users d ON o.delivery_user_id = d.id
+                  LEFT JOIN order_shipments s ON o.id = s.order_id
+                  LEFT JOIN users d ON s.delivery_user_id = d.id
                   WHERE 1=1";
 
         if (!empty($filters['date']) && $filters['date'] !== '') {
@@ -126,7 +152,7 @@ class Order {
             $query .= " AND YEAR(o.created_at) = :year";
         }
         if (!empty($filters['delivery_user_id'])) {
-            $query .= " AND o.delivery_user_id = :delivery_user_id";
+            $query .= " AND s.delivery_user_id = :delivery_user_id";
         }
 
         $query .= " ORDER BY o.created_at DESC";
@@ -167,10 +193,10 @@ class Order {
      * Asigna un repartidor a un pedido y actualiza el estado
      */
     public function assignDelivery($orderId, $deliveryUserId) {
-        // Mantenemos el estado actual (confirmed), solo vinculamos al repartidor
-        $query = "UPDATE " . $this->table . "
+        // Actualizamos el repartidor en la tabla de envíos
+        $query = "UPDATE order_shipments
                   SET delivery_user_id = :delivery_id
-                  WHERE id = :id";
+                  WHERE order_id = :id";
         $stmt = $this->conn->prepare($query);
         return $stmt->execute([
             ':delivery_id' => $deliveryUserId,
@@ -182,9 +208,13 @@ class Order {
      * Obtiene un solo pedido por ID
      */
     public function readOne() {
-        $query = "SELECT o.*, c.name as user_name, c.email as user_email 
+        $query = "SELECT o.*, c.name as user_name, c.email as user_email, c.phone as user_phone,
+                         s.address_snapshot as delivery_address, s.lat_snapshot as delivery_lat, s.lng_snapshot as delivery_lng,
+                         s.delivery_user_id, st.name as staff_name
                   FROM " . $this->table . " o
                   JOIN clients c ON o.client_id = c.id
+                  LEFT JOIN order_shipments s ON o.id = s.order_id
+                  LEFT JOIN users st ON o.user_id = st.id
                   WHERE o.id = :id LIMIT 0,1";
         
         $stmt = $this->conn->prepare($query);

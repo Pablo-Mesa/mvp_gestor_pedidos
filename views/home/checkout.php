@@ -166,6 +166,7 @@
                     <input type="hidden" name="delivery_lat" id="lat">
                     <input type="hidden" name="delivery_lng" id="lng">
                     <input type="hidden" name="delivery_address" id="selected_address">
+                    <input type="hidden" name="location_id" id="location_id">
                 </div>
 
                 <!-- 3. Método de Pago -->
@@ -344,6 +345,7 @@
         document.getElementById('lat').disabled = !show;
         document.getElementById('lng').disabled = !show;
         document.getElementById('selected_address').disabled = !show;
+        document.getElementById('location_id').disabled = !show;
         loadCheckoutItems(); // Recalcular subtotales al cambiar tipo de entrega
     }
 
@@ -376,6 +378,7 @@
             // Limpiar inputs ocultos de lat/lng para nueva ubicación
             document.getElementById('lat').value = '';
             document.getElementById('lng').value = '';
+            document.getElementById('location_id').value = '';
 
             if (marker) { // Eliminar marcador si se abre para una nueva ubicación
                 map.removeLayer(marker);
@@ -425,6 +428,7 @@
         document.getElementById('lat').value = card.dataset.lat;
         document.getElementById('lng').value = card.dataset.lng;
         document.getElementById('selected_address').value = card.dataset.addr;
+        document.getElementById('location_id').value = card.dataset.id;
         
         if (!silent) Toast.fire("Dirección seleccionada", "success");
         loadCheckoutItems(); // Recalcular total con delivery

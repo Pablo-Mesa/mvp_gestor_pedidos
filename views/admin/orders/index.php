@@ -385,7 +385,7 @@
                                 <option value="rejected" <?php echo $order['status']=='rejected'?'selected':''; ?>>Rechazado</option>
                                 <option value="cancelled" <?php echo $order['status']=='cancelled'?'selected':''; ?>>Cancelado</option>
                             </select>
-                            <?php if ($order['delivery_user_id'] && !in_array($order['status'], ['completed', 'rejected', 'cancelled'])): ?>
+                            <?php if (!empty($order['delivery_user_id']) && !in_array($order['status'], ['completed', 'rejected', 'cancelled'])): ?>
                                 <div style="font-size: 0.7rem; color: #28a745; font-weight: bold; margin-top: 4px;">
                                     <i class="fas fa-user-check"></i> DELIVERY ASIGNADO
                                 </div>

@@ -11,7 +11,13 @@
             </div>
             
             <p><strong>Cliente:</strong> <?php echo htmlspecialchars($order['user_name']); ?></p>
+            <p><strong>Teléfono:</strong> <?php echo htmlspecialchars($order['user_phone'] ?? 'No registrado'); ?></p>
             <p><strong>Email:</strong> <?php echo htmlspecialchars($order['user_email']); ?></p>
+            <hr>
+            <p><strong>Origen:</strong> <?php echo $order['channel_id'] == 1 ? '🌐 Web' : '🏪 Mostrador'; ?></p>
+            <?php if(!empty($order['staff_name'])): ?>
+                <p><strong>Registrado por:</strong> <?php echo htmlspecialchars($order['staff_name']); ?></p>
+            <?php endif; ?>
             
             <?php if($order['observation']): ?>
                 <div style="background: #fff3cd; padding: 10px; border-radius: 4px; margin-top: 10px; color: #856404;">

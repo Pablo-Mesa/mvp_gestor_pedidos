@@ -465,7 +465,7 @@
                             </button>
                         </div>
                         <div id="swal-search-feedback" class="text-muted mt-1" style="font-size: 0.7rem; min-height: 1rem;"></div>
-                        <select id="swal-client-id" class="form-select form-select-sm mt-1">
+                        <select id="swal-client-id" class="form-select form-select-sm mt-1" onchange="window.loadClientLocations(this.value)">
                             <option value="1">-- Cliente Ocasional --</option>
                         </select>
                     </div>
@@ -490,9 +490,16 @@
                     </div>
 
                     <div id="pos-delivery-extra" style="display: ${deliveryType === 'delivery' ? 'block' : 'none'};">
+                        <div id="saved-locations-container" class="mb-2" style="display: none;">
+                            <label class="form-label fw-bold small"><i class="fas fa-bookmark"></i> Usar ubicación guardada</label>
+                            <select id="swal-location-id" class="form-select form-select-sm" onchange="window.handleSavedLocationSelect(this)">
+                                <option value="">-- Seleccionar o ingresar nueva --</option>
+                            </select>
+                        </div>
+
                         <div class="mb-2">
-                            <label class="form-label fw-bold small text-primary"><i class="fas fa-map-marker-alt"></i> URL Ubicación Google Maps</label>
-                            <input type="text" id="swal-location-url" class="form-control form-control-sm" placeholder="Pegue el link aquí..." oninput="window.processLocationUrl(this.value)">
+                            <label id="label-manual-location" class="form-label fw-bold small text-primary"><i class="fas fa-map-marker-alt"></i> URL Ubicación Google Maps</label>
+                            <input type="text" id="swal-location-url" class="form-control form-control-sm" placeholder="Pegue el link aquí o use el mapa..." oninput="window.processLocationUrl(this.value)">
                         </div>
                         <div id="swal-pos-map"></div>
                         <input type="hidden" id="swal-lat">
@@ -500,7 +507,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Notas del pedido</label>
+                        <label class="form-label fw-bold small">Notas del pedido</label>
                         <textarea id="swal-observation" class="form-control form-control-sm" rows="2">${observation}</textarea>
                     </div>
 
@@ -537,6 +544,7 @@
                     const select = document.getElementById('swal-client-id');
                     const newOpt = new Option(clientName, clientId, true, true);
                     select.add(newOpt);
+                    window.loadClientLocations(clientId);
                 }
             },
             preConfirm: () => {
@@ -545,6 +553,7 @@
                     deliveryType: document.getElementById('swal-delivery-type').value,
                     paymentMethod: document.getElementById('swal-payment-method').value,
                     observation: document.getElementById('swal-observation').value,
+                    locationId: document.getElementById('swal-location-id')?.value || null,
                     lat: document.getElementById('swal-lat')?.value,
                     lng: document.getElementById('swal-lng')?.value
                 }
@@ -570,6 +579,57 @@
                     if(window.posMap && typeof window.posMap.invalidateSize === 'function') window.posMap.invalidateSize();
                 }, 300);
             }
+        }
+    }
+
+    /**
+     * Carga las ubicaciones del cliente seleccionado en el POS
+     */
+    window.loadClientLocations = async function(clientId) {
+        const container = document.getElementById('saved-locations-container');
+        const select = document.getElementById('swal-location-id');
+        if(!select) return;
+
+        if(clientId == 1) {
+            container.style.display = 'none';
+            select.innerHTML = '<option value="">-- Seleccionar --</option>';
+            return;
+        }
+
+        try {
+            const resp = await fetch(`?route=admin_client_locations&id=${clientId}`);
+            const locations = await resp.json();
+            
+            if(locations.length > 0) {
+                container.style.display = 'block';
+                select.innerHTML = '<option value="">-- Usar Nueva Ubicación --</option>';
+                locations.forEach(loc => {
+                    const opt = document.createElement('option');
+                    opt.value = loc.id;
+                    opt.text = `${loc.title} (${loc.address})`;
+                    opt.dataset.lat = loc.lat;
+                    opt.dataset.lng = loc.lng;
+                    opt.dataset.address = loc.address;
+                    select.appendChild(opt);
+                });
+            } else {
+                container.style.display = 'none';
+            }
+        } catch (e) { console.error("Error cargando ubicaciones:", e); }
+    }
+
+    /**
+     * Maneja la selección de una ubicación guardada
+     */
+    window.handleSavedLocationSelect = function(select) {
+        const opt = select.options[select.selectedIndex];
+        if(opt.value) {
+            window.updatePosMapMarker(parseFloat(opt.dataset.lat), parseFloat(opt.dataset.lng));
+            document.getElementById('swal-location-url').value = opt.dataset.address;
+            document.getElementById('label-manual-location').innerHTML = '<i class="fas fa-check-circle text-success"></i> Dirección seleccionada';
+        } else {
+            document.getElementById('swal-location-url').value = '';
+            document.getElementById('label-manual-location').innerHTML = '<i class="fas fa-map-marker-alt"></i> URL Ubicación Google Maps';
         }
     }
 
@@ -818,9 +878,13 @@
             body: JSON.stringify({ 
                 cart: posCart, 
                 client_id: data.clientId,
+                location_id: data.locationId,
                 delivery_type: data.deliveryType,
                 payment_method: data.paymentMethod,
-                observation: data.observation 
+                observation: data.observation,
+                lat: data.lat,
+                lng: data.lng,
+                delivery_address: document.getElementById('swal-location-url')?.value
             })
         });
 

@@ -108,4 +108,18 @@ class ClientController {
             echo json_encode(['success' => false, 'message' => 'No se encontraron coordenadas en el enlace']);
         }
     }
+
+    /**
+     * Obtiene las ubicaciones guardadas de un cliente específico
+     */
+    public function getLocationsApi() {
+        header('Content-Type: application/json');
+        $id = $_GET['id'] ?? null;
+        if (!$id) { echo json_encode([]); exit; }
+
+        require_once '../models/ClientLocation.php';
+        $locationModel = new ClientLocation();
+        $locations = $locationModel->getAllByClient($id);
+        echo json_encode($locations);
+    }
 }

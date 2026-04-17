@@ -319,6 +319,12 @@ switch ($route) {
         $controller->deliveryRates();
         break;
 
+    case 'settings_delivery_activate':
+        require_once '../controllers/SettingController.php';
+        $controller = new SettingController();
+        $controller->setDeliveryRateActive();
+        break;
+
     case 'settings_delivery_update':
         require_once '../controllers/SettingController.php';
         $controller = new SettingController();

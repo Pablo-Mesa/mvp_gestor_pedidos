@@ -268,6 +268,14 @@ class OrderController {
         $locationModel = new ClientLocation();
         $savedLocations = $locationModel->getAllByClient($_SESSION['client_id']);
 
+        // 3. Cargar configuraciones y tarifas para el cálculo de delivery en el frontend
+        $settingModel = new Setting();
+        $siteSettings = $settingModel->getAll();
+
+        $rateModel = new DeliveryRate();
+        $activeRateData = $rateModel->getActive();
+        $activeRates = $activeRateData['details'] ?? [];
+
         $content_view = '../views/home/checkout.php';
         require_once '../views/layouts/client_layout.php';
     }

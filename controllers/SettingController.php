@@ -34,10 +34,36 @@ class SettingController {
 
     public function deliveryRates() {
         $rateModel = new DeliveryRate();
-        $activeRate = $rateModel->getActive();
+        
+        // Si se pasa un ID, cargamos esa versión, si no, la activa por defecto
+        $id = $_GET['id'] ?? null;
+        $isNew = isset($_GET['new']);
+
+        if ($isNew) {
+            $activeRate = null;
+        } else {
+            $activeRate = $id ? $rateModel->getById($id) : $rateModel->getActive();
+        }
+        
+        $allRates = $rateModel->readAll()->fetchAll(PDO::FETCH_ASSOC);
         
         $content_view = '../views/admin/settings/delivery_rates.php';
         require_once '../views/layouts/admin_layout.php';
+    }
+
+    public function setDeliveryRateActive() {
+        $id = $_GET['id'] ?? null;
+        if ($id) {
+            $rateModel = new DeliveryRate();
+            if ($rateModel->setActive($id)) {
+                header('Location: ?route=settings_delivery&id=' . $id . '&success=active_changed');
+            } else {
+                header('Location: ?route=settings_delivery&error=update_failed');
+            }
+        } else {
+            header('Location: ?route=settings_delivery');
+        }
+        exit;
     }
 
     public function updateDeliveryRates() {
@@ -47,10 +73,16 @@ class SettingController {
             $rates = [];
             if (isset($_POST['km_start'])) {
                 foreach ($_POST['km_start'] as $i => $start) {
+                    $end = $_POST['km_end'][$i];
+                    $price = $_POST['price'][$i];
+
+                    // Ignorar filas que estén completamente vacías
+                    if ($start === '' && $end === '' && $price === '') continue;
+
                     $rates[] = [
                         'start' => (float)$start,
-                        'end'   => (float)$_POST['km_end'][$i],
-                        'price' => (float)$_POST['price'][$i]
+                        'end'   => (float)$end,
+                        'price' => (float)$price
                     ];
                 }
             }

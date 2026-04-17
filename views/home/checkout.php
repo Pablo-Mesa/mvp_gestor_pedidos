@@ -270,12 +270,12 @@
 <script>
     // Configuración del local y tarifas cargadas desde el sistema
     const storeConfig = {
-        lat: <?= $siteSettings['store_lat'] ?? -25.3006 ?>,
-        lng: <?= $siteSettings['store_lng'] ?? -57.6359 ?>,
-        rates: <?= json_encode($activeRates) ?>
+        lat: <?= json_encode($siteSettings['store_lat'] ?? -25.3006) ?>,
+        lng: <?= json_encode($siteSettings['store_lng'] ?? -57.6359) ?>,
+        rates: <?= json_encode($activeRates ?? []) ?>
     };
 
-    /**
+    /** 
      * Calcula la distancia en KM entre dos puntos (Fórmula de Haversine)
      */
     function calculateDistance(lat1, lon1, lat2, lon2) {

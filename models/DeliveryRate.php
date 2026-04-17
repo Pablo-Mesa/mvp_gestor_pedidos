@@ -11,10 +11,38 @@ class DeliveryRate {
     }
 
     /**
+     * Obtiene todas las versiones de tarifas creadas
+     */
+    public function readAll() {
+        $query = "SELECT r.*, u.name as creator_name 
+                  FROM " . $this->table . " r
+                  JOIN users u ON r.user_id = u.id
+                  ORDER BY r.created_at DESC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt;
+    }
+
+    public function getById($id) {
+        $query = "SELECT r.*, u.name as creator_name 
+                  FROM " . $this->table . " r
+                  JOIN users u ON r.user_id = u.id
+                  WHERE r.id = ? LIMIT 1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([$id]);
+        $header = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($header) {
+            $header['details'] = $this->getDetails($header['id']);
+        }
+        return $header;
+    }
+
+    /**
      * Obtiene la tarifa activa con sus detalles
      */
     public function getActive() {
-        $query = "SELECT r.id, r.created_at, u.name as creator_name 
+        $query = "SELECT r.id, r.created_at, r.is_active, u.name as creator_name 
                   FROM " . $this->table . " r
                   JOIN users u ON r.user_id = u.id
                   WHERE r.is_active = 1 LIMIT 1";
@@ -26,6 +54,26 @@ class DeliveryRate {
             $header['details'] = $this->getDetails($header['id']);
         }
         return $header;
+    }
+
+    /**
+     * Cambia la versión activa del sistema
+     */
+    public function setActive($id) {
+        try {
+            $this->conn->beginTransaction();
+            // Desactivar todas
+            $this->conn->exec("UPDATE " . $this->table . " SET is_active = 0");
+            // Activar la seleccionada
+            $query = "UPDATE " . $this->table . " SET is_active = 1 WHERE id = ?";
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute([$id]);
+            $this->conn->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->conn->rollBack();
+            return false;
+        }
     }
 
     public function getDetails($rateId) {

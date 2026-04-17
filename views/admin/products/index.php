@@ -8,6 +8,8 @@
     .btn-delete { background-color: #dc3545; }
     .badge { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; }
     .badge-success { background: #d4edda; color: #155724; }
+    .badge-info { background: #d1ecf1; color: #0c5460; }
+    .badge-warning { background: #fff3cd; color: #856404; }
     .badge-danger { background: #f8d7da; color: #721c24; }
 
     /* Header y Filtros */
@@ -211,6 +213,7 @@
         <thead>
             <tr>
                 <th>Imagen</th>
+                <th>Cód. Barra</th>
                 <th>Nombre</th>
                 <th>Categoría</th>
                 <th>Precio</th>
@@ -233,13 +236,19 @@
                         ?>
                         <img src="<?php echo $displayImg; ?>" width="50" height="50" style="object-fit: cover; border-radius: 4px;">
                     <?php else: ?>
-                        <span style="color: #ccc;">Sin img</span>
+                        <div style="width: 50px; height: 50px; background: #eee; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #ccc;"><i class="fas fa-image"></i></div>
                     <?php endif; ?>
                 </td>
+                <td><small class="text-muted"><?php echo htmlspecialchars($prod['codigobarra'] ?? '-'); ?></small></td>
                 <td><?php echo htmlspecialchars($prod['name']); ?></td>
                 <td><span class="badge" style="background: #e9ecef; color: #495057;"><?php echo htmlspecialchars($prod['category_name'] ?? 'Sin categoría'); ?></span></td>
                 <td>Gs. <?php echo number_format($prod['price'], 0); ?></td>
                 <td>
+                    <?php if(isset($prod['es_vendible']) && !$prod['es_vendible']): ?>
+                        <span class="badge badge-warning" title="Insumo / No Vendible">Insumo</span>
+                    <?php else: ?>
+                        <span class="badge badge-info">Venta</span>
+                    <?php endif; ?>
                     <span class="badge <?php echo $prod['is_active'] ? 'badge-success' : 'badge-danger'; ?>">
                         <?php echo $prod['is_active'] ? 'Activo' : 'Inactivo'; ?>
                     </span>
@@ -348,15 +357,21 @@ document.addEventListener('DOMContentLoaded', function() {
             const statusBadge = prod.is_active 
                 ? '<span class="badge badge-success">Activo</span>' 
                 : '<span class="badge badge-danger">Inactivo</span>';
+            
+            const vendibleBadge = (prod.es_vendible == 0)
+                ? '<span class="badge badge-warning">Insumo</span> '
+                : '<span class="badge badge-info">Venta</span> ';
+
             const price = new Intl.NumberFormat('es-PY').format(prod.price);
 
             html += `
             <tr>
                 <td><img src="${imgPath}" width="50" height="50" style="object-fit: cover; border-radius: 4px;"></td>
+                <td><small class="text-muted">${escapeHtml(prod.codigobarra || '-')}</small></td>
                 <td>${escapeHtml(prod.name)}</td>
                 <td><span class="badge" style="background: #e9ecef; color: #495057;">${escapeHtml(prod.category_name || 'Sin categoría')}</span></td>
                 <td>Gs. ${price}</td>
-                <td>${statusBadge}</td>
+                <td>${vendibleBadge}${statusBadge}</td>
                 <td>
                     <a href="?route=products_edit&id=${prod.id}" class="btn-sm btn-edit">Editar</a>
                     <a href="javascript:void(0)" 

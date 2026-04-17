@@ -7,6 +7,7 @@ require_once '../models/User.php';
 require_once '../models/ClientLocation.php';
 require_once '../models/Setting.php';
 require_once '../models/CashRegister.php'; // Nuevo Modelo
+require_once '../models/DeliveryRate.php';
 
 class OrderController {
 
@@ -382,20 +383,9 @@ class OrderController {
         $c = 2 * atan2(sqrt($a), sqrt(1-$a));
         $distance = $earthRadius * $c; // Distancia en KM
 
-        // Regla de Negocio Dinámica basada en rangos JSON
-        $rawRates = $settings['delivery_rates_json'] ?? null;
-        
-        if ($rawRates) {
-            $rates = json_decode($rawRates, true);
-            foreach ($rates as $rate) {
-                if ($distance >= $rate['start'] && $distance <= $rate['end']) {
-                    return $rate['price'];
-                }
-            }
-        }
-
-        // Si no hay rangos configurados o no coincide ninguno, devolvemos 0 o un valor por defecto
-        return 0;
+        // Nuevo Cálculo vía Base de Datos
+        $rateModel = new DeliveryRate();
+        return $rateModel->getPriceForDistance($distance);
     }
 
     public function store() {

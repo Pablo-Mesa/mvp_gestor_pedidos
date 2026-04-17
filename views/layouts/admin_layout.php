@@ -289,6 +289,7 @@
                 'icon' => 'fas fa-cog',
                 'id' => 'menuSettings',
                 'children' => [
+                    ['route' => 'empresa',          'label' => 'Datos de Empresa',     'icon' => 'fas fa-building'],
                     ['route' => 'settings',          'label' => 'Ajustes de Marca',     'icon' => 'fas fa-brush'],
                     ['route' => 'hero_promos',       'label' => 'Hero Promo',           'icon' => 'fas fa-palette'],
                     ['route' => 'settings_location', 'label' => 'Ajustes de Ubicación', 'icon' => 'fas fa-map-marker-alt'],

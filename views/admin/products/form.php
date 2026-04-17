@@ -25,6 +25,11 @@ $action = $isEdit ? '?route=products_update' : '?route=products_store';
         </div>
 
         <div class="form-group mb-3">
+            <label class="form-label">Código de Barras</label>
+            <input type="text" name="codigobarra" class="form-control" value="<?php echo $isEdit ? htmlspecialchars($product['codigobarra'] ?? '') : ''; ?>" placeholder="Escanear o ingresar código">
+        </div>
+
+        <div class="form-group mb-3">
             <label class="form-label">Nombre del Plato</label>
             <input type="text" name="name" class="form-control" required value="<?php echo $isEdit ? htmlspecialchars($product['name']) : ''; ?>" placeholder="Ej: Milanesa con Puré">
         </div>
@@ -67,11 +72,19 @@ $action = $isEdit ? '?route=products_update' : '?route=products_store';
             </div>
         </div>
 
-        <div class="form-check mb-4">
-            <input type="checkbox" name="is_active" class="form-check-input" id="is_active" <?php echo (!$isEdit || $product['is_active']) ? 'checked' : ''; ?>>
-            <label class="form-check-label" for="is_active">
-                Disponible para venta
-            </label>
+        <div class="d-flex gap-4 mb-4">
+            <div class="form-check">
+                <input type="checkbox" name="es_vendible" class="form-check-input" id="es_vendible" <?php echo (!$isEdit || (isset($product['es_vendible']) && $product['es_vendible'])) ? 'checked' : ''; ?>>
+                <label class="form-check-label" for="es_vendible">
+                    Es producto de venta
+                </label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" name="is_active" class="form-check-input" id="is_active" <?php echo (!$isEdit || $product['is_active']) ? 'checked' : ''; ?>>
+                <label class="form-check-label" for="is_active">
+                    Estado Activo
+                </label>
+            </div>
         </div>
 
         <div class="form-actions d-flex align-items-center gap-3">

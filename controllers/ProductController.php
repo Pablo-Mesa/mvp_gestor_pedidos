@@ -65,9 +65,11 @@ class ProductController {
     public function store() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $product = new Product();
+            $product->codigobarra = $_POST['codigobarra'] ?? null;
             $product->name = $_POST['name'];
             $product->category_id = $_POST['category_id'];
             $product->description = $_POST['description'];
+            $product->es_vendible = isset($_POST['es_vendible']) ? 1 : 0;
             $product->price = $_POST['price'];
             $product->price_half = $_POST['price_half'] ?? null;
             $product->is_active = isset($_POST['is_active']) ? 1 : 0;
@@ -105,9 +107,11 @@ class ProductController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $product = new Product();
             $product->id = $_POST['id'];
+            $product->codigobarra = $_POST['codigobarra'] ?? null;
             $product->name = $_POST['name'];
             $product->category_id = $_POST['category_id'];
             $product->description = $_POST['description'];
+            $product->es_vendible = isset($_POST['es_vendible']) ? 1 : 0;
             $product->price = $_POST['price'];
             $product->price_half = $_POST['price_half'] ?? null;
             $product->is_active = isset($_POST['is_active']) ? 1 : 0;

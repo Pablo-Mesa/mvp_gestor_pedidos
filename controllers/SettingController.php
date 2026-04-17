@@ -1,5 +1,6 @@
 <?php
 require_once '../models/Setting.php';
+require_once '../models/DeliveryRate.php';
 
 class SettingController {
 
@@ -32,8 +33,8 @@ class SettingController {
     }
 
     public function deliveryRates() {
-        $model = new Setting();
-        $settings = $model->getAll();
+        $rateModel = new DeliveryRate();
+        $activeRate = $rateModel->getActive();
         
         $content_view = '../views/admin/settings/delivery_rates.php';
         require_once '../views/layouts/admin_layout.php';
@@ -41,7 +42,7 @@ class SettingController {
 
     public function updateDeliveryRates() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $model = new Setting();
+            $rateModel = new DeliveryRate();
             
             $rates = [];
             if (isset($_POST['km_start'])) {
@@ -54,7 +55,7 @@ class SettingController {
                 }
             }
 
-            if ($model->update('delivery_rates_json', json_encode($rates))) {
+            if ($rateModel->createVersion($_SESSION['user_id'], $rates)) {
                 header('Location: ?route=settings_delivery&success=1');
             } else {
                 header('Location: ?route=settings_delivery&error=update_failed');

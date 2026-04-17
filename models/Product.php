@@ -6,9 +6,11 @@ class Product {
     private $table = 'products';
 
     public $id;
+    public $codigobarra;
     public $name;
     public $category_id; // Cambiado de $category a $category_id
     public $description;
+    public $es_vendible;
     public $price;
     public $price_half;
     public $image;
@@ -31,7 +33,7 @@ class Product {
 
         if (!empty($filters['search'])) {
             // Buscamos coincidencia en nombre o ID (actúa como código)
-            $query .= ' AND (p.name LIKE :search OR p.id = :id)';
+            $query .= ' AND (p.name LIKE :search OR p.id = :id OR p.codigobarra LIKE :barcode)';
         }
 
         $query .= ' ORDER BY p.created_at DESC';
@@ -44,6 +46,7 @@ class Product {
         if (!empty($filters['search'])) {
             $stmt->bindValue(':search', '%' . $filters['search'] . '%');
             $stmt->bindValue(':id', $filters['search']);
+            $stmt->bindValue(':barcode', '%' . $filters['search'] . '%');
         }
 
         $stmt->execute();
@@ -91,16 +94,19 @@ class Product {
     }
 
     public function create() {
-        $query = 'INSERT INTO ' . $this->table . ' (name, category_id, description, price, price_half, image, is_active) VALUES (:name, :category_id, :description, :price, :price_half, :image, :is_active)';
+        $query = 'INSERT INTO ' . $this->table . ' (codigobarra, name, category_id, es_vendible, description, price, price_half, image, is_active) VALUES (:codigobarra, :name, :category_id, :es_vendible, :description, :price, :price_half, :image, :is_active)';
         $stmt = $this->conn->prepare($query);
 
         // Limpieza básica
+        $this->codigobarra = htmlspecialchars(strip_tags($this->codigobarra));
         $this->name = htmlspecialchars(strip_tags($this->name));
         $this->category_id = htmlspecialchars(strip_tags($this->category_id)); // Cambiado a category_id
         $this->description = htmlspecialchars(strip_tags($this->description));
 
+        $stmt->bindParam(':codigobarra', $this->codigobarra);
         $stmt->bindParam(':name', $this->name);
         $stmt->bindParam(':category_id', $this->category_id); // Cambiado a category_id
+        $stmt->bindParam(':es_vendible', $this->es_vendible);
         $stmt->bindParam(':description', $this->description);
         $stmt->bindParam(':price', $this->price);
 
@@ -115,15 +121,18 @@ class Product {
     }
 
     public function update() {
-        $query = 'UPDATE ' . $this->table . ' SET name = :name, category_id = :category_id, description = :description, price = :price, price_half = :price_half, image = :image, is_active = :is_active WHERE id = :id';
+        $query = 'UPDATE ' . $this->table . ' SET codigobarra = :codigobarra, name = :name, category_id = :category_id, es_vendible = :es_vendible, description = :description, price = :price, price_half = :price_half, image = :image, is_active = :is_active WHERE id = :id';
         $stmt = $this->conn->prepare($query);
 
+        $this->codigobarra = htmlspecialchars(strip_tags($this->codigobarra));
         $this->name = htmlspecialchars(strip_tags($this->name));
         $this->category_id = htmlspecialchars(strip_tags($this->category_id)); // Cambiado a category_id
         $this->description = htmlspecialchars(strip_tags($this->description));
 
+        $stmt->bindParam(':codigobarra', $this->codigobarra);
         $stmt->bindParam(':name', $this->name);
         $stmt->bindParam(':category_id', $this->category_id); // Cambiado a category_id
+        $stmt->bindParam(':es_vendible', $this->es_vendible);
         $stmt->bindParam(':description', $this->description);
         $stmt->bindParam(':price', $this->price);
         // 5. VINCULAR EL PARÁMETRO EN UPDATE TAMBIÉN

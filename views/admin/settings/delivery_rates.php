@@ -14,35 +14,39 @@
                     <h6 class="m-0 font-weight-bold text-primary">Configurar Rangos y Precios</h6>
                 </div>
                 <div class="card-body">
+                    <?php if ($activeRate): ?>
+                        <div class="alert alert-info py-2 small">
+                            <i class="fas fa-history"></i> 
+                            Versión actual creada por <strong><?= htmlspecialchars($activeRate['creator_name']) ?></strong> 
+                            el <?= date('d/m/Y H:i', strtotime($activeRate['created_at'])) ?>.
+                        </div>
+                    <?php endif; ?>
+
                     <p class="text-muted small">
-                        Define los rangos de distancia en kilómetros y el precio correspondiente. El sistema usará estas reglas para calcular el costo de envío automáticamente basándose en la ubicación del cliente.
+                        Define los rangos de distancia. Al guardar, se creará una nueva versión activa.
                     </p>
 
                     <form action="?route=settings_delivery_update" method="POST">
                         <div id="rates-container">
                             <?php 
-                            $rawRates = $settings['delivery_rates_json'] ?? '[]';
-                            $rates = json_decode($rawRates, true);
-                            
-                            if (empty($rates)) {
+                            $rates = $activeRate['details'] ?? [];
+                            if (empty($rates)): ?>
+                                <?php 
                                 $rates = [
-                                    ['start' => 0,    'end' => 5,  'price' => 15000],
-                                    ['start' => 5.1,  'end' => 8,  'price' => 20000],
-                                    ['start' => 8.1,  'end' => 11, 'price' => 26000],
-                                    ['start' => 11.1, 'end' => 12, 'price' => 32000],
-                                    ['start' => 12.1, 'end' => 16, 'price' => 34000]
+                                    ['km_from' => 0, 'km_to' => 5, 'price' => 10000]
                                 ];
-                            }
+                                ?>
+                            <?php endif; ?>
 
-                            foreach ($rates as $index => $rate): ?>
+                            <?php foreach ($rates as $index => $rate): ?>
                                 <div class="row mb-3 rate-row align-items-end">
                                     <div class="col-md-3">
                                         <label class="form-label small fw-bold">Desde (km)</label>
-                                        <input type="number" step="0.1" name="km_start[]" class="form-control" value="<?= $rate['start'] ?>" required>
+                                        <input type="number" step="0.1" name="km_start[]" class="form-control" value="<?= $rate['km_from'] ?>" required>
                                     </div>
                                     <div class="col-md-3">
                                         <label class="form-label small fw-bold">Hasta (km)</label>
-                                        <input type="number" step="0.1" name="km_end[]" class="form-control" value="<?= $rate['end'] ?>" required>
+                                        <input type="number" step="0.1" name="km_end[]" class="form-control" value="<?= $rate['km_to'] ?>" required>
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label small fw-bold">Precio (Gs.)</label>

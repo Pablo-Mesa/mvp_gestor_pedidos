@@ -478,6 +478,38 @@ switch ($route) {
         $controller->resolveMapUrl();
         break;
 
+    // --- Gestión de Empresa ---
+    case 'empresa':
+        require_once '../controllers/EmpresaController.php';
+        $controller = new EmpresaController();
+        $controller->index();
+        break;
+    case 'empresa_create':
+        require_once '../controllers/EmpresaController.php';
+        $controller = new EmpresaController();
+        $controller->create();
+        break;
+    case 'empresa_store':
+        require_once '../controllers/EmpresaController.php';
+        $controller = new EmpresaController();
+        $controller->store();
+        break;
+    case 'empresa_edit':
+        require_once '../controllers/EmpresaController.php';
+        $controller = new EmpresaController();
+        $controller->edit();
+        break;
+    case 'empresa_update':
+        require_once '../controllers/EmpresaController.php';
+        $controller = new EmpresaController();
+        $controller->update();
+        break;
+    case 'empresa_delete':
+        require_once '../controllers/EmpresaController.php';
+        $controller = new EmpresaController();
+        $controller->delete();
+        break;
+
     default:
         echo "Ruta no encontrada.";
         break;

@@ -272,7 +272,7 @@
     const storeConfig = {
         lat: <?= $siteSettings['store_lat'] ?? -25.3006 ?>,
         lng: <?= $siteSettings['store_lng'] ?? -57.6359 ?>,
-        rates: <?= $siteSettings['delivery_rates_json'] ?? '[]' ?>
+        rates: <?= json_encode($activeRates) ?>
     };
 
     /**
@@ -619,19 +619,27 @@
         if (deliveryType === 'delivery' && lat && lng) {
             const dist = calculateDistance(storeConfig.lat, storeConfig.lng, parseFloat(lat), parseFloat(lng));
             
-            // Buscar el precio correspondiente en los rangos configurados
-            let foundPrice = 0;
+            let foundPrice = null;
             if (storeConfig.rates && storeConfig.rates.length > 0) {
                 for (const rate of storeConfig.rates) {
-                    if (dist >= rate.start && dist <= rate.end) {
-                        foundPrice = rate.price;
+                    if (dist >= parseFloat(rate.km_from) && dist <= parseFloat(rate.km_to)) {
+                        foundPrice = parseFloat(rate.price);
                         break;
                     }
                 }
             }
-            deliveryCost = foundPrice;
-            deliveryRow.style.display = 'flex';
-            deliveryPriceEl.innerText = 'Gs. ' + new Intl.NumberFormat('es-PY').format(deliveryCost);
+
+            if (foundPrice !== null) {
+                deliveryCost = foundPrice;
+                deliveryRow.style.display = 'flex';
+                deliveryPriceEl.innerText = 'Gs. ' + new Intl.NumberFormat('es-PY').format(deliveryCost);
+                deliveryPriceEl.style.color = '#2d3436';
+            } else {
+                deliveryRow.style.display = 'flex';
+                deliveryPriceEl.innerText = 'Fuera de zona';
+                deliveryPriceEl.style.color = '#dc3545';
+                Toast.fire("Zona no cubierta", "La ubicación seleccionada supera nuestro límite de entrega.", "warning");
+            }
         } else {
             deliveryRow.style.display = 'none';
         }
@@ -661,12 +669,18 @@
             return;
         }
 
-        // 2. Validar ubicación si es delivery
+        // 2. Validar logística si es delivery
         const deliveryType = document.querySelector('input[name="delivery_type"]:checked').value;
         if (deliveryType === 'delivery') {
             const lat = document.getElementById('lat').value;
             if (!lat) {
-                alert("Por favor, toca en el mapa para indicar dónde entregar el pedido.");
+                Toast.fire("Ubicación requerida", "Por favor selecciona una dirección para el envío.", "warning");
+                return;
+            }
+
+            const deliveryPriceEl = document.getElementById('checkout-delivery-price');
+            if (deliveryPriceEl.innerText === 'Fuera de zona') {
+                Toast.fire("No podemos entregar aquí", "Tu dirección está fuera de nuestro rango. Elige 'Pasar a buscar' o cambia la ubicación.", "error");
                 return;
             }
         }

@@ -72,8 +72,8 @@ class Order {
             // 2. Si es delivery, insertar en order_shipments
             if ($this->delivery_type === 'delivery') {
                 $queryShip = "INSERT INTO order_shipments 
-                              (order_id, client_location_id, delivery_rate_id, address_snapshot, lat_snapshot, lng_snapshot) 
-                              VALUES (:order_id, :location_id, :rate_id, :address, :lat, :lng)";
+                              (order_id, client_location_id, delivery_rate_id, address_snapshot, lat_snapshot, lng_snapshot, delivery_user_id) 
+                              VALUES (:order_id, :location_id, :rate_id, :address, :lat, :lng, :delivery_user_id)";
                 $stmtShip = $this->conn->prepare($queryShip);
                 
                 $stmtShip->bindValue(':order_id', $this->id);
@@ -82,6 +82,7 @@ class Order {
                 $stmtShip->bindValue(':address', $this->delivery_address); // Propiedad temporal para snapshot
                 $stmtShip->bindValue(':lat', $this->delivery_lat);
                 $stmtShip->bindValue(':lng', $this->delivery_lng);
+                $stmtShip->bindValue(':delivery_user_id', $this->delivery_user_id);
                 $stmtShip->execute();
             }
 
@@ -122,11 +123,12 @@ class Order {
 
         $query = "SELECT o.*, c.name as user_name, c.phone as user_phone, ch.name as channel_name, ch.icon as channel_icon, 
                          s.address_snapshot as delivery_address, s.lat_snapshot as delivery_lat, s.lng_snapshot as delivery_lng, 
-                         s.delivery_user_id, d.name as delivery_name
+                         s.delivery_user_id, d.name as delivery_name, drd.price as delivery_cost
                   FROM " . $this->table . " o
                   LEFT JOIN clients c ON o.client_id = c.id 
                   LEFT JOIN order_channels ch ON o.channel_id = ch.id
                   LEFT JOIN order_shipments s ON o.id = s.order_id
+                  LEFT JOIN delivery_rate_details drd ON s.delivery_rate_id = drd.id
                   LEFT JOIN users d ON s.delivery_user_id = d.id
                   WHERE 1=1";
 
@@ -210,10 +212,11 @@ class Order {
     public function readOne() {
         $query = "SELECT o.*, c.name as user_name, c.email as user_email, c.phone as user_phone,
                          s.address_snapshot as delivery_address, s.lat_snapshot as delivery_lat, s.lng_snapshot as delivery_lng,
-                         s.delivery_user_id, st.name as staff_name
+                         s.delivery_user_id, st.name as staff_name, drd.price as delivery_cost
                   FROM " . $this->table . " o
                   JOIN clients c ON o.client_id = c.id
                   LEFT JOIN order_shipments s ON o.id = s.order_id
+                  LEFT JOIN delivery_rate_details drd ON s.delivery_rate_id = drd.id
                   LEFT JOIN users st ON o.user_id = st.id
                   WHERE o.id = :id LIMIT 0,1";
         

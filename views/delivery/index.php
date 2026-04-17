@@ -209,9 +209,34 @@
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
     }
+
+    /* Barra de producción nocturna en el panel principal */
+    .nightly-progress-bar {
+        background: #2d3436;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        border-left: 4px solid var(--delivery-primary);
+    }
 </style>
 
 <div id="delivery-orders-container">
+
+    <div class="nightly-progress-bar">
+        <div>
+            <div style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: #b2bec3; letter-spacing: 0.5px;">Producción Hoy</div>
+            <div style="font-size: 1.1rem; font-weight: 900; color: var(--delivery-primary);">Gs. <?php echo number_format($todaySummary['earnings'], 0, ',', '.'); ?></div>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: #b2bec3;">Servicios</div>
+            <div style="font-size: 1.1rem; font-weight: 900; color: #fff;"><?php echo $todaySummary['count']; ?></div>
+        </div>
+    </div>
         
     <?php if(empty($orders)): ?>
         <div class="empty-state">
@@ -243,12 +268,14 @@ function renderOrderCardHTML($order) {
             <!-- Área 1: Información de Cliente y Pago -->
             <div class="card-info-section">
                 <div class="order-header">
+
                     <div class="header-left">
                         <button class="toggle-section-btn" onclick="toggleCardSection(this.closest('.order-card'))" title="Expandir/Colapsar">
                             <i class="fas fa-chevron-down"></i>
                         </button>
                         <span class="order-number">#<?php echo $order['id']; ?></span>
                     </div>
+                    
                     <div class="header-right">
                         <?php if($order['status'] === 'completed'): ?>
                             <span class="status-badge-header completed"><i class="fas fa-check-circle"></i> Entregado</span>
@@ -263,7 +290,9 @@ function renderOrderCardHTML($order) {
                         <?php endif; ?>
                         <span class="order-time"><?php echo date('H:i', strtotime($order['created_at'])); ?></span>
                     </div>
+                    
                 </div>
+
                 <div class="client-info">
                     <h3><?php echo htmlspecialchars($order['user_name'] ?? 'Cliente'); ?></h3>
                     <div class="address-box">
@@ -282,6 +311,10 @@ function renderOrderCardHTML($order) {
                     <div class="payment-row" style="margin-top: 5px;">
                         <span class="payment-label">Monto Total:</span>
                         <span class="amount-to-collect">Gs. <?php echo number_format($order['total'], 0, ',', '.'); ?></span>
+                    </div>
+                    <div class="payment-row" style="margin-top: 5px; border-top: 1px dashed #ddd; padding-top: 5px;">
+                        <span class="payment-label" style="color: var(--delivery-primary); font-weight: bold;">Tu Ganancia:</span>
+                        <span style="font-weight: 900; color: var(--delivery-primary);">Gs. <?php echo number_format($order['delivery_cost'] ?? 0, 0, ',', '.'); ?></span>
                     </div>
                 </div>
             </div>
@@ -453,6 +486,7 @@ function renderOrderCardJS(order) {
     const mustCollect = true; 
     const isCollapsed = ['confirmed', 'completed', 'rejected', 'cancelled'].includes(order.status) ? 'collapsed' : '';
     const formattedTotal = new Intl.NumberFormat('es-PY').format(order.total);
+    const formattedEarnings = new Intl.NumberFormat('es-PY').format(order.delivery_cost || 0);
     const time = (order.created_at.split(' ')[1] || '').substring(0, 5);
     
     let statusBadge = '';
@@ -489,6 +523,10 @@ function renderOrderCardJS(order) {
                     <div class="payment-row" style="margin-top: 5px;">
                         <span class="payment-label">Monto Total:</span>
                         <span class="amount-to-collect">Gs. ${formattedTotal}</span>
+                    </div>
+                    <div class="payment-row" style="margin-top: 5px; border-top: 1px dashed #ddd; padding-top: 5px;">
+                        <span class="payment-label" style="color: var(--delivery-primary); font-weight: bold;">Tu Ganancia:</span>
+                        <span style="font-weight: 900; color: var(--delivery-primary);">Gs. ${formattedEarnings}</span>
                     </div>
                 </div>
             </div>

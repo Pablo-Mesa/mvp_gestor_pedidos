@@ -392,7 +392,7 @@ class OrderController {
         $distance = $earthRadius * $c; // Distancia en KM
 
         $db = (new Database())->getConnection();
-        $query = "SELECT d.delivery_rate_id, d.price FROM delivery_rate_details d
+        $query = "SELECT d.id as delivery_rate_id, d.price FROM delivery_rate_details d
                   JOIN delivery_rates r ON d.delivery_rate_id = r.id
                   WHERE r.is_active = 1 AND :dist BETWEEN d.km_from AND d.km_to LIMIT 1";
         $stmt = $db->prepare($query);

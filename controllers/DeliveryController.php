@@ -59,6 +59,15 @@ class DeliveryController {
         $activeOrders = array_filter($orders, fn($o) => $o['status'] === 'shipped');
         $completedOrders = array_filter($orders, fn($o) => $o['status'] === 'completed');
 
+        // Resumen rápido de "Producción de Hoy" para el panel principal (Progreso en vivo)
+        $todaySummary = ['earnings' => 0, 'count' => 0];
+        foreach ($allOrders as $o) {
+            if ($o['status'] === 'completed' && date('Y-m-d', strtotime($o['created_at'])) === $today) {
+                $todaySummary['count']++;
+                $todaySummary['earnings'] += $o['delivery_cost'] ?? 0;
+            }
+        }
+
         $view_title = "Panel de Logística";
         $content_view = '../views/delivery/index.php';
         
@@ -83,6 +92,7 @@ class DeliveryController {
         $summary = [
             'cash' => 0,      // Lo cobrado en efectivo (debe rendir)
             'digital' => 0,   // Lo pagado por medios digitales
+            'earnings' => 0,  // Lo que ganó el delivery por sus servicios
             'total' => 0,
             'count' => 0,
             'rejected' => 0,
@@ -93,6 +103,7 @@ class DeliveryController {
             if ($o['status'] === 'completed') {
                 $summary['count']++;
                 $summary['total'] += $o['total'];
+                $summary['earnings'] += $o['delivery_cost'] ?? 0;
                 
                 // TEMPORAL: Hasta que se implemente el módulo de Caja, todo se considera "Efectivo/A Cobrar"
                 // para asegurar que el repartidor rinda cuentas por cada entrega realizada.

@@ -1,14 +1,15 @@
 <style>
     .history-kpi-grid {
         display: grid;
-        grid-template-columns: 0.7fr 1.15fr 1.15fr;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
         gap: 8px;
         margin-bottom: 20px;
         flex-shrink: 0;
     }
     .kpi-card {
         background: white;
-        padding: 12px 5px;
+        padding: 15px 10px;
         border-radius: 12px;
         text-align: center;
         border: 1px solid #eee;
@@ -18,6 +19,8 @@
     .kpi-card span { font-size: 0.95rem; font-weight: 800; color: #2d3436; white-space: nowrap; }
     .kpi-cash { border-top: 4px solid #ff7675; }
     .kpi-digital { border-top: 4px solid #55efc4; }
+    .kpi-earnings { border-top: 4px solid #0984e3; background: #e3f2fd; }
+    .kpi-settle { border-top: 4px solid #2d3436; background: #f8f9fa; }
 
     .history-table-container {
         background: white;
@@ -169,13 +172,21 @@
         <label>Entregados</label>
         <span><?php echo $summary['count']; ?></span>
     </div>
-    <div class="kpi-card kpi-cash">
-        <label>Efectivo a Rendir</label>
+    <div class="kpi-card kpi-earnings">
+        <label style="color: #0984e3;">Mi Producción</label>
+        <span style="color: #0984e3; font-size: 1.1rem;">Gs. <?php echo number_format($summary['earnings'], 0, ',', '.'); ?></span>
+    </div>
+    <div class="kpi-card">
+        <label>Cobrado (Bruto)</label>
         <span style="color: #d63031;">Gs. <?php echo number_format($summary['cash'], 0, ',', '.'); ?></span>
     </div>
-    <div class="kpi-card kpi-digital">
-        <label>Cobros Digitales</label>
-        <span style="color: #00b894;">Gs. <?php echo number_format($summary['digital'], 0, ',', '.'); ?></span>
+    <div class="kpi-card kpi-settle">
+        <label>Saldo a Entregar</label>
+        <?php 
+            // Saldo = Lo cobrado en efectivo menos la comisión (ganancia) que el delivery retiene
+            $toDeliver = $summary['cash'] - $summary['earnings'];
+        ?>
+        <span style="font-size: 1.1rem; font-weight: 900;">Gs. <?php echo number_format($toDeliver, 0, ',', '.'); ?></span>
     </div>
 </div>
 
@@ -204,8 +215,8 @@
                 </div>
                 <div class="row-amount">
                     <span class="price">Gs. <?php echo number_format($o['total'], 0, ',', '.'); ?></span>
-                    <span class="badge" style="background: #fff3cd; color: #856404;">
-                        <?php echo $o['payment_method']; ?> (A Cobrar)
+                    <span class="badge" style="background: #e3f2fd; color: #0984e3; display: block; margin-top: 4px;">
+                        Envío: Gs. <?php echo number_format($o['delivery_cost'] ?? 0, 0, ',', '.'); ?>
                     </span>
                 </div>
             </div>

@@ -19,8 +19,7 @@
     .kpi-card span { font-size: 0.95rem; font-weight: 800; color: #2d3436; white-space: nowrap; }
     .kpi-cash { border-top: 4px solid #ff7675; }
     .kpi-digital { border-top: 4px solid #55efc4; }
-    .kpi-earnings { border-top: 4px solid #0984e3; background: #e3f2fd; }
-    .kpi-settle { border-top: 4px solid #2d3436; background: #f8f9fa; }
+    .kpi-settle { border-top: 4px solid #2d3436; background: #f8f9fa; grid-column: span 2; }
 
     .history-table-container {
         background: white;
@@ -172,10 +171,6 @@
         <label>Entregados</label>
         <span><?php echo $summary['count']; ?></span>
     </div>
-    <div class="kpi-card kpi-earnings">
-        <label style="color: #0984e3;">Mi Producción</label>
-        <span style="color: #0984e3; font-size: 1.1rem;">Gs. <?php echo number_format($summary['earnings'], 0, ',', '.'); ?></span>
-    </div>
     <div class="kpi-card">
         <label>Cobrado (Bruto)</label>
         <span style="color: #d63031;">Gs. <?php echo number_format($summary['cash'], 0, ',', '.'); ?></span>
@@ -215,8 +210,8 @@
                 </div>
                 <div class="row-amount">
                     <span class="price">Gs. <?php echo number_format($o['total'], 0, ',', '.'); ?></span>
-                    <span class="badge" style="background: #e3f2fd; color: #0984e3; display: block; margin-top: 4px;">
-                        Envío: Gs. <?php echo number_format($o['delivery_cost'] ?? 0, 0, ',', '.'); ?>
+                    <span class="badge" style="background: #f8f9fa; color: #95a5a6; border: 1px solid #eee; display: block; margin-top: 4px; font-weight: 500;">
+                        Costo de delivery: Gs. <?php echo number_format($o['delivery_cost'] ?? 0, 0, ',', '.'); ?>
                     </span>
                 </div>
             </div>

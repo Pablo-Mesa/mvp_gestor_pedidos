@@ -209,34 +209,9 @@
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
     }
-
-    /* Barra de producción nocturna en el panel principal */
-    .nightly-progress-bar {
-        background: #2d3436;
-        color: white;
-        padding: 12px 20px;
-        border-radius: 12px;
-        margin-bottom: 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        border-left: 4px solid var(--delivery-primary);
-    }
 </style>
 
 <div id="delivery-orders-container">
-
-    <div class="nightly-progress-bar">
-        <div>
-            <div style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: #b2bec3; letter-spacing: 0.5px;">Producción Hoy</div>
-            <div style="font-size: 1.1rem; font-weight: 900; color: var(--delivery-primary);">Gs. <?php echo number_format($todaySummary['earnings'], 0, ',', '.'); ?></div>
-        </div>
-        <div style="text-align: right;">
-            <div style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: #b2bec3;">Servicios</div>
-            <div style="font-size: 1.1rem; font-weight: 900; color: #fff;"><?php echo $todaySummary['count']; ?></div>
-        </div>
-    </div>
         
     <?php if(empty($orders)): ?>
         <div class="empty-state">
@@ -313,8 +288,8 @@ function renderOrderCardHTML($order) {
                         <span class="amount-to-collect">Gs. <?php echo number_format($order['total'], 0, ',', '.'); ?></span>
                     </div>
                     <div class="payment-row" style="margin-top: 5px; border-top: 1px dashed #ddd; padding-top: 5px;">
-                        <span class="payment-label" style="color: var(--delivery-primary); font-weight: bold;">Tu Ganancia:</span>
-                        <span style="font-weight: 900; color: var(--delivery-primary);">Gs. <?php echo number_format($order['delivery_cost'] ?? 0, 0, ',', '.'); ?></span>
+                        <span class="payment-label" style="color: #95a5a6; font-size: 0.8rem;">Costo de delivery:</span>
+                        <span style="font-weight: 600; color: #7f8c8d; font-size: 0.85rem;">Gs. <?php echo number_format($order['delivery_cost'] ?? 0, 0, ',', '.'); ?></span>
                     </div>
                 </div>
             </div>
@@ -525,8 +500,8 @@ function renderOrderCardJS(order) {
                         <span class="amount-to-collect">Gs. ${formattedTotal}</span>
                     </div>
                     <div class="payment-row" style="margin-top: 5px; border-top: 1px dashed #ddd; padding-top: 5px;">
-                        <span class="payment-label" style="color: var(--delivery-primary); font-weight: bold;">Tu Ganancia:</span>
-                        <span style="font-weight: 900; color: var(--delivery-primary);">Gs. ${formattedEarnings}</span>
+                        <span class="payment-label" style="color: #95a5a6; font-size: 0.8rem;">Costo de delivery:</span>
+                        <span style="font-weight: 600; color: #7f8c8d; font-size: 0.85rem;">Gs. ${formattedEarnings}</span>
                     </div>
                 </div>
             </div>

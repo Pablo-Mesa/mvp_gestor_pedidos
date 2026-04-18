@@ -192,5 +192,32 @@ class DeliveryController {
         }
         exit;
     }
+
+    /**
+     * Vista independiente de producción diaria del repartidor
+     */
+    public function production() {
+        $orderModel = new Order();
+        $selectedDate = $_GET['date'] ?? date('Y-m-d');
+        
+        $filters = [
+            'delivery_type' => 'delivery',
+            'delivery_user_id' => $_SESSION['user_id'],
+            'date' => $selectedDate,
+            'status' => 'completed' // Solo servicios efectivamente realizados
+        ];
+
+        $stmt = $orderModel->readAll($filters);
+        $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $totalProduction = 0;
+        foreach ($services as $s) {
+            $totalProduction += $s['delivery_cost'] ?? 0;
+        }
+
+        $view_title = "Mi Producción";
+        $content_view = '../views/delivery/production.php';
+        require_once '../views/layouts/delivery_layout.php';
+    }
 }
 ?>

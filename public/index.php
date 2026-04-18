@@ -356,6 +356,12 @@ switch ($route) {
         $controller->history();
         break;
 
+    case 'delivery_production':
+        require_once '../controllers/DeliveryController.php';
+        $controller = new DeliveryController();
+        $controller->production();
+        break;
+
     case 'delivery_assists':
         require_once '../controllers/DeliveryController.php';
         $controller = new DeliveryController();

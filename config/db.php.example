@@ -1,0 +1,26 @@
+<?php
+/**
+ * PLANTILLA DE CONFIGURACIÓN DE BASE DE DATOS
+ * Copie este archivo como 'db.php' y complete sus credenciales locales.
+ */
+class Database {
+    private $host = 'localhost';
+    private $db_name = 'nombre_de_tu_base_de_datos';
+    private $username = 'usuario_db';
+    private $password = 'contrasena_db';
+    public $conn;
+
+    public function getConnection() {
+        $this->conn = null;
+        try {
+            $this->conn = new PDO("mysql:host=" . $this->host . ";dbname=" . $this->db_name, $this->username, $this->password);
+            $this->conn->exec("set names utf8mb4");
+            $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $this->conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+        } catch(PDOException $exception) {
+            error_log("Connection error: " . $exception->getMessage());
+            die("Error de conexión al servidor.");
+        }
+        return $this->conn;
+    }
+}

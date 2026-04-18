@@ -16,17 +16,23 @@ class ClientController {
      */
     public function search() {
         header('Content-Type: application/json');
-        $term = $_GET['term'] ?? '';
+        $term = trim($_GET['term'] ?? '');
         
         $client = new Client();
         $db = (new Database())->getConnection();
         
+        // Búsqueda inteligente: Prioriza nombres que empiezan con el término 
+        // y asegura insensibilidad a mayúsculas/minúsculas (CI).
         $query = "SELECT id, name, phone FROM clients 
-                  WHERE name LIKE :term OR phone LIKE :term 
-                  LIMIT 10";
+                  WHERE LOWER(name) LIKE LOWER(:term_any) OR phone LIKE :term_any 
+                  ORDER BY (CASE WHEN LOWER(name) LIKE LOWER(:term_start) THEN 1 ELSE 2 END), name ASC
+                  LIMIT 15";
         
         $stmt = $db->prepare($query);
-        $stmt->execute([':term' => "%$term%"]);
+        $stmt->execute([
+            ':term_any' => "%$term%",
+            ':term_start' => "$term%"
+        ]);
         $clients = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         echo json_encode($clients);

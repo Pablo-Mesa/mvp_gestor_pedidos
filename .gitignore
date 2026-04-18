@@ -1,21 +1,28 @@
-# Archivos de configuración sensibles
-# Contiene db.php con las credenciales de la base de datos.
-config/
+# --- SEGURIDAD ---
+# Ignorar configuración local de base de datos
+config/db.php
 
-# Archivos del Sistema Operativo
-.DS_Store
-Thumbs.db
-
-# Configuración de IDEs
-.vscode/
-.idea/
-
-# Dependencias de Composer (si se usa en el futuro)
-vendor/
-
-# Archivos subidos por los usuarios
+# --- ARCHIVOS DE USUARIO ---
+# Ignorar imágenes subidas (productos, logos, etc)
 public/uploads/*
+# Permitir que la carpeta exista en git pero vacía
 !public/uploads/.gitkeep
 
-# Archivos de instalación temporales y peligrosos
-views/auth/install_admin.php
+# --- LOGS Y TEMPORALES ---
+*.log
+npm-debug.log*
+.tmp/
+.temp/
+
+# --- SISTEMA OPERATIVO ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- EDITORES DE CÓDIGO ---
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln

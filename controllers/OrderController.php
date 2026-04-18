@@ -529,6 +529,18 @@ class OrderController {
         $order->delivery_lat = $input['delivery_lat'] ?? $input['lat'] ?? null;
         $order->delivery_lng = $input['delivery_lng'] ?? $input['lng'] ?? null;
 
+        // Si se solicita guardar una nueva ubicación permanentemente para este cliente
+        if (!empty($input['save_new_location']) && $order->client_id > 1 && $order->delivery_lat && $order->delivery_lng) {
+            $locationModel = new ClientLocation();
+            $locationModel->create([
+                'client_id' => $order->client_id,
+                'title'     => !empty($input['new_location_title']) ? $input['new_location_title'] : 'Dirección POS',
+                'address'   => $order->delivery_address,
+                'lat'       => $order->delivery_lat,
+                'lng'       => $order->delivery_lng
+            ]);
+        }
+
         $deliveryCost = 0;
         $order->delivery_rate_id = null;
 

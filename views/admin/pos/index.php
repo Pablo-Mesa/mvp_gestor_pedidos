@@ -227,6 +227,17 @@
         margin-top: 10px;
         border: 1px solid #ddd;
     }
+
+    /* Estilos para cuadrícula de ubicaciones (Igual al Checkout) */
+    .pos-locations-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 1rem; }
+    .pos-location-card { 
+        border: 1px solid #eee; padding: 12px; border-radius: 10px; cursor: pointer; 
+        display: flex; flex-direction: column; gap: 4px; transition: 0.2s; font-size: 0.8rem; position: relative; background: #fff;
+    }
+    .pos-location-card i { font-size: 1.1rem; color: #aaa; margin-bottom: 3px; }
+    .pos-location-card.selected { border-color: #00b894; background: #f0fdf4; border-width: 2px; }
+    .pos-location-card strong { color: #2d3436; display: block; }
+    .pos-location-card small { color: #636e72; font-size: 0.7rem; line-height: 1.2; }
 </style>
 
 <!-- Vista para el Punto de Venta (POS) -->
@@ -472,11 +483,11 @@
 
                     <div class="row g-2 mb-3">
                         <div class="col-6">
-                            <label class="form-label fw-bold"><i class="fas fa-truck"></i> Entrega</label>
+                            <label class="form-label fw-bold"><i class="fas fa-truck"></i> Tipo de Entrega</label>
                             <select id="swal-delivery-type" class="form-select form-select-sm" onchange="window.togglePosDeliveryFields(this.value)">
                                 <option value="local" ${deliveryType === 'local' ? 'selected' : ''}>Consumo Local</option>
                                 <option value="pickup" ${deliveryType === 'pickup' ? 'selected' : ''}>Para Retirar</option>
-                                <option value="delivery" ${deliveryType === 'delivery' ? 'selected' : ''}>Envío / Teléfono</option>
+                                <option value="delivery" ${deliveryType === 'delivery' ? 'selected' : ''}>Delivery / WhatsApp</option>
                             </select>
                         </div>
                         <div class="col-6">
@@ -490,17 +501,40 @@
                     </div>
 
                     <div id="pos-delivery-extra" style="display: ${deliveryType === 'delivery' ? 'block' : 'none'};">
-                        <div id="saved-locations-container" class="mb-2" style="display: none;">
-                            <label class="form-label fw-bold small"><i class="fas fa-bookmark"></i> Usar ubicación guardada</label>
-                            <select id="swal-location-id" class="form-select form-select-sm" onchange="window.handleSavedLocationSelect(this)">
-                                <option value="">-- Seleccionar o ingresar nueva --</option>
-                            </select>
+                        <div class="btn-group w-100 mb-3" role="group">
+                            <button type="button" id="btn-mode-saved" class="btn btn-outline-primary btn-sm btn-delivery-mode" style="display:none;" onclick="window.setDeliveryMode('saved')">
+                                <i class="fas fa-list"></i> Lista
+                            </button>
+                            <button type="button" id="btn-mode-new" class="btn btn-primary btn-sm btn-delivery-mode active" onclick="window.setDeliveryMode('new')">
+                                <i class="fas fa-plus"></i> Nuevo Lugar
+                            </button>
+                            <button type="button" id="btn-mode-link" class="btn btn-outline-primary btn-sm btn-delivery-mode" onclick="window.setDeliveryMode('link')">
+                                <i class="fab fa-whatsapp"></i> Enlace/Link
+                            </button>
                         </div>
 
-                        <div class="mb-2">
-                            <label id="label-manual-location" class="form-label fw-bold small text-primary"><i class="fas fa-map-marker-alt"></i> URL Ubicación Google Maps</label>
-                            <input type="text" id="swal-location-url" class="form-control form-control-sm" placeholder="Pegue el link aquí o use el mapa..." oninput="window.processLocationUrl(this.value)">
+                        <div id="mode-saved" class="mb-2" style="display:none;">
+                            <label class="form-label fw-bold small text-muted mb-2"><i class="fas fa-bookmark"></i> Seleccionar Dirección Guardada</label>
+                            <div id="pos-locations-list" class="pos-locations-grid"></div>
                         </div>
+
+                        <div id="mode-new" class="mb-2">
+                            <div class="row g-2 mb-2">
+                                <div class="col-5">
+                                    <input type="text" id="swal-new-loc-title" class="form-control form-control-sm" placeholder="Ej: Casa, Trabajo">
+                                </div>
+                                <div class="col-7">
+                                    <input type="text" id="swal-new-loc-address" class="form-control form-control-sm" placeholder="Dirección escrita (Opcional)">
+                                </div>
+                            </div>
+                            <p class="text-primary small mb-1" style="font-size: 0.7rem;"><i class="fas fa-mouse-pointer"></i> Haga clic en el mapa para marcar el punto.</p>
+                        </div>
+
+                        <div id="mode-link" class="mb-2" style="display:none;">
+                            <label class="form-label fw-bold small text-success"><i class="fas fa-link"></i> Link de WhatsApp o Google Maps</label>
+                            <input type="text" id="swal-location-url" class="form-control form-control-sm" placeholder="Pegue el link recibido aquí..." oninput="window.processLocationUrl(this.value)">
+                        </div>
+
                         <div id="swal-pos-map"></div>
                         <input type="hidden" id="swal-lat">
                         <input type="hidden" id="swal-lng">
@@ -548,12 +582,17 @@
                 }
             },
             preConfirm: () => {
+                const mode = document.querySelector('.btn-delivery-mode.active')?.id.replace('btn-mode-', '') || 'saved';
                 return {
                     clientId: document.getElementById('swal-client-id').value,
                     deliveryType: document.getElementById('swal-delivery-type').value,
                     paymentMethod: document.getElementById('swal-payment-method').value,
                     observation: document.getElementById('swal-observation').value,
-                    locationId: document.getElementById('swal-location-id')?.value || null,
+                    
+                    deliveryMode: mode,
+                    locationId: mode === 'saved' ? document.querySelector('.pos-location-card.selected')?.dataset.id : null,
+                    newTitle: mode === 'new' ? document.getElementById('swal-new-loc-title').value : null,
+                    newAddress: mode === 'new' ? document.getElementById('swal-new-loc-address').value : document.getElementById('swal-location-url').value,
                     lat: document.getElementById('swal-lat')?.value,
                     lng: document.getElementById('swal-lng')?.value
                 }
@@ -574,6 +613,12 @@
             const isDelivery = (val === 'delivery');
             container.style.display = isDelivery ? 'block' : 'none';
             if(isDelivery) {
+                // Forzar carga de ubicaciones al cambiar a delivery si hay un cliente seleccionado
+                const clientId = document.getElementById('swal-client-id')?.value;
+                if(clientId && clientId != "1") {
+                    window.loadClientLocations(clientId);
+                }
+
                 setTimeout(() => {
                     if(!window.posMap) window.initPosMap();
                     if(window.posMap && typeof window.posMap.invalidateSize === 'function') window.posMap.invalidateSize();
@@ -583,53 +628,105 @@
     }
 
     /**
+     * Alterna entre los 3 métodos de entrada de ubicación
+     */
+    window.setDeliveryMode = function(mode) {
+        // Ocultar todos los contenedores
+        ['saved', 'new', 'link'].forEach(m => {
+            const div = document.getElementById('mode-' + m);
+            if(div) div.style.display = 'none';
+            const btn = document.getElementById('btn-mode-' + m);
+            if(btn) btn.classList.replace('btn-primary', 'btn-outline-primary');
+            if(btn) btn.classList.remove('active');
+        });
+
+        // Mostrar el seleccionado
+        const activeDiv = document.getElementById('mode-' + mode);
+        if(activeDiv) activeDiv.style.display = 'block';
+        const activeBtn = document.getElementById('btn-mode-' + mode);
+        if(activeBtn) {
+            activeBtn.classList.replace('btn-outline-primary', 'btn-primary');
+            activeBtn.classList.add('active');
+        }
+
+        // Refrescar mapa si es necesario
+        if(window.posMap) {
+            setTimeout(() => window.posMap.invalidateSize(), 100);
+        }
+    }
+
+    /**
      * Carga las ubicaciones del cliente seleccionado en el POS
      */
     window.loadClientLocations = async function(clientId) {
-        const container = document.getElementById('saved-locations-container');
-        const select = document.getElementById('swal-location-id');
-        if(!select) return;
+        const btnSaved = document.getElementById('btn-mode-saved');
+        const listContainer = document.getElementById('pos-locations-list');
+        const feedback = document.getElementById('swal-search-feedback');
+        if(!listContainer || !btnSaved) return;
 
-        if(clientId == 1) {
-            container.style.display = 'none';
-            select.innerHTML = '<option value="">-- Seleccionar --</option>';
+        // Resetear estado visual antes de la consulta
+        btnSaved.style.display = 'none';
+        listContainer.innerHTML = '';
+        if(feedback) feedback.innerHTML = '';
+
+        if(clientId == 1 || !clientId) {
+            window.setDeliveryMode('new');
             return;
         }
 
         try {
             const resp = await fetch(`?route=admin_client_locations&id=${clientId}`);
-            const locations = await resp.json();
+            if (!resp.ok) throw new Error("Error en la respuesta de la API");
             
-            if(locations.length > 0) {
-                container.style.display = 'block';
-                select.innerHTML = '<option value="">-- Usar Nueva Ubicación --</option>';
+            const locations = await resp.json();
+
+            if(Array.isArray(locations) && locations.length > 0) {
                 locations.forEach(loc => {
-                    const opt = document.createElement('option');
-                    opt.value = loc.id;
-                    opt.text = `${loc.title} (${loc.address})`;
-                    opt.dataset.lat = loc.lat;
-                    opt.dataset.lng = loc.lng;
-                    opt.dataset.address = loc.address;
-                    select.appendChild(opt);
+                    const card = document.createElement('div');
+                    card.className = 'pos-location-card';
+                    card.dataset.id = loc.id;
+                    card.dataset.lat = loc.lat;
+                    card.dataset.lng = loc.lng;
+                    card.dataset.address = loc.address;
+                    card.innerHTML = `<i class="fas fa-home"></i><strong>${loc.title}</strong><small>${loc.address}</small>`;
+                    card.addEventListener('click', function() { window.handlePosLocationSelect(this); });
+                    listContainer.appendChild(card);
                 });
+
+                // Si hay ubicaciones, mostrar botón con prioridad y activar modo lista
+                btnSaved.style.setProperty('display', 'inline-flex', 'important');
+                if(feedback) feedback.innerHTML = `<span class="text-success fw-bold small"><i class="fas fa-check-circle"></i> Cliente con ${locations.length} direcciones guardadas.</span>`;
+                
+                // Seleccionar la primera por defecto
+                const firstCard = listContainer.querySelector('.pos-location-card');
+                if(firstCard) window.handlePosLocationSelect(firstCard);
+                window.setDeliveryMode('saved');
             } else {
-                container.style.display = 'none';
+                if(feedback) feedback.innerHTML = `<span class="text-muted small"><i class="fas fa-info-circle"></i> Cliente sin direcciones registradas.</span>`;
+                window.setDeliveryMode('new');
             }
-        } catch (e) { console.error("Error cargando ubicaciones:", e); }
+        } catch (e) { 
+            console.error("Error cargando ubicaciones:", e);
+            window.setDeliveryMode('new');
+        }
     }
 
     /**
-     * Maneja la selección de una ubicación guardada
+     * Maneja la selección visual de las tarjetas de ubicación
      */
-    window.handleSavedLocationSelect = function(select) {
-        const opt = select.options[select.selectedIndex];
-        if(opt.value) {
-            window.updatePosMapMarker(parseFloat(opt.dataset.lat), parseFloat(opt.dataset.lng));
-            document.getElementById('swal-location-url').value = opt.dataset.address;
-            document.getElementById('label-manual-location').innerHTML = '<i class="fas fa-check-circle text-success"></i> Dirección seleccionada';
+    window.handlePosLocationSelect = function(card) {
+        if(!card) return;
+        document.querySelectorAll('.pos-location-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+
+        if(card.dataset.id) {
+            window.updatePosMapMarker(parseFloat(card.dataset.lat), parseFloat(card.dataset.lng));
+            const linkInput = document.getElementById('swal-location-url');
+            if(linkInput) linkInput.value = card.dataset.address;
         } else {
-            document.getElementById('swal-location-url').value = '';
-            document.getElementById('label-manual-location').innerHTML = '<i class="fas fa-map-marker-alt"></i> URL Ubicación Google Maps';
+            document.getElementById('swal-lat').value = '';
+            document.getElementById('swal-lng').value = '';
+            if (window.posMarker) window.posMap.removeLayer(window.posMarker);
         }
     }
 
@@ -652,6 +749,14 @@
 
         window.posMap = L.map(mapContainer).setView([-25.3006, -57.6359], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window.posMap);
+
+        // Permitir marcar punto manualmente si el modo es "Nuevo"
+        window.posMap.on('click', function(e) {
+            const mode = document.querySelector('.btn-delivery-mode.active')?.id.replace('btn-mode-', '');
+            if(mode === 'new') {
+                window.updatePosMapMarker(e.latlng.lat, e.latlng.lng);
+            }
+        });
 
         // Forzamos el renderizado de los cuadros (tiles)
         setTimeout(() => { if(window.posMap) window.posMap.invalidateSize(); }, 400);
@@ -725,30 +830,35 @@
      * Función auxiliar para buscar clientes registrados dentro del modal
      */
     window.searchClientInModal = async function() {
-        const term = document.getElementById('swal-client-search').value;
+        const termInput = document.getElementById('swal-client-search');
+        const term = termInput ? termInput.value.trim() : '';
         const feedback = document.getElementById('swal-search-feedback');
+        const select = document.getElementById('swal-client-id');
         
-        if(term.length < 3) {
-            if(feedback) feedback.innerText = term.length > 0 ? "Escribe al menos 3 caracteres..." : "";
+        if(term.length < 2) { // Bajamos a 2 caracteres para mayor agilidad
+            if(feedback) feedback.innerText = term.length > 0 ? "Escribe al menos 2 caracteres..." : "";
+            if(select) select.innerHTML = '<option value="1">-- Cliente Ocasional --</option>';
             return;
         }
 
         if(feedback) feedback.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Buscando...';
 
         try {
-            const resp = await fetch(`?route=admin_clients_search&term=${term}`);
+            const resp = await fetch(`?route=admin_clients_search&term=${encodeURIComponent(term)}`);
             const clients = await resp.json();
-            const select = document.getElementById('swal-client-id');
             
-            // Mantener la opción por defecto y agregar resultados
-            select.innerHTML = '<option value="1">-- Cliente Ocasional --</option>';
+            // Limpiar y poblar el selector de una sola vez
+            let options = '<option value="1">-- Cliente Ocasional --</option>';
             clients.forEach(c => {
-                select.innerHTML += `<option value="${c.id}">${c.name} (${c.phone || 'Sin tel'})</option>`;
+                options += `<option value="${c.id}">${c.name} (${c.phone || 'Sin tel'})</option>`;
             });
+            select.innerHTML = options;
             
             if(clients.length > 0) {
-                select.selectedIndex = 1;
-                if(feedback) feedback.innerText = `✅ ${clients.length} resultados encontrados`;
+                // Seleccionar automáticamente el primer resultado y cargar sus ubicaciones
+                select.value = clients[0].id;
+                if(feedback) feedback.innerHTML = `<span class="text-primary fw-bold small">✅ ${clients.length} encontrados</span>`;
+                window.loadClientLocations(clients[0].id);
             } else {
                 if(feedback) feedback.innerText = "❌ No se encontraron coincidencias";
             }
@@ -907,7 +1017,11 @@
                 observation: data.observation,
                 lat: data.lat,
                 lng: data.lng,
-                delivery_address: document.getElementById('swal-location-url')?.value
+                delivery_address: data.deliveryMode === 'saved' ? 
+                    document.querySelector('.pos-location-card.selected small')?.innerText : 
+                    data.newAddress,
+                save_new_location: (data.deliveryMode === 'new' && data.clientId != 1),
+                new_location_title: data.newTitle
             })
         });
 

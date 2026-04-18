@@ -4,6 +4,7 @@
         padding: 0px 20px;
         max-width: 1200px;
         margin: 0 auto;
+        animation: fadeIn 0.5s ease-in-out;
     }
 
     .dashboard-header {
@@ -11,16 +12,17 @@
         text-align: left;
     }
 
-    .dashboard-header h1 { color: #2d3436; font-size: 1.8rem; margin-bottom: 5px; }
+    .dashboard-header h1 { color: #2d3436; font-size: 2.2rem; font-weight: 800; margin-bottom: 5px; letter-spacing: -1px; }
     .dashboard-header p { color: #636e72; }
 
     /* Alertas */
     .alert-section { margin-bottom: 25px; }
     .alert-banner {
-        background: #fff3cd;
-        border-left: 5px solid #ffc107;
-        padding: 15px 20px;
-        border-radius: 8px;
+        background: #fff9db;
+        border: 1px solid #ffe066;
+        border-left: 5px solid #fcc419;
+        padding: 12px 20px;
+        border-radius: 12px;
         display: flex;
         align-items: center;
         gap: 15px;
@@ -30,9 +32,9 @@
     }
     .btn-alert {
         margin-left: auto;
-        background: #856404;
+        background: #fcc419;
         color: white;
-        padding: 5px 12px;
+        padding: 6px 15px;
         border-radius: 4px;
         text-decoration: none;
         font-size: 0.85rem;
@@ -51,23 +53,23 @@
     .stat-card {
         background: white;
         border-radius: 12px;
-        padding: 25px;
+        padding: 20px;
         display: flex;
         align-items: center;
         gap: 20px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.04);
         transition: transform 0.3s ease, box-shadow 0.3s ease;
-        border-left: 6px solid #dfe6e9;
+        border: 1px solid #f1f3f5;
     }
 
     .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        transform: translateY(-3px);
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05);
     }
 
-    .stat-card.pending { border-left-color: #ffc107; }
-    .stat-card.income { border-left-color: #28a745; }
-    .stat-card.sales { border-left-color: #17a2b8; }
+    .stat-card.pending { border-bottom: 4px solid #fab005; }
+    .stat-card.income { border-bottom: 4px solid #40c057; }
+    .stat-card.sales { border-bottom: 4px solid #228be6; }
 
     .stat-icon {
         width: 60px;
@@ -102,11 +104,11 @@
     /* Layout Visual (Gráfico + Acciones) */
     .dashboard-visuals {
         display: flex;
-        flex-direction: row;
+        gap: 30px;
         justify-content: space-between;
-        align-items: flex-end;
+        align-items: flex-start;
         width: 100%;
-        height: auto;
+        margin-top: 20px;
     }
 
     .chart-container {
@@ -116,6 +118,8 @@
         box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         display: flex;
         flex-direction: column;
+        flex: 1;
+        min-width: 350px;
     }
 
     .chart-header h2 {
@@ -132,27 +136,20 @@
 
     /* Acciones Rápidas */
     .quick-actions {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;   
-        width: 100%;    
+        flex: 1.5;
     }
     .quick-actions h2 { 
-
         text-align: left;
         font-size: 1.2rem; 
         color: #2d3436; 
-        margin-bottom: 20px;
+        margin-bottom: 15px;
         font-weight: 600;
     }
 
     .actions-grid {
-        display: flex;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
         gap: 15px;
-        justify-content: center;
-        align-items: center;
     }
 
     .action-btn {
@@ -168,6 +165,11 @@
         color: #2d3436;
         transition: all 0.3s ease;
         box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
     .action-btn i { font-size: 1.5rem; color: #0984e3; }

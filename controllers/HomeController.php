@@ -7,6 +7,7 @@ require_once '../models/ProductReaction.php';
 require_once '../models/HeroPromo.php';
 require_once '../models/ClientLocation.php';
 require_once '../models/Product.php';
+require_once '../models/Client.php';
 
 class HomeController {
 
@@ -258,6 +259,52 @@ class HomeController {
         $view_title = "Mis Direcciones";
         $content_view = '../views/home/locations.php';
         require_once '../views/layouts/client_layout.php';
+    }
+
+    /**
+     * Muestra la gestión de datos de facturación
+     */
+    public function myBilling() {
+        if (!isset($_SESSION['client_id'])) {
+            header('Location: ?route=home');
+            exit;
+        }
+
+        $clientModel = new Client();
+        $clientData = $clientModel->getById($_SESSION['client_id']);
+
+        $view_title = "Datos de Facturación";
+        $content_view = '../views/home/billing.php';
+        require_once '../views/layouts/client_layout.php';
+    }
+
+    /**
+     * Procesa la actualización de datos de facturación vía AJAX
+     */
+    public function updateBillingApi() {
+        header('Content-Type: application/json');
+        if (!isset($_SESSION['client_id'])) {
+            echo json_encode(['success' => false, 'message' => 'Sesión no válida']);
+            exit;
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        if (empty($data['billing_name']) || empty($data['billing_ruc'])) {
+            echo json_encode(['success' => false, 'message' => 'El nombre y RUC son obligatorios']);
+            exit;
+        }
+
+        $clientModel = new Client();
+        if ($clientModel->updateBilling($_SESSION['client_id'], $data['billing_name'], $data['billing_ruc'])) {
+            // Actualizar sesión para reflejar cambios en checkout
+            $_SESSION['client_billing_name'] = $data['billing_name'];
+            $_SESSION['client_billing_ruc'] = $data['billing_ruc'];
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Error al actualizar en la base de datos']);
+        }
+        exit;
     }
 
     /**

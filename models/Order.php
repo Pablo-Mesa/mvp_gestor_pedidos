@@ -16,6 +16,8 @@ class Order {
     public $status;
     public $delivery_user_id; // ID del repartidor asignado
     public $observation; // Nueva propiedad
+    public $billing_name;
+    public $billing_ruc;
     public $payment_method;
     public $delivery_type;
     public $client_location_id; // Relación con envíos
@@ -51,8 +53,8 @@ class Order {
 
             // 1. Insertar Cabecera (Order)
             $query = "INSERT INTO " . $this->table . " 
-                      (user_id, client_id, channel_id, total, status, observation, payment_method, delivery_type) 
-                      VALUES (:user_id, :client_id, :channel_id, :total, :status, :observation, :payment_method, :delivery_type)";
+                      (user_id, client_id, channel_id, total, status, observation, billing_name, billing_ruc, payment_method, delivery_type) 
+                      VALUES (:user_id, :client_id, :channel_id, :total, :status, :observation, :billing_name, :billing_ruc, :payment_method, :delivery_type)";
             
             $stmt = $this->conn->prepare($query);
             
@@ -63,6 +65,8 @@ class Order {
             $stmt->bindParam(':total', $this->total);
             $stmt->bindParam(':status', $this->status);
             $stmt->bindParam(':observation', $this->observation);
+            $stmt->bindParam(':billing_name', $this->billing_name);
+            $stmt->bindParam(':billing_ruc', $this->billing_ruc);
             $stmt->bindParam(':payment_method', $this->payment_method);
             $stmt->bindParam(':delivery_type', $this->delivery_type);
 

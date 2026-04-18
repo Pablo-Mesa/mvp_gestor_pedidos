@@ -67,6 +67,15 @@
     .summary-total { display: flex; justify-content: space-between; font-size: 1.3rem; font-weight: bold; margin-bottom: 1.5rem; color: #333; }
     
     .btn-confirm { width: 100%; padding: 14px; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
+
+    /* Estilo para inputs de facturación bloqueados */
+    .billing-input[readonly] {
+        background-color: #fcfcfc;
+        border-color: #eee;
+        color: #777;
+        cursor: default;
+    }
+
     .btn-confirm:hover { background: #218838; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(40,167,69,0.3); }
     
     .btn-back { 
@@ -167,6 +176,45 @@
                     <input type="hidden" name="delivery_lng" id="lng">
                     <input type="hidden" name="delivery_address" id="selected_address">
                     <input type="hidden" name="location_id" id="location_id">
+                </div>
+
+                <!-- 3. Datos de Facturación -->
+                <div class="section-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="margin:0;"><i class="fas fa-file-invoice"></i> ¿Desea Factura Legal?</h3>
+                        <label class="switch" style="transform: scale(0.9);">
+                            <input type="checkbox" id="wants_invoice" onchange="toggleInvoiceFields(this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div id="invoice_fields" style="display: none; border-top: 1px solid #f8f9fa; padding-top: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <p class="hint-text" style="margin:0;">Datos para el comprobante:</p>
+                            <div>
+                                <button type="button" id="btn-edit-billing" class="btn-add-location" style="background: #f8f9fa; color: #2d3436; border: 1px solid #ddd; padding: 4px 10px;" onclick="enableBillingEdit()">
+                                    <i class="fas fa-pen"></i> Editar
+                                </button>
+                                <button type="button" id="btn-save-billing" class="btn-add-location" style="display: none; background: #0984e3; padding: 4px 10px;" onclick="saveBillingChanges()">
+                                    <i class="fas fa-save"></i> Guardar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div class="input-group">
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #666;">Razón Social / Nombre</label>
+                                <input type="text" id="billing_name" name="billing_name" class="form-control billing-input" 
+                                       value="<?= htmlspecialchars($_SESSION['client_billing_name'] ?? $_SESSION['client_name'] ?? '') ?>" readonly>
+                            </div>
+                            <div class="input-group">
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #666;">RUC / Cédula</label>
+                                <input type="text" id="billing_ruc" name="billing_ruc" class="form-control billing-input" 
+                                       value="<?= htmlspecialchars($_SESSION['client_billing_ruc'] ?? '') ?>" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="invoice_off_msg" style="color: #999; font-size: 0.85rem;">Se emitirá como "Sin Nombre" o Ticket Interno si no se marca esta opción.</div>
                 </div>
 
                 <!-- 3. Método de Pago -->
@@ -434,6 +482,71 @@
         loadCheckoutItems(); // Recalcular total con delivery
     }
 
+    /**
+     * Muestra/Oculta los campos de facturación y gestiona su obligatoriedad
+     */
+    function toggleInvoiceFields(show) {
+        const fields = document.getElementById('invoice_fields');
+        const msg = document.getElementById('invoice_off_msg');
+        fields.style.display = show ? 'block' : 'none';
+        msg.style.display = show ? 'none' : 'block';
+    }
+
+    /**
+     * Habilita la edición de los campos de facturación
+     */
+    function enableBillingEdit() {
+        document.getElementById('billing_name').readOnly = false;
+        document.getElementById('billing_ruc').readOnly = false;
+        document.getElementById('btn-edit-billing').style.display = 'none';
+        document.getElementById('btn-save-billing').style.display = 'inline-flex';
+        document.getElementById('billing_name').focus();
+    }
+
+    /**
+     * Guarda los cambios de facturación permanentemente en el perfil del cliente
+     */
+    async function saveBillingChanges() {
+        const name = document.getElementById('billing_name').value.trim();
+        const ruc = document.getElementById('billing_ruc').value.trim();
+
+        if (!name || !ruc) {
+            Toast.fire("Campos obligatorios", "Por favor complete Nombre y RUC", "warning");
+            return;
+        }
+
+        try {
+            const btn = document.getElementById('btn-save-billing');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            const response = await fetch('?route=update_billing_api', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ billing_name: name, billing_ruc: ruc })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                Toast.fire("Datos actualizados", "Los cambios se guardaron en tu perfil.", "success");
+                // Bloquear campos de nuevo
+                document.getElementById('billing_name').readOnly = true;
+                document.getElementById('billing_ruc').readOnly = true;
+                document.getElementById('btn-edit-billing').style.display = 'inline-flex';
+                document.getElementById('btn-save-billing').style.display = 'none';
+            } else {
+                Toast.fire("Error", result.message || "No se pudo actualizar", "error");
+            }
+        } catch (error) {
+            Toast.fire("Error de conexión", "error");
+        } finally {
+            const btn = document.getElementById('btn-save-billing');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save"></i> Guardar';
+        }
+    }
+
     async function confirmDeleteLocation(id, title) {
         const { isConfirmed } = await Swal.fire({
             title: `¿Eliminar "${title}"?`,
@@ -695,6 +808,20 @@
         
         // Convertir FormData a objeto simple para enviar como JSON
         const data = Object.fromEntries(formData.entries());
+
+        // Validación y Limpieza de Facturación
+        const wantsInvoice = document.getElementById('wants_invoice').checked;
+        if (wantsInvoice) {
+            if (!data.billing_name || !data.billing_ruc) {
+                Toast.fire("Datos de facturación incompletos", "Por favor ingrese el Nombre y RUC.", "warning");
+                return;
+            }
+        } else {
+            // Si no desea factura, nos aseguramos de enviar nulos al servidor
+            data.billing_name = null;
+            data.billing_ruc = null;
+        }
+
         data.cart = cart; // Adjuntar carrito
 
         // 4. Enviar al servidor (AJAX)

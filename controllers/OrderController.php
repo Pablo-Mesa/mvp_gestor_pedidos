@@ -8,6 +8,7 @@ require_once '../models/ClientLocation.php';
 require_once '../models/Setting.php';
 require_once '../models/CashRegister.php'; // Nuevo Modelo
 require_once '../models/DeliveryRate.php';
+require_once '../models/Client.php';
 
 class OrderController {
 
@@ -428,6 +429,26 @@ class OrderController {
         $order->payment_method = $input['payment_method'] ?? 'efectivo';
         $order->delivery_type = $input['delivery_type'] ?? 'pickup';
         $order->observation = $input['observation'] ?? ''; // Guardamos la observación
+        
+        // Capturar datos de facturación
+        $order->billing_name = $input['billing_name'] ?? null;
+        $order->billing_ruc = $input['billing_ruc'] ?? null;
+
+        // Si se enviaron datos de facturación, actualizamos el perfil del cliente "de paso"
+        if (!empty($order->billing_name) && !empty($order->billing_ruc)) {
+            // Solo actualizamos si son diferentes a lo que ya tenemos en sesión para ahorrar recursos
+            if ($order->billing_name !== ($_SESSION['client_billing_name'] ?? '') || 
+                $order->billing_ruc !== ($_SESSION['client_billing_ruc'] ?? '')) {
+                
+                $clientModel = new Client();
+                $clientModel->updateBilling($_SESSION['client_id'], $order->billing_name, $order->billing_ruc);
+                
+                // Actualizamos la sesión para que el cambio sea inmediato en la interfaz
+                $_SESSION['client_billing_name'] = $order->billing_name;
+                $_SESSION['client_billing_ruc'] = $order->billing_ruc;
+            }
+        }
+
         $order->client_location_id = $input['location_id'] ?? null; // Nueva relación
         
         $deliveryCost = 0;

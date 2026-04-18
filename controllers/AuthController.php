@@ -121,6 +121,8 @@ class AuthController {
                 // Usamos claves de sesión DISTINTAS para no mezclar con admin
                 $_SESSION['client_id'] = $client->id;
                 $_SESSION['client_name'] = $client->name;
+                $_SESSION['client_billing_name'] = $client->billing_name;
+                $_SESSION['client_billing_ruc'] = $client->billing_ruc;
                 
                 // Redirección inteligente post-login
                 $redirectTo = $_POST['redirect_to'] ?? 'home';
@@ -143,11 +145,15 @@ class AuthController {
             $client->password = $_POST['password'];
             $client->phone = $_POST['phone'];
             $client->has_whatsapp = isset($_POST['has_whatsapp']) ? 1 : 0;
+            $client->billing_name = $_POST['billing_name'] ?? null;
+            $client->billing_ruc = $_POST['billing_ruc'] ?? null;
 
             if ($client->register()) {
                 // Auto-login tras registro exitoso
                 $_SESSION['client_id'] = $client->id;
                 $_SESSION['client_name'] = $client->name;
+                $_SESSION['client_billing_name'] = $client->billing_name;
+                $_SESSION['client_billing_ruc'] = $client->billing_ruc;
 
                 // Redirección inteligente post-registro
                 $redirectTo = $_POST['redirect_to'] ?? 'home';

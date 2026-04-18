@@ -780,6 +780,17 @@
 
                     <label class="form-label small fw-bold">Email (Opcional)</label>
                     <input id="q-email" class="form-control" placeholder="cliente@correo.com">
+
+                    <hr class="my-3 opacity-10">
+                    <label class="form-label small fw-bold text-primary"><i class="fas fa-file-invoice"></i> Datos de Facturación (Opcional)</label>
+                    <div class="row g-2">
+                        <div class="col-7">
+                            <input id="q-billing-name" class="form-control form-control-sm" placeholder="Razón Social / Nombre">
+                        </div>
+                        <div class="col-5">
+                            <input id="q-billing-ruc" class="form-control form-control-sm" placeholder="RUC / CI">
+                        </div>
+                    </div>
                 </div>
             `,
             focusConfirm: false,
@@ -787,6 +798,8 @@
                 const nameInput = document.getElementById('q-name');
                 const phoneInput = document.getElementById('q-phone');
                 const emailInput = document.getElementById('q-email');
+                const billingNameInput = document.getElementById('q-billing-name');
+                const billingRucInput = document.getElementById('q-billing-ruc');
                 const feedback = document.getElementById('phone-feedback');
 
                 nameInput?.focus();
@@ -801,6 +814,14 @@
                 });
 
                 emailInput?.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); billingNameInput?.focus(); }
+                });
+
+                billingNameInput?.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); billingRucInput?.focus(); }
+                });
+
+                billingRucInput?.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') { e.preventDefault(); Swal.clickConfirm(); }
                 });
                 
@@ -832,7 +853,9 @@
                 return {
                     name: document.getElementById('q-name').value,
                     phone: document.getElementById('q-phone').value,
-                    email: document.getElementById('q-email').value
+                    email: document.getElementById('q-email').value,
+                    billing_name: document.getElementById('q-billing-name').value,
+                    billing_ruc: document.getElementById('q-billing-ruc').value
                 }
             }
         });

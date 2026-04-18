@@ -155,6 +155,9 @@ $siteLogo = !empty($siteSettings['site_logo']) ? $baseUrl . 'uploads/' . $siteSe
                     <a href="?route=my_locations" class="sidebar-link">
                         <i class="fas fa-map-marker-alt"></i> Mis Direcciones
                     </a>
+                    <a href="?route=my_billing" class="sidebar-link">
+                        <i class="fas fa-file-invoice"></i> Datos de Facturación
+                    </a>
                     <a href="#" class="sidebar-link" id="btnSidebarInstall" style="display:none; color: #0984e3;">
                         <i class="fas fa-download"></i> Instalar Aplicación
                     </a>
@@ -260,6 +263,17 @@ $siteLogo = !empty($siteSettings['site_logo']) ? $baseUrl . 'uploads/' . $siteSe
                                 <input type="checkbox" name="has_whatsapp" id="hasWhatsapp" onchange="toggleWsIcon()">
                                 <span class="slider"></span>
                             </label>
+                </div>
+            </div>
+
+            <div class="grid-inputs">
+                <div class="input-group">
+                    <label>Nombre para Factura (Opcional)</label>
+                    <input type="text" name="billing_name" placeholder="Razón Social o Nombre">
+                </div>
+                <div class="input-group">
+                    <label>RUC / Cédula</label>
+                    <input type="text" name="billing_ruc" placeholder="1234567-8">
                         </div>
                     </div>
 

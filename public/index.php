@@ -29,6 +29,16 @@ switch ($route) {
         $controller = new HomeController();
         $controller->myLocations();
         break;
+    case 'my_billing':
+        require_once '../controllers/HomeController.php';
+        $controller = new HomeController();
+        $controller->myBilling();
+        break;
+    case 'update_billing_api':
+        require_once '../controllers/HomeController.php';
+        $controller = new HomeController();
+        $controller->updateBillingApi();
+        break;
 
     case 'my_order_details':
         require_once '../controllers/HomeController.php';

@@ -80,7 +80,7 @@ class AdminController {
         $categoryModel = new Category();
         $categories = $categoryModel->readAll()->fetchAll(PDO::FETCH_ASSOC);
 
-        $data = ['title' => 'Punto de Venta (POS)'];
+        $data = ['title' => 'Recepción de Pedidos'];
         
         $content_view = '../views/admin/pos/index.php';
         require_once '../views/layouts/admin_layout.php';
@@ -114,6 +114,78 @@ class AdminController {
         }
 
         $content_view = '../views/admin/delivery/assists.php';
+        require_once '../views/layouts/admin_layout.php';
+    }
+
+    /**
+     * Muestra el historial de ventas (Facturación / Tickets)
+     * Recupera datos de las tablas pos_ventas_cabecera y sus relaciones
+     */
+    public function salesHistory() {
+        $date = $_GET['date'] ?? date('Y-m-d');
+        $sales = [];
+
+        try {
+            $db = (new Database())->getConnection();
+            
+            $query = "SELECT v.*, c.name as client_name, u.name as cashier_name, o.id as order_id_display
+                      FROM pos_ventas_cabecera v
+                      LEFT JOIN clients c ON v.cliente_id = c.id
+                      LEFT JOIN users u ON v.user_id = u.id
+                      LEFT JOIN orders o ON v.order_id = o.id
+                      WHERE DATE(v.fecha_hora) = :date
+                      ORDER BY v.fecha_hora DESC";
+            
+            $stmt = $db->prepare($query);
+            $stmt->bindParam(':date', $date);
+            $stmt->execute();
+            $sales = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("Error en salesHistory: " . $e->getMessage());
+        }
+
+        $content_view = '../views/admin/sales/index.php';
+        require_once '../views/layouts/admin_layout.php';
+    }
+
+    /**
+     * Muestra el desglose de ingresos por método de pago (Caja)
+     */
+    public function paymentsReport() {
+        $date = $_GET['date'] ?? date('Y-m-d');
+        $payments = [];
+        $summary = [
+            'efectivo' => 0,
+            'pos' => 0,
+            'transferencia' => 0,
+            'qr' => 0,
+            'total' => 0
+        ];
+
+        try {
+            $db = (new Database())->getConnection();
+            
+            $query = "SELECT pd.*, p.fecha_pago, v.nro_factura, v.order_id as order_ref
+                      FROM pagos_detalles pd
+                      JOIN pagos p ON pd.pago_id = p.id
+                      JOIN pos_ventas_cabecera v ON p.venta_id = v.id
+                      WHERE DATE(p.fecha_pago) = :date
+                      ORDER BY p.fecha_pago DESC";
+            
+            $stmt = $db->prepare($query);
+            $stmt->bindParam(':date', $date);
+            $stmt->execute();
+            $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($payments as $pay) {
+                $summary[$pay['metodo_pago']] += $pay['monto'];
+                $summary['total'] += $pay['monto'];
+            }
+        } catch (Exception $e) {
+            error_log("Error en paymentsReport: " . $e->getMessage());
+        }
+
+        $content_view = '../views/admin/sales/payments.php';
         require_once '../views/layouts/admin_layout.php';
     }
 }

@@ -198,16 +198,25 @@ class Order {
     /**
      * Asigna un repartidor a un pedido y actualiza el estado
      */
-    public function assignDelivery($orderId, $deliveryUserId) {
+    public function assignDelivery($orderId, $deliveryUserId, $staffId = null) {
         // Actualizamos el repartidor en la tabla de envíos
         $query = "UPDATE order_shipments
                   SET delivery_user_id = :delivery_id
                   WHERE order_id = :id";
         $stmt = $this->conn->prepare($query);
-        return $stmt->execute([
+        $res = $stmt->execute([
             ':delivery_id' => $deliveryUserId,
             ':id' => $orderId
         ]);
+
+        // Si el pedido no tiene un usuario asignado (vía web), lo vinculamos al staff que asigna el delivery
+        if ($res && $staffId) {
+            $queryOrder = "UPDATE " . $this->table . " SET user_id = IFNULL(user_id, :staff_id) WHERE id = :id";
+            $stmtOrder = $this->conn->prepare($queryOrder);
+            $stmtOrder->execute([':staff_id' => $staffId, ':id' => $orderId]);
+        }
+
+        return $res;
     }
 
     /**
@@ -263,13 +272,41 @@ class Order {
     }
 
     public function updateStatus() {
-        $query = "UPDATE " . $this->table . " SET status = :status WHERE id = :id";
-        $stmt = $this->conn->prepare($query);
-        // Pasamos los valores directamente en el execute para mayor seguridad
-        return $stmt->execute([
-            ':status' => $this->status,
-            ':id' => $this->id
-        ]);
+        try {
+            $this->conn->beginTransaction();
+
+            // 1. Actualizar el estado principal del pedido
+            // Usamos IFNULL para que, si el user_id está vacío (pedido web), se asigne al staff que opera ahora
+            $query = "UPDATE " . $this->table . " 
+                      SET status = :status, user_id = IFNULL(user_id, :staff_id) 
+                      WHERE id = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute([
+                ':status' => $this->status,
+                ':staff_id' => $this->user_id,
+                ':id' => $this->id
+            ]);
+
+            // 2. Lógica de Tiempos Logísticos en order_shipments
+            if ($this->status === 'shipped') {
+                // Marcamos la salida del repartidor
+                $queryShip = "UPDATE order_shipments SET shipped_at = CURRENT_TIMESTAMP WHERE order_id = :id AND shipped_at IS NULL";
+                $stmtShip = $this->conn->prepare($queryShip);
+                $stmtShip->execute([':id' => $this->id]);
+            } elseif ($this->status === 'completed') {
+                // Marcamos la entrega efectiva al cliente
+                $queryShip = "UPDATE order_shipments SET delivered_at = CURRENT_TIMESTAMP WHERE order_id = :id AND delivered_at IS NULL";
+                $stmtShip = $this->conn->prepare($queryShip);
+                $stmtShip->execute([':id' => $this->id]);
+            }
+
+            $this->conn->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->conn->rollBack();
+            $this->error = $e->getMessage();
+            return false;
+        }
     }
 
     /**
@@ -281,6 +318,86 @@ class Order {
         $stmt->bindParam(':date', $date);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+    }
+
+    /**
+     * Transforma un pedido en una Venta Legal y registra el pago.
+     * Soporta pagos mixtos (Efectivo, Tarjeta, etc.)
+     */
+    public function finalizeSale($payments = []) {
+        try {
+            if (empty($payments)) throw new Exception("No se proporcionaron detalles de pago.");
+
+            $this->conn->beginTransaction();
+            $order = $this->readOne();
+            $details = $this->readDetails();
+
+            // 1. Calcular Impuestos (IVA 10% para Gastronomía en Py)
+            $total = $order['total'];
+            $iva10 = round($total / 11, 2);
+            $grav10 = $total - $iva10;
+
+            // 2. Insertar Cabecera de Venta
+            $qVenta = "INSERT INTO pos_ventas_cabecera 
+                       (order_id, cliente_id, user_id, nro_factura, fecha_hora, gravada_10, iva_10, total_venta, estado) 
+                       VALUES (:oid, :cid, :uid, :nro, CURRENT_TIMESTAMP, :g10, :i10, :total, 1)";
+            $stVenta = $this->conn->prepare($qVenta);
+            $stVenta->execute([
+                ':oid'   => $order['id'],
+                ':cid'   => $order['client_id'],
+                ':uid'   => $this->user_id,
+                ':nro'   => 'PROV-' . str_pad($order['id'], 7, '0', STR_PAD_LEFT),
+                ':g10'   => $grav10,
+                ':i10'   => $iva10,
+                ':total' => $total
+            ]);
+            $ventaId = $this->conn->lastInsertId();
+
+            // 3. Insertar Detalles de Venta
+            $qDet = "INSERT INTO pos_ventas_detalle (venta_id, producto_id, cantidad, precio_unitario_venta, subtotal) 
+                     VALUES (:vid, :pid, :cant, :pre, :sub)";
+            $stDet = $this->conn->prepare($qDet);
+            foreach ($details as $item) {
+                $stDet->execute([
+                    ':vid'  => $ventaId,
+                    ':pid'  => $item['product_id'],
+                    ':cant' => $item['quantity'],
+                    ':pre'  => $item['price'],
+                    ':sub'  => $item['price'] * $item['quantity']
+                ]);
+            }
+
+            // 4. Registrar Pago
+            $qPago = "INSERT INTO pagos (venta_id, monto_total) VALUES (:vid, :tot)";
+            $stPago = $this->conn->prepare($qPago);
+            $stPago->execute([':vid' => $ventaId, ':tot' => $total]);
+            $pagoId = $this->conn->lastInsertId();
+
+            // 5. Detalle de los pagos mixtos
+            $qPDet = "INSERT INTO pagos_detalles (pago_id, metodo_pago, monto, referencia) VALUES (:pid, :met, :mon, :ref)";
+            $stPDet = $this->conn->prepare($qPDet);
+            
+            foreach ($payments as $pay) {
+                if ($pay['monto'] <= 0) continue;
+                $stPDet->execute([
+                    ':pid' => $pagoId,
+                    ':met' => $pay['metodo'],
+                    ':mon' => $pay['monto'],
+                    ':ref' => $pay['referencia'] ?? null
+                ]);
+            }
+
+            // 6. Actualizar el pedido a completado
+            $this->status = 'completed';
+            $this->updateStatus();
+
+            $this->conn->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->conn->rollBack();
+            $this->error = $e->getMessage();
+            return false;
+        }
     }
 
     /**

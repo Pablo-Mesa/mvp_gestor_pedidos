@@ -458,6 +458,9 @@
             </div>
             <div class="modal-body p-3">
                 <div class="d-grid gap-2 mb-3">
+                    <a href="#" class="btn btn-success btn-lg" id="qa-btn-pay">
+                        <i class="fas fa-cash-register"></i> COBRAR PEDIDO
+                    </a>
                     <button type="button" class="btn btn-primary" id="qa-btn-80">
                         <i class="fas fa-print"></i> Imprimir 80mm
                     </button>
@@ -604,6 +607,15 @@ if (empty($orders) && $hasFilter):
         
         document.getElementById('qa-title').innerText = `Pedido #${order.id} - ${order.user_name}`;
         document.getElementById('qa-btn-view').href = `?route=orders_show&id=${order.id}`;
+
+        // Configurar botón de cobro
+        const payBtn = document.getElementById('qa-btn-pay');
+        if (order.status === 'completed' || order.status === 'cancelled' || order.status === 'rejected') {
+            payBtn.style.display = 'none';
+        } else {
+            payBtn.style.display = 'block';
+            payBtn.href = `?route=orders_finalize&id=${order.id}`;
+        }
         
         document.getElementById('qa-btn-80').onclick = () => { printOrderDirectly(order.id, '80mm'); confirmOrderOnPrint(order.id); qaModal.hide(); };
         document.getElementById('qa-btn-58').onclick = () => { printOrderDirectly(order.id, '58mm'); confirmOrderOnPrint(order.id); qaModal.hide(); };

@@ -253,8 +253,17 @@
 
         $menu_structure = [
             ['route' => 'admin',       'label' => 'Dashboard',        'icon' => 'fas fa-chart-pie'],
-            ['route' => 'pos',         'label' => 'Punto de Venta',    'icon' => 'fas fa-desktop'],
-            ['route' => 'cash',        'label' => 'Caja / Arqueo',     'icon' => 'fas fa-cash-register'],
+            ['route' => 'pos',         'label' => 'Recepción',        'icon' => 'fas fa-concierge-bell'],
+            [
+                'label' => 'Tesorería',
+                'icon' => 'fas fa-vault',
+                'id' => 'menuTreasury',
+                'children' => [
+                    ['route' => 'cash',           'label' => 'Apertura y Cierre', 'icon' => 'fas fa-key'],
+                    ['route' => 'sales_history',  'label' => 'Facturación / Tickets', 'icon' => 'fas fa-file-invoice-dollar'],
+                    ['route' => 'payments_report','label' => 'Pagos Recibidos',   'icon' => 'fas fa-money-check-alt'],
+                ]
+            ],
             [
                 'label' => 'Pedidos',
                 'icon' => 'fas fa-box',

@@ -1,8 +1,7 @@
 <style>
     .history-kpi-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        grid-template-rows: auto auto;
+        grid-template-columns: 0.7fr 1.15fr 1.15fr;
         gap: 8px;
         margin-bottom: 20px;
         flex-shrink: 0;
@@ -19,7 +18,7 @@
     .kpi-card span { font-size: 0.95rem; font-weight: 800; color: #2d3436; white-space: nowrap; }
     .kpi-cash { border-top: 4px solid #ff7675; }
     .kpi-digital { border-top: 4px solid #55efc4; }
-    .kpi-settle { border-top: 4px solid #2d3436; background: #f8f9fa; grid-column: span 2; }
+    .kpi-settle { border-top: 4px solid #2d3436; background: #f8f9fa; }
 
     .history-table-container {
         background: white;
@@ -45,23 +44,6 @@
     .row-amount { text-align: right; }
     .row-amount .price { display: block; font-weight: 800; font-size: 0.9rem; }
     .row-amount .badge { font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
-
-    /* Fijar el resumen final al fondo */
-    .history-footer-summary {
-        margin-top: 20px;
-        flex-shrink: 0;
-        padding: 18px 20px;
-        background: white;
-        border-radius: 15px;
-        border: 1px solid #eee;
-        border-top: 4px solid var(--delivery-primary);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-    .footer-label { font-size: 0.85rem; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
-    .footer-amount { font-size: 1.4rem; font-weight: 900; color: var(--delivery-text); letter-spacing: -0.5px; }
 
     .history-actions-grid {
         display: grid;
@@ -134,7 +116,6 @@
         }
         body { background: white; padding: 0; }
         .history-table-container { border: none; }
-        .history-footer-summary { border: 2px solid #2d3436 !important; box-shadow: none !important; color: #2d3436 !important; -webkit-print-color-adjust: exact; }
         .kpi-card { border: 1px solid #ddd !important; -webkit-print-color-adjust: exact; }
     }
 </style>
@@ -152,36 +133,6 @@
         <h2>REPORTE DE RENDICIÓN</h2>
         <p><strong>Repartidor:</strong> <?php echo htmlspecialchars($_SESSION['user_name']); ?></p>
         <p><strong>Fecha de reporte:</strong> <?php echo date('d/m/Y', strtotime($selectedDate)); ?></p>
-    </div>
-</div>
-
-<!-- botones de exportación -->
-<div class="history-actions-grid">
-    <button class="btn-export btn-pdf" onclick="window.print()">
-        <i class="fas fa-file-pdf"></i> PDF / Imprimir
-    </button>
-    <button class="btn-export btn-wa" onclick="shareHistoryWA()">
-        <i class="fab fa-whatsapp"></i> Compartir WA
-    </button>
-</div>
-
-<!-- resumen de entregas -->
-<div class="history-kpi-grid">
-    <div class="kpi-card">
-        <label>Entregados</label>
-        <span><?php echo $summary['count']; ?></span>
-    </div>
-    <div class="kpi-card">
-        <label>Cobrado (Bruto)</label>
-        <span style="color: #d63031;">Gs. <?php echo number_format($summary['cash'], 0, ',', '.'); ?></span>
-    </div>
-    <div class="kpi-card kpi-settle">
-        <label>Saldo a Entregar</label>
-        <?php 
-            // Saldo = Lo cobrado en efectivo menos la comisión (ganancia) que el delivery retiene
-            $toDeliver = $summary['cash'] - $summary['earnings'];
-        ?>
-        <span style="font-size: 1.1rem; font-weight: 900;">Gs. <?php echo number_format($toDeliver, 0, ',', '.'); ?></span>
     </div>
 </div>
 
@@ -219,10 +170,34 @@
     <?php endif; ?>
 </div>
 
-<!-- resumen final -->
-<div class="history-footer-summary">
-    <span class="footer-label">Total Facturado</span>
-    <span class="footer-amount">Gs. <?php echo number_format($summary['total'], 0, ',', '.'); ?></span>
+<!-- botones de exportación -->
+<div class="history-actions-grid">
+    <button class="btn-export btn-pdf" onclick="window.print()">
+        <i class="fas fa-file-pdf"></i> PDF / Imprimir
+    </button>
+    <button class="btn-export btn-wa" onclick="shareHistoryWA()">
+        <i class="fab fa-whatsapp"></i> Compartir WA
+    </button>
+</div>
+
+<!-- resumen de entregas -->
+<div class="history-kpi-grid">
+    <div class="kpi-card kpi-digital">
+        <label>Entregados</label>
+        <span><?php echo $summary['count']; ?></span>
+    </div>
+    <div class="kpi-card kpi-cash">
+        <label>Cobrado (Bruto)</label>
+        <span style="color: #d63031;">Gs. <?php echo number_format($summary['cash'], 0, ',', '.'); ?></span>
+    </div>
+    <div class="kpi-card kpi-settle">
+        <label>Saldo a Entregar</label>
+        <?php 
+            // Saldo = Lo cobrado en efectivo menos la comisión (ganancia) que el delivery retiene
+            $toDeliver = $summary['cash'] - $summary['earnings'];
+        ?>
+        <span style="font-size: 1.1rem; font-weight: 900;">Gs. <?php echo number_format($toDeliver, 0, ',', '.'); ?></span>
+    </div>
 </div>
 
 <!-- Pie de página exclusivo para impresión -->

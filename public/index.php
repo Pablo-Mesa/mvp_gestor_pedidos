@@ -159,6 +159,18 @@ switch ($route) {
         $controller->posStore();
         break;
 
+    case 'sales_history':
+        require_once '../controllers/AdminController.php';
+        $controller = new AdminController();
+        $controller->salesHistory();
+        break;
+
+    case 'payments_report':
+        require_once '../controllers/AdminController.php';
+        $controller = new AdminController();
+        $controller->paymentsReport();
+        break;
+
     // --- Gestión de Caja ---
     case 'cash':
         require_once '../controllers/CashController.php';

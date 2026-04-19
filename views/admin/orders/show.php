@@ -44,6 +44,14 @@
                     <td style="padding: 8px; text-align: right; font-weight: bold;"><?php echo number_format($item['price'] * $item['quantity'], 0); ?></td>
                 </tr>
                 <?php endforeach; ?>
+                <?php if($order['delivery_type'] === 'delivery' && !empty($order['delivery_cost'])): ?>
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td colspan="3" style="padding: 8px; text-align: right; color: #666; font-style: italic;">Servicio de Delivery:</td>
+                    <td style="padding: 8px; text-align: right; font-weight: bold; color: #666;">
+                        <?php echo number_format($order['delivery_cost'], 0, ',', '.'); ?>
+                    </td>
+                </tr>
+                <?php endif; ?>
                 <tr>
                     <td colspan="3" style="padding: 15px 8px; text-align: right; font-size: 1.2rem;"><strong>Total:</strong></td>
                     <td style="padding: 15px 8px; text-align: right; font-size: 1.2rem; color: #28a745; font-weight: bold;">
@@ -66,6 +74,15 @@
                 <i class="fas fa-print"></i> 58mm
             </a>
         </div>
+
+        <!-- Botón de Acceso al Cobro Mixto -->
+        <?php if ($order['status'] !== 'completed' && $order['status'] !== 'cancelled' && $order['status'] !== 'rejected'): ?>
+        <div style="margin-bottom: 20px;">
+            <a href="?route=orders_finalize&id=<?php echo $order['id']; ?>" style="display: block; width: 100%; padding: 15px; background: #28a745; color: white; text-align: center; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 10px rgba(40,167,69,0.3);">
+                <i class="fas fa-cash-register me-2"></i> COBRAR Y FINALIZAR
+            </a>
+        </div>
+        <?php endif; ?>
 
         <!-- Panel de Estado -->
         <div class="card" style="margin-bottom: 20px; background: #f8f9fa;">
@@ -190,7 +207,7 @@
         </div>
         
         <div style="margin-top: 20px;">
-            <a href="?route=orders" style="color: #666; text-decoration: none;">&larr; Volver al listado</a>
+            <a href="?route=orders" style="color: #666; text-decoration: none;">&larr; Volver al listado <small style="opacity: 0.6;">[Esc]</small></a>
         </div>
 
     </div>
@@ -199,3 +216,12 @@
 <style>
     .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 </style>
+
+<script>
+    // Atajo de teclado: ESC para volver rápidamente al listado de pedidos
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            window.location.href = '?route=orders';
+        }
+    });
+</script>

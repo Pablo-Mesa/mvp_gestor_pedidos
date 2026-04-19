@@ -53,14 +53,14 @@ El proyecto sigue una estructura MVC estricta:
     ```
 
 2.  **Base de Datos:**
-    *   Crea una base de datos en MySQL (ej. `mvp_comedor`).
+    *   Crea una base de datos en MySQL (ej. `comedor_db`).
     *   Importa el archivo SQL de estructura (tablas: `users`, `products`, `categories`, `daily_menus`, `orders`, `order_details`).
 
 3.  **Configuración:**
     *   Edita el archivo `config/db.php` con tus credenciales:
     ```php
     private $host = 'localhost';
-    private $db_name = 'mvp_comedor';
+    private $db_name = 'comedor_db';
     private $username = 'root';
     private $password = '';
     ```

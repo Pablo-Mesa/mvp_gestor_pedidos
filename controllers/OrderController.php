@@ -181,6 +181,42 @@ class OrderController {
         require_once '../views/admin/orders/ticket.php';
     }
 
+    /**
+     * Muestra la interfaz de cobro mixto para un pedido
+     */
+    public function finalize() {
+        $this->checkAdminAccess();
+        $id = $_GET['id'] ?? null;
+        if (!$id) { header('Location: ?route=orders'); exit; }
+
+        $orderModel = new Order();
+        $orderModel->id = $id;
+        $order = $orderModel->readOne();
+        
+        if ($order['status'] === 'completed') {
+            header('Location: ?route=orders_show&id=' . $id . '&error=already_paid');
+            exit;
+        }
+
+        $content_view = '../views/admin/orders/finalize.php';
+        require_once '../views/layouts/admin_layout.php';
+    }
+
+    public function processFinalize() {
+        $this->checkAdminAccess();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $order = new Order();
+            $order->id = $_POST['order_id'];
+            $order->user_id = $_SESSION['user_id'];
+            
+            if ($order->finalizeSale($_POST['payments'])) {
+                header('Location: ?route=orders_show&id=' . $order->id . '&success=paid');
+            } else {
+                header('Location: ?route=orders_finalize&id=' . $order->id . '&error=' . urlencode($order->error));
+            }
+        }
+    }
+
     public function updateStatus() {
         // Permitir que tanto Admin como Delivery actualicen estados
         if (!isset($_SESSION['user_role']) || !in_array($_SESSION['user_role'], ['admin', 'delivery'])) { header('Location: ?route=login'); exit; }
@@ -189,15 +225,12 @@ class OrderController {
             $order = new Order();
             $order->id = $_POST['id'];
             $order->status = $_POST['status'];
+            $order->user_id = $_SESSION['user_id']; // Pasamos el ID del staff que realiza la acción
             $success = $order->updateStatus();
 
-            // Si el pedido se completa y es en efectivo, registrar ingreso en caja
+            // Si el pedido se completa, formalizar la Venta y el Pago (Segunda Propuesta)
             if ($success && $_POST['status'] === 'completed') {
-                $orderData = $order->readOne();
-                if ($orderData['payment_method'] === 'efectivo') {
-                    $cashModel = new CashRegister();
-                    $cashModel->addOrderMovement($orderData['id'], $orderData['total'], $_SESSION['user_id']);
-                }
+                $order->finalizeSale();
             }
 
             // Si es una petición AJAX (como al imprimir), respondemos JSON
@@ -224,7 +257,7 @@ class OrderController {
         $deliveryId = $_POST['delivery_id'] ?? null;
 
         $orderModel = new Order();
-        $success = $orderModel->assignDelivery($orderId, $deliveryId);
+        $success = $orderModel->assignDelivery($orderId, $deliveryId, $_SESSION['user_id']);
 
         // Si la asignación fue exitosa, confirmamos el pedido automáticamente si estaba pendiente
         if ($success) {
@@ -232,6 +265,7 @@ class OrderController {
             $currentOrder = $orderModel->readOne();
             if ($currentOrder && $currentOrder['status'] === 'pending') {
                 $orderModel->status = 'confirmed';
+                $orderModel->user_id = $_SESSION['user_id'];
                 $orderModel->updateStatus();
             }
         }
@@ -525,6 +559,7 @@ class OrderController {
         $order->status = 'confirmed'; // Los pedidos de mostrador suelen estar confirmados de entrada
         
         $order->client_location_id = $input['location_id'] ?? null;
+        // Usamos los nombres de propiedades correctos definidos en el modelo Order
         $order->delivery_address = $input['delivery_address'] ?? ($input['delivery_type'] === 'delivery' ? 'Ubicación vía POS' : '');
         $order->delivery_lat = $input['delivery_lat'] ?? $input['lat'] ?? null;
         $order->delivery_lng = $input['delivery_lng'] ?? $input['lng'] ?? null;
@@ -566,11 +601,9 @@ class OrderController {
         $order->total = $total + $deliveryCost;
 
         if ($order->create()) {
-            // Si es POS y es efectivo, registrar ingreso inmediato
-            if ($order->payment_method === 'efectivo') {
-                $cashModel = new CashRegister();
-                $cashModel->addOrderMovement($order->id, $order->total, $_SESSION['user_id'], 'Venta POS');
-            }
+            // Al ser Venta Directa, formalizamos la venta y el pago inmediatamente
+            $order->user_id = $_SESSION['user_id'];
+            $order->finalizeSale();
 
             echo json_encode([
                 'success' => true, 

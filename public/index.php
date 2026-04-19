@@ -450,6 +450,18 @@ switch ($route) {
         $controller->pendingCountApi();
         break;
 
+    case 'orders_finalize':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->finalize();
+        break;
+
+    case 'orders_process_finalize':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->processFinalize();
+        break;
+
     // --- Gestión de Usuarios (Staff) ---
     case 'users':
         require_once '../controllers/UserController.php';

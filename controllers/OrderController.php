@@ -193,7 +193,8 @@ class OrderController {
         $orderModel->id = $id;
         $order = $orderModel->readOne();
         
-        if ($order['status'] === 'completed') {
+        // Solo bloqueamos si el pedido YA tiene una factura asociada
+        if ($orderModel->hasInvoice($id)) {
             header('Location: ?route=orders_show&id=' . $id . '&error=already_paid');
             exit;
         }
@@ -210,7 +211,7 @@ class OrderController {
             $order->user_id = $_SESSION['user_id'];
             
             if ($order->finalizeSale($_POST['payments'])) {
-                header('Location: ?route=orders_show&id=' . $order->id . '&success=paid');
+                header('Location: ?route=sales_history&success=paid');
             } else {
                 header('Location: ?route=orders_finalize&id=' . $order->id . '&error=' . urlencode($order->error));
             }

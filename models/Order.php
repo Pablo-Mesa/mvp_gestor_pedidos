@@ -273,7 +273,9 @@ class Order {
 
     public function updateStatus() {
         try {
-            $this->conn->beginTransaction();
+            // Solo iniciamos transacción si no hay una activa
+            $isNested = $this->conn->inTransaction();
+            if (!$isNested) $this->conn->beginTransaction();
 
             // 1. Actualizar el estado principal del pedido
             // Usamos IFNULL para que, si el user_id está vacío (pedido web), se asigne al staff que opera ahora
@@ -300,11 +302,12 @@ class Order {
                 $stmtShip->execute([':id' => $this->id]);
             }
 
-            $this->conn->commit();
+            if (!$isNested) $this->conn->commit();
             return true;
         } catch (Exception $e) {
-            $this->conn->rollBack();
+            if (!$isNested && $this->conn->inTransaction()) $this->conn->rollBack();
             $this->error = $e->getMessage();
+            if ($isNested) throw $e; // Re-lanzar para que el padre la capture
             return false;
         }
     }
@@ -321,16 +324,57 @@ class Order {
     }
 
     /**
+     * Obtiene pedidos que están listos para ser facturados pero aún no tienen factura.
+     * Se consideran pedidos confirmados, en cocina o enviados.
+     */
+    public function getOrdersAwaitingInvoice() {
+        $query = "SELECT o.id, o.created_at, o.total, o.delivery_type, c.name as client_name 
+                  FROM " . $this->table . " o
+                  JOIN clients c ON o.client_id = c.id
+                  LEFT JOIN pos_ventas_cabecera v ON o.id = v.order_id
+                  WHERE v.id IS NULL 
+                  AND o.status IN ('confirmed', 'shipped', 'completed')
+                  ORDER BY o.created_at ASC";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Verifica si un pedido ya tiene un registro de venta (Factura/Ticket)
+     */
+    public function hasInvoice($orderId) {
+        $query = "SELECT id FROM pos_ventas_cabecera WHERE order_id = :id LIMIT 1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([':id' => $orderId]);
+        return $stmt->fetch() ? true : false;
+    }
+
+    /**
      * Transforma un pedido en una Venta Legal y registra el pago.
      * Soporta pagos mixtos (Efectivo, Tarjeta, etc.)
      */
     public function finalizeSale($payments = []) {
         try {
-            if (empty($payments)) throw new Exception("No se proporcionaron detalles de pago.");
-
-            $this->conn->beginTransaction();
+            // Solo iniciamos transacción si no hay una activa
+            $isNested = $this->conn->inTransaction();
+            if (!$isNested) $this->conn->beginTransaction();
             $order = $this->readOne();
             $details = $this->readDetails();
+
+            // Si no se proporcionan pagos (ej: cierre automático), 
+            // generamos un pago único basado en el método del pedido.
+            if (empty($payments)) {
+                if (empty($order['payment_method'])) {
+                    throw new Exception("No se proporcionaron detalles de pago ni método predefinido.");
+                }
+                $payments[] = [
+                    'metodo' => $order['payment_method'],
+                    'monto' => $order['total'],
+                    'referencia' => 'Pago automático al completar'
+                ];
+            }
 
             // 1. Calcular Impuestos (IVA 10% para Gastronomía en Py)
             $total = $order['total'];
@@ -391,10 +435,10 @@ class Order {
             $this->status = 'completed';
             $this->updateStatus();
 
-            $this->conn->commit();
+            if (!$isNested) $this->conn->commit();
             return true;
         } catch (Exception $e) {
-            $this->conn->rollBack();
+            if (!$isNested && $this->conn->inTransaction()) $this->conn->rollBack();
             $this->error = $e->getMessage();
             return false;
         }

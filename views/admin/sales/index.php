@@ -1,13 +1,27 @@
+<?php
+// Aseguramos que el modelo Order esté cargado, ya que se usa en el modal.
+// Esto evita el error "Class Order not found" si el controlador no lo cargó.
+if (!class_exists('Order')) {
+    require_once '../models/Order.php';
+}
+$orderModel = new Order();
+$pendingInvoices = $orderModel->getOrdersAwaitingInvoice();
+?>
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-file-invoice-dollar me-2"></i>Facturación / Tickets</h1>
-        <form action="index.php" method="GET" class="d-flex gap-2">
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalPendingOrders">
+                <i class="fas fa-plus-circle me-1"></i> Facturar Pedido
+            </button>
+            <form action="index.php" method="GET" class="d-flex gap-2">
             <input type="hidden" name="route" value="sales_history">
             <input type="date" name="date" class="form-control" value="<?php echo $_GET['date'] ?? date('Y-m-d'); ?>">
             <button type="submit" class="btn btn-primary">
                 <i class="fas fa-search"></i>
             </button>
         </form>
+        </div>
     </div>
 
     <div class="card shadow-sm border-0">
@@ -81,10 +95,58 @@
     </div>
 </div>
 
+<!-- Modal de Pedidos Pendientes de Facturar -->
+<div class="modal fade" id="modalPendingOrders" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Pedidos pendientes de Facturación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Pedido</th>
+                                <th>Cliente</th>
+                                <th>Tipo</th>
+                                <th>Total</th>
+                                <th class="text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($pendingInvoices)): ?>
+                                <tr><td colspan="5" class="text-center py-4 text-muted">No hay pedidos pendientes de facturar.</td></tr>
+                            <?php else: ?>
+                            <?php foreach($pendingInvoices as $p): ?>
+                            <tr>
+                                <td class="ps-3">#<?php echo $p['id']; ?></td>
+                                <td><?php echo htmlspecialchars($p['client_name']); ?></td>
+                                <td><small class="badge bg-info"><?php echo $p['delivery_type']; ?></small></td>
+                                <td>Gs. <?php echo number_format($p['total'], 0, ',', '.'); ?></td>
+                                <td class="text-center">
+                                    <form action="index.php" method="GET" class="d-inline">
+                                        <input type="hidden" name="route" value="orders_finalize">
+                                        <input type="hidden" name="id" value="<?php echo $p['id']; ?>">
+                                        <button type="submit" class="btn btn-sm btn-primary">Generar Factura/Ticket</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 function viewSaleDetail(id) {
     // Por ahora, redirigimos al pedido vinculado ya que el detalle es el mismo.
-    const sales = <?php echo json_encode($sales); ?>;
+    const sales = <?php echo json_encode($sales ?? []); ?>;
     const sale = sales.find(s => s.id == id);
     if (sale && sale.order_id_display) {
         window.location.href = `?route=orders_show&id=${sale.order_id_display}`;

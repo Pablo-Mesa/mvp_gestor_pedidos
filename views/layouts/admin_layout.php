@@ -253,17 +253,7 @@
 
         $menu_structure = [
             ['route' => 'admin',       'label' => 'Dashboard',        'icon' => 'fas fa-chart-pie'],
-            ['route' => 'pos',         'label' => 'Recepción',        'icon' => 'fas fa-concierge-bell'],
-            [
-                'label' => 'Tesorería',
-                'icon' => 'fas fa-vault',
-                'id' => 'menuTreasury',
-                'children' => [
-                    ['route' => 'cash',           'label' => 'Apertura y Cierre', 'icon' => 'fas fa-key'],
-                    ['route' => 'sales_history',  'label' => 'Facturación / Tickets', 'icon' => 'fas fa-file-invoice-dollar'],
-                    ['route' => 'payments_report','label' => 'Pagos Recibidos',   'icon' => 'fas fa-money-check-alt'],
-                ]
-            ],
+            ['route' => 'pos',         'label' => 'Recepción',        'icon' => 'fas fa-concierge-bell'],            
             [
                 'label' => 'Pedidos',
                 'icon' => 'fas fa-box',
@@ -272,6 +262,16 @@
                 'children' => [
                     ['route' => 'orders',         'label' => 'Todos los Pedidos', 'icon' => 'fas fa-list'],
                     ['route' => 'orders_pending', 'label' => 'Solo Pendientes',  'icon' => 'fas fa-clock'],
+                ]
+            ],
+            [
+                'label' => 'Tesorería',
+                'icon' => 'fas fa-vault',
+                'id' => 'menuTreasury',
+                'children' => [
+                    ['route' => 'cash',           'label' => 'Apertura y Cierre', 'icon' => 'fas fa-key'],
+                    ['route' => 'sales_history',  'label' => 'Facturación / Tickets', 'icon' => 'fas fa-file-invoice-dollar'],
+                    ['route' => 'payments_report','label' => 'Pagos Recibidos',   'icon' => 'fas fa-money-check-alt'],
                 ]
             ],
             [

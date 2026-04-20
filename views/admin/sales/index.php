@@ -67,14 +67,21 @@ $pendingInvoices = $orderModel->getOrdersAwaitingInvoice();
                                         Gs. <?php echo number_format($sale['total_venta'], 0, ',', '.'); ?>
                                     </td>
                                     <td class="align-middle text-center">
-                                        <?php if ($sale['estado'] == 1): ?>
-                                            <span class="badge bg-success-subtle text-success border border-success-subtle">Emitida</span>
+                                        <?php if ($sale['estado'] == 0): ?>
+                                            <span class="badge bg-danger">Anulada</span>
+                                        <?php elseif ($sale['is_paid'] > 0): ?>
+                                            <span class="badge bg-success">Pagada</span>
                                         <?php else: ?>
-                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Anulada</span>
+                                            <span class="badge bg-warning text-dark">Pendiente Pago</span>
                                         <?php endif; ?>
                                     </td>
                                     <td class="px-4 align-middle text-center">
                                         <div class="btn-group">
+                                            <?php if ($sale['is_paid'] == 0 && $sale['estado'] == 1): ?>
+                                                <a href="?route=orders_finalize&id=<?php echo $sale['order_id_display']; ?>" class="btn btn-sm btn-success" title="Registrar Pago">
+                                                    <i class="fas fa-cash-register"></i> Cobrar
+                                                </a>
+                                            <?php endif; ?>
                                             <button type="button" class="btn btn-sm btn-outline-secondary" title="Re-imprimir Ticket de Venta" onclick="printSaleTicket(<?php echo $sale['id']; ?>, '80mm')">
                                                 <i class="fas fa-print"></i>
                                             </button>
@@ -127,6 +134,7 @@ $pendingInvoices = $orderModel->getOrdersAwaitingInvoice();
                                     <form action="index.php" method="GET" class="d-inline">
                                         <input type="hidden" name="route" value="orders_finalize">
                                         <input type="hidden" name="id" value="<?php echo $p['id']; ?>">
+                                        <input type="hidden" name="quick" value="1">
                                         <button type="submit" class="btn btn-sm btn-primary">Generar Factura/Ticket</button>
                                     </form>
                                 </td>

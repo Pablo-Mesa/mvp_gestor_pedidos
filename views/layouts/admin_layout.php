@@ -435,6 +435,16 @@
             // Nueva ruta para comprobante de venta
             printFrame.src = `?route=sales_ticket&id=${saleId}&format=${format}`;
         }
+
+        // Manejador Global de Impresión Automática (Detecta parámetro en URL)
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const printId = urlParams.get('print_sale_id');
+            if (printId) {
+                printSaleTicket(printId, '80mm');
+                if (typeof Toast !== 'undefined') Toast.fire("Documento enviado a impresión", "success");
+            }
+        });
     </script>
 
     <script src="<?php echo $baseUrl; ?>js/tool-kit-v002.js"></script>

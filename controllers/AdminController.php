@@ -128,7 +128,8 @@ class AdminController {
         try {
             $db = (new Database())->getConnection();
             
-            $query = "SELECT v.*, c.name as client_name, u.name as cashier_name, o.id as order_id_display
+            $query = "SELECT v.*, c.name as client_name, u.name as cashier_name, o.id as order_id_display,
+                             (SELECT COUNT(*) FROM pagos WHERE venta_id = v.id) as is_paid
                       FROM pos_ventas_cabecera v
                       LEFT JOIN clients c ON v.cliente_id = c.id
                       LEFT JOIN users u ON v.user_id = u.id

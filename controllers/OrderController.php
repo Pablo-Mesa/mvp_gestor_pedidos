@@ -237,11 +237,32 @@ class OrderController {
 
         $orderModel = new Order();
         $orderModel->id = $id;
+
+        // Cargamos los datos para la vista (Soluciona el error de variable indefinida $order y $details)
         $order = $orderModel->readOne();
+        $details = $orderModel->readDetails();
         
-        // Solo bloqueamos si el pedido YA tiene una factura asociada
+        // Si tiene factura, verificamos si ya está pagada
         if ($orderModel->hasInvoice($id)) {
-            header('Location: ?route=orders_show&id=' . $id . '&error=already_paid');
+            $db = (new Database())->getConnection();
+            $check = $db->prepare("SELECT p.id FROM pagos p JOIN pos_ventas_cabecera v ON p.venta_id = v.id WHERE v.order_id = :id");
+            $check->execute([':id' => $id]);
+            if ($check->fetch()) {
+                header('Location: ?route=orders_show&id=' . $id . '&error=already_paid');
+                exit;
+            }
+        }
+
+        // Si se solicita facturación rápida (sin desglose de pagos manual)
+        if (isset($_GET['quick']) && $_GET['quick'] == 1) {
+            $orderModel->user_id = $_SESSION['user_id'];
+            $ventaId = $orderModel->finalizeSale(null); // Pasamos null para no registrar pago
+            if ($ventaId) {
+                // Redirigimos al mismo formulario de cobro pero ya con la factura generada para completar el flujo
+                header('Location: ?route=orders_finalize&id=' . $id . '&success=invoice_created&print_sale_id=' . $ventaId);
+            } else {
+                header('Location: ?route=sales_history&error=' . urlencode($orderModel->error));
+            }
             exit;
         }
 

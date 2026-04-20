@@ -354,7 +354,7 @@ class Order {
     /**
      * Transforma un pedido en una Venta Legal y registra el pago.
      * Soporta pagos mixtos (Efectivo, Tarjeta, etc.)
-     * @param array $payments Detalles de los pagos recibidos
+     * @param array|null $payments Detalles de los pagos recibidos. Si es null, no registra pago.
      * @param int|null $cash_register_id ID de la sesión de caja activa
      */
     public function finalizeSale($payments = [], $cash_register_id = null) {
@@ -362,89 +362,102 @@ class Order {
             // Solo iniciamos transacción si no hay una activa
             $isNested = $this->conn->inTransaction();
             if (!$isNested) $this->conn->beginTransaction();
-            $order = $this->readOne();
-            $details = $this->readDetails();
 
-            // Si no se proporcionan pagos (ej: cierre automático), 
-            // generamos un pago único basado en el método del pedido.
-            if (empty($payments)) {
-                if (empty($order['payment_method'])) {
-                    throw new Exception("No se proporcionaron detalles de pago ni método predefinido.");
+            // 1. Verificar si ya existe la cabecera (evitar duplicar factura al cobrar después)
+            $qCheck = "SELECT id FROM pos_ventas_cabecera WHERE order_id = :oid LIMIT 1";
+            $stCheck = $this->conn->prepare($qCheck);
+            $stCheck->execute([':oid' => $this->id]);
+            $existingVenta = $stCheck->fetch(PDO::FETCH_ASSOC);
+
+            if ($existingVenta) {
+                $ventaId = $existingVenta['id'];
+                $order = $this->readOne(); // Necesitamos el total para el pago
+            } else {
+                $order = $this->readOne();
+                $details = $this->readDetails();
+
+                // 1. Calcular Impuestos (IVA 10% para Gastronomía en Py)
+                $total = $order['total'];
+                $iva10 = round($total / 11, 2);
+                $grav10 = $total - $iva10;
+
+                // 2. Insertar Cabecera de Venta
+                $qVenta = "INSERT INTO pos_ventas_cabecera 
+                           (order_id, cliente_id, user_id, nro_factura, fecha_hora, gravada_10, iva_10, total_venta, estado) 
+                           VALUES (:oid, :cid, :uid, :nro, CURRENT_TIMESTAMP, :g10, :i10, :total, 1)";
+                $stVenta = $this->conn->prepare($qVenta);
+                $stVenta->execute([
+                    ':oid'   => $order['id'],
+                    ':cid'   => $order['client_id'],
+                    ':uid'   => $this->user_id,
+                    ':nro'   => 'PROV-' . str_pad($order['id'], 7, '0', STR_PAD_LEFT),
+                    ':g10'   => $grav10,
+                    ':i10'   => $iva10,
+                    ':total' => $total
+                ]);
+                $ventaId = $this->conn->lastInsertId();
+
+                // 3. Insertar Detalles de Venta
+                $qDet = "INSERT INTO pos_ventas_detalle (venta_id, producto_id, cantidad, precio_unitario_venta, subtotal) 
+                         VALUES (:vid, :pid, :cant, :pre, :sub)";
+                $stDet = $this->conn->prepare($qDet);
+                foreach ($details as $item) {
+                    $stDet->execute([
+                        ':vid'  => $ventaId,
+                        ':pid'  => $item['product_id'],
+                        ':cant' => $item['quantity'],
+                        ':pre'  => $item['price'],
+                        ':sub'  => $item['price'] * $item['quantity']
+                    ]);
                 }
-                $payments[] = [
-                    'metodo' => $order['payment_method'],
-                    'monto' => $order['total'],
-                    'referencia' => 'Pago automático al completar'
-                ];
             }
 
-            // 1. Calcular Impuestos (IVA 10% para Gastronomía en Py)
-            $total = $order['total'];
-            $iva10 = round($total / 11, 2);
-            $grav10 = $total - $iva10;
+            // --- PROCESAMIENTO DE PAGO (OPCIONAL) ---
+            if ($payments !== null) {
+                // Si se pasan vacíos [], usamos el método del pedido
+                if (empty($payments)) {
+                    $payments[] = [
+                        'metodo' => $order['payment_method'],
+                        'monto' => $order['total'],
+                        'referencia' => 'Pago automático'
+                    ];
+                }
 
-            // 2. Insertar Cabecera de Venta
-            $qVenta = "INSERT INTO pos_ventas_cabecera 
-                       (order_id, cliente_id, user_id, nro_factura, fecha_hora, gravada_10, iva_10, total_venta, estado) 
-                       VALUES (:oid, :cid, :uid, :nro, CURRENT_TIMESTAMP, :g10, :i10, :total, 1)";
-            $stVenta = $this->conn->prepare($qVenta);
-            $stVenta->execute([
-                ':oid'   => $order['id'],
-                ':cid'   => $order['client_id'],
-                ':uid'   => $this->user_id,
-                ':nro'   => 'PROV-' . str_pad($order['id'], 7, '0', STR_PAD_LEFT),
-                ':g10'   => $grav10,
-                ':i10'   => $iva10,
-                ':total' => $total
-            ]);
-            $ventaId = $this->conn->lastInsertId();
+                $total = $order['total'];
+                
+                // 4. Registrar Pago
+                $qPago = "INSERT INTO pagos (venta_id, monto_total) VALUES (:vid, :tot)";
+                $stPago = $this->conn->prepare($qPago);
+                $stPago->execute([':vid' => $ventaId, ':tot' => $total]);
+                $pagoId = $this->conn->lastInsertId();
 
-            // 3. Insertar Detalles de Venta
-            $qDet = "INSERT INTO pos_ventas_detalle (venta_id, producto_id, cantidad, precio_unitario_venta, subtotal) 
-                     VALUES (:vid, :pid, :cant, :pre, :sub)";
-            $stDet = $this->conn->prepare($qDet);
-            foreach ($details as $item) {
-                $stDet->execute([
-                    ':vid'  => $ventaId,
-                    ':pid'  => $item['product_id'],
-                    ':cant' => $item['quantity'],
-                    ':pre'  => $item['price'],
-                    ':sub'  => $item['price'] * $item['quantity']
-                ]);
-            }
+                // 5. Detalle de los pagos mixtos
+                $qPDet = "INSERT INTO pagos_detalles (pago_id, metodo_pago, monto, referencia) VALUES (:pid, :met, :mon, :ref)";
+                $stPDet = $this->conn->prepare($qPDet);
+                
+                foreach ($payments as $pay) {
+                    if ($pay['monto'] <= 0) continue;
+                    $stPDet->execute([
+                        ':pid' => $pagoId,
+                        ':met' => $pay['metodo'],
+                        ':mon' => $pay['monto'],
+                        ':ref' => $pay['referencia'] ?? null
+                    ]);
+                }
 
-            // 4. Registrar Pago
-            $qPago = "INSERT INTO pagos (venta_id, monto_total) VALUES (:vid, :tot)";
-            $stPago = $this->conn->prepare($qPago);
-            $stPago->execute([':vid' => $ventaId, ':tot' => $total]);
-            $pagoId = $this->conn->lastInsertId();
-
-            // 5. Detalle de los pagos mixtos
-            $qPDet = "INSERT INTO pagos_detalles (pago_id, metodo_pago, monto, referencia) VALUES (:pid, :met, :mon, :ref)";
-            $stPDet = $this->conn->prepare($qPDet);
-            
-            foreach ($payments as $pay) {
-                if ($pay['monto'] <= 0) continue;
-                $stPDet->execute([
-                    ':pid' => $pagoId,
-                    ':met' => $pay['metodo'],
-                    ':mon' => $pay['monto'],
-                    ':ref' => $pay['referencia'] ?? null
-                ]);
-            }
-
-            // 6. Registrar movimiento en la Caja si se proporcionó una sesión
-            if ($cash_register_id) {
-                $qMov = "INSERT INTO cash_movements 
-                         (cash_register_id, amount, type, description, source, reference_id, created_at) 
-                         VALUES (:rid, :amt, 'ingress', :desc, 'order', :ref, CURRENT_TIMESTAMP)";
-                $stMov = $this->conn->prepare($qMov);
-                $stMov->execute([
-                    ':rid'  => $cash_register_id,
-                    ':amt'  => $total,
-                    ':desc' => "Venta Pedido #" . $order['id'] . " (Factura " . 'PROV-' . str_pad($order['id'], 7, '0', STR_PAD_LEFT) . ")",
-                    ':ref'  => $order['id']
-                ]);
+                // 6. Registrar movimiento en la Caja si se proporcionó una sesión
+                if ($cash_register_id) {
+                    $qMov = "INSERT INTO cash_movements 
+                             (cash_register_id, amount, type, description, source, reference_id, created_at) 
+                             VALUES (:rid, :amt, 'ingress', :desc, 'order', :ref, CURRENT_TIMESTAMP)";
+                    $stMov = $this->conn->prepare($qMov);
+                    $stMov->execute([
+                        ':rid'  => $cash_register_id,
+                        ':amt'  => $total,
+                        ':desc' => "Venta Pedido #" . $order['id'] . " (Factura " . 'PROV-' . str_pad($order['id'], 7, '0', STR_PAD_LEFT) . ")",
+                        ':ref'  => $order['id']
+                    ]);
+                }
             }
 
             // 7. Actualizar el pedido a completado
@@ -452,7 +465,7 @@ class Order {
             $this->updateStatus();
 
             if (!$isNested) $this->conn->commit();
-            return true;
+            return $ventaId;
         } catch (Exception $e) {
             if (!$isNested && $this->conn->inTransaction()) $this->conn->rollBack();
             $this->error = $e->getMessage();

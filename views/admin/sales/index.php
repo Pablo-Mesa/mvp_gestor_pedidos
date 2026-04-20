@@ -75,11 +75,9 @@ $pendingInvoices = $orderModel->getOrdersAwaitingInvoice();
                                     </td>
                                     <td class="px-4 align-middle text-center">
                                         <div class="btn-group">
-                                            <?php if ($sale['order_id_display']): ?>
-                                                <button type="button" class="btn btn-sm btn-outline-secondary" title="Re-imprimir Ticket" onclick="printOrderDirectly(<?php echo $sale['order_id_display']; ?>, '80mm')">
-                                                    <i class="fas fa-print"></i>
-                                                </button>
-                                            <?php endif; ?>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" title="Re-imprimir Ticket de Venta" onclick="printSaleTicket(<?php echo $sale['id']; ?>, '80mm')">
+                                                <i class="fas fa-print"></i>
+                                            </button>
                                             <button type="button" class="btn btn-sm btn-outline-primary" title="Ver Detalle" onclick="viewSaleDetail(<?php echo $sale['id']; ?>)">
                                                 <i class="fas fa-eye"></i>
                                             </button>

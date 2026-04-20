@@ -423,6 +423,18 @@
             // Iniciamos la carga del ticket
             printFrame.src = `?route=orders_ticket&id=${orderId}&format=${format}`;
         }
+
+        function printSaleTicket(saleId, format = '80mm') {
+            const printFrame = document.getElementById('printFrame');
+            
+            printFrame.onload = function() {
+                printFrame.contentWindow.focus();
+                printFrame.contentWindow.print();
+            };
+
+            // Nueva ruta para comprobante de venta
+            printFrame.src = `?route=sales_ticket&id=${saleId}&format=${format}`;
+        }
     </script>
 
     <script src="<?php echo $baseUrl; ?>js/tool-kit-v002.js"></script>

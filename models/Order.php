@@ -354,8 +354,10 @@ class Order {
     /**
      * Transforma un pedido en una Venta Legal y registra el pago.
      * Soporta pagos mixtos (Efectivo, Tarjeta, etc.)
+     * @param array $payments Detalles de los pagos recibidos
+     * @param int|null $cash_register_id ID de la sesión de caja activa
      */
-    public function finalizeSale($payments = []) {
+    public function finalizeSale($payments = [], $cash_register_id = null) {
         try {
             // Solo iniciamos transacción si no hay una activa
             $isNested = $this->conn->inTransaction();
@@ -431,7 +433,21 @@ class Order {
                 ]);
             }
 
-            // 6. Actualizar el pedido a completado
+            // 6. Registrar movimiento en la Caja si se proporcionó una sesión
+            if ($cash_register_id) {
+                $qMov = "INSERT INTO cash_movements 
+                         (cash_register_id, amount, type, description, source, reference_id, created_at) 
+                         VALUES (:rid, :amt, 'ingress', :desc, 'order', :ref, CURRENT_TIMESTAMP)";
+                $stMov = $this->conn->prepare($qMov);
+                $stMov->execute([
+                    ':rid'  => $cash_register_id,
+                    ':amt'  => $total,
+                    ':desc' => "Venta Pedido #" . $order['id'] . " (Factura " . 'PROV-' . str_pad($order['id'], 7, '0', STR_PAD_LEFT) . ")",
+                    ':ref'  => $order['id']
+                ]);
+            }
+
+            // 7. Actualizar el pedido a completado
             $this->status = 'completed';
             $this->updateStatus();
 

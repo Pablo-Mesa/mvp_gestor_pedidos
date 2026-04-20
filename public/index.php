@@ -450,6 +450,12 @@ switch ($route) {
         $controller->pendingCountApi();
         break;
 
+    case 'sales_ticket':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->salesTicket();
+        break;
+
     case 'orders_finalize':
         require_once '../controllers/OrderController.php';
         $controller = new OrderController();

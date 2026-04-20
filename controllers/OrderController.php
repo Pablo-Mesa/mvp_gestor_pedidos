@@ -9,6 +9,7 @@ require_once '../models/Setting.php';
 require_once '../models/CashRegister.php'; // Nuevo Modelo
 require_once '../models/DeliveryRate.php';
 require_once '../models/Client.php';
+require_once '../models/Empresa.php';
 
 class OrderController {
 
@@ -182,12 +183,57 @@ class OrderController {
     }
 
     /**
+     * Genera el Ticket de Venta (Control Interno / Cliente)
+     */
+    public function salesTicket() {
+        $this->checkAdminAccess();
+
+        $saleId = $_GET['id'] ?? null;
+        $format = $_GET['format'] ?? '80mm';
+        if (!$saleId) { header('Location: ?route=sales_history'); exit; }
+
+        $empresaModel = new Empresa();
+        $empresa = $empresaModel->readAll()->fetch(PDO::FETCH_ASSOC);
+
+        $db = (new Database())->getConnection();
+        // Traemos la cabecera de la venta
+        $querySale = "SELECT v.*, c.name as client_name, c.billing_ruc as client_ruc 
+                      FROM pos_ventas_cabecera v
+                      LEFT JOIN clients c ON v.cliente_id = c.id
+                      WHERE v.id = :id";
+        $stmtSale = $db->prepare($querySale);
+        $stmtSale->execute([':id' => $saleId]);
+        $sale = $stmtSale->fetch(PDO::FETCH_ASSOC);
+
+        if (!$sale) { die("Venta no encontrada."); }
+
+        // Traemos el detalle histórico de esa venta específica
+        $queryDetails = "SELECT vd.*, p.name as product_name 
+                         FROM pos_ventas_detalle vd
+                         JOIN products p ON vd.producto_id = p.id
+                         WHERE vd.venta_id = :id";
+        $stmtDetails = $db->prepare($queryDetails);
+        $stmtDetails->execute([':id' => $saleId]);
+        $details = $stmtDetails->fetchAll(PDO::FETCH_ASSOC);
+
+        require_once '../views/admin/sales/ticket.php';
+    }
+
+    /**
      * Muestra la interfaz de cobro mixto para un pedido
      */
     public function finalize() {
         $this->checkAdminAccess();
         $id = $_GET['id'] ?? null;
         if (!$id) { header('Location: ?route=orders'); exit; }
+
+        // --- VALIDACIÓN DE CAJA ---
+        $cashModel = new CashRegister();
+        $activeSession = $cashModel->getActiveSession($_SESSION['user_id']);
+        if (!$activeSession) {
+            header('Location: ?route=cash&error=require_open_session');
+            exit;
+        }
 
         $orderModel = new Order();
         $orderModel->id = $id;
@@ -206,11 +252,19 @@ class OrderController {
     public function processFinalize() {
         $this->checkAdminAccess();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // --- VALIDACIÓN DE CAJA ---
+            $cashModel = new CashRegister();
+            $activeSession = $cashModel->getActiveSession($_SESSION['user_id']);
+            if (!$activeSession) {
+                header('Location: ?route=cash&error=require_open_session');
+                exit;
+            }
+
             $order = new Order();
             $order->id = $_POST['order_id'];
             $order->user_id = $_SESSION['user_id'];
             
-            if ($order->finalizeSale($_POST['payments'])) {
+            if ($order->finalizeSale($_POST['payments'], $activeSession['id'])) {
                 header('Location: ?route=sales_history&success=paid');
             } else {
                 header('Location: ?route=orders_finalize&id=' . $order->id . '&error=' . urlencode($order->error));
@@ -231,7 +285,13 @@ class OrderController {
 
             // Si el pedido se completa, formalizar la Venta y el Pago (Segunda Propuesta)
             if ($success && $_POST['status'] === 'completed') {
-                $order->finalizeSale();
+                // Intentamos obtener sesión de caja para el cierre automático
+                $cashModel = new CashRegister();
+                $activeSession = $cashModel->getActiveSession($_SESSION['user_id']);
+                
+                // En el cierre automático, si no hay caja abierta, finalizeSale lanzará error o se puede manejar
+                $registerId = $activeSession ? $activeSession['id'] : null;
+                $order->finalizeSale([], $registerId);
             }
 
             // Si es una petición AJAX (como al imprimir), respondemos JSON

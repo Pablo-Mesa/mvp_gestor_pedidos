@@ -51,9 +51,9 @@
             <h6 class="m-0 font-weight-bold text-primary">Detalle de Transacciones</h6>
         </div>
         <div class="card-body p-0">
-            <div class="table-responsive">
+            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
                 <table class="table table-hover mb-0">
-                    <thead class="bg-light">
+                    <thead class="bg-light sticky-top" style="top: 0; z-index: 10; background-color: #f8f9fa !important; box-shadow: 0 2px 2px -1px rgba(0,0,0,0.1);">
                         <tr>
                             <th class="px-4 py-3">Fecha / Hora</th>
                             <th class="py-3">Método</th>
@@ -102,7 +102,7 @@
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
-                            <tr class="table-light">
+                            <tr class="table-light sticky-bottom" style="bottom: 0; z-index: 5; background-color: #f8f9fa !important; box-shadow: 0 -2px 2px -1px rgba(0,0,0,0.1);">
                                 <td colspan="4" class="text-end fw-bold py-3">TOTAL RECAUDADO:</td>
                                 <td class="text-end fw-bold text-primary py-3 px-4">Gs. <?php echo number_format($summary['total'], 0, ',', '.'); ?></td>
                             </tr>
@@ -112,4 +112,5 @@
             </div>
         </div>
     </div>
+    
 </div>

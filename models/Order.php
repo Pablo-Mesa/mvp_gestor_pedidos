@@ -476,29 +476,66 @@ class Order {
     /**
      * Obtiene estadísticas resumidas para el dashboard
      */
-    public function getDashboardStats() {
-        $today = date('Y-m-d');
-        
+    public function getDashboardStats($date = null) {
+        $target_date = $date ?: date('Y-m-d');
+
         // Pedidos Pendientes totales (no solo de hoy)
-        $q1 = "SELECT COUNT(*) FROM " . $this->table . " WHERE status = 'pending'";
-        $pending = $this->conn->query($q1)->fetchColumn();
+        $q1 = "SELECT COUNT(*) FROM " . $this->table . " WHERE status = 'pending' AND DATE(created_at) = :target_date";
+        $stmt1 = $this->conn->prepare($q1);
+        $stmt1->execute([':target_date' => $target_date]);
+        $pending = $stmt1->fetchColumn();
 
         // Ingresos de hoy (excluyendo cancelados)
-        $q2 = "SELECT SUM(total) FROM " . $this->table . " WHERE DATE(created_at) = :today AND status != 'cancelled'";
+        $q2 = "SELECT SUM(total) FROM " . $this->table . " WHERE DATE(created_at) = :target_date AND status != 'cancelled'";
         $stmt2 = $this->conn->prepare($q2);
-        $stmt2->execute([':today' => $today]);
+        $stmt2->execute([':target_date' => $target_date]);
         $income = $stmt2->fetchColumn() ?: 0;
 
         // Platos/Items vendidos hoy
-        $q3 = "SELECT SUM(quantity) FROM orders_items oi JOIN orders o ON oi.order_id = o.id WHERE DATE(o.created_at) = :today AND o.status != 'cancelled'";
+        $q3 = "SELECT SUM(quantity) FROM orders_items oi JOIN orders o ON oi.order_id = o.id WHERE DATE(o.created_at) = :target_date AND o.status != 'cancelled'";
         $stmt3 = $this->conn->prepare($q3);
-        $stmt3->execute([':today' => $today]);
+        $stmt3->execute([':target_date' => $target_date]);
         $sold = $stmt3->fetchColumn() ?: 0;
 
         return [
             'pending_orders' => $pending,
             'income_today' => $income,
             'dishes_sold' => $sold
+        ];
+    }
+
+    /**
+     * Obtiene estadísticas agregadas y desglose diario para un mes específico
+     */
+    public function getMonthlyStats($year, $month) {
+        // Totales del mes
+        $q = "SELECT 
+                COUNT(id) as total_orders,
+                SUM(total) as total_income,
+                (SELECT SUM(quantity) FROM orders_items oi JOIN orders o2 ON oi.order_id = o2.id 
+                 WHERE o2.status != 'cancelled' AND YEAR(o2.created_at) = :y AND MONTH(o2.created_at) = :m) as dishes_sold
+              FROM " . $this->table . " 
+              WHERE status != 'cancelled' AND YEAR(created_at) = :y AND MONTH(created_at) = :m";
+        
+        $stmt = $this->conn->prepare($q);
+        $stmt->execute([':y' => $year, ':m' => $month]);
+        $totals = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Desglose diario para el gráfico de barras
+        $qChart = "SELECT DAY(created_at) as day, SUM(total) as income 
+                   FROM " . $this->table . " 
+                   WHERE status != 'cancelled' AND YEAR(created_at) = :y AND MONTH(created_at) = :m
+                   GROUP BY DAY(created_at)
+                   ORDER BY DAY(created_at) ASC";
+        $stmtChart = $this->conn->prepare($qChart);
+        $stmtChart->execute([':y' => $year, ':m' => $month]);
+        $dailyData = $stmtChart->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'income' => $totals['total_income'] ?: 0,
+            'orders' => $totals['total_orders'] ?: 0,
+            'dishes' => $totals['dishes_sold'] ?: 0,
+            'chart'  => $dailyData
         ];
     }
 }

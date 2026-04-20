@@ -33,40 +33,59 @@ class AdminController {
         require_once '../models/Order.php';
         require_once '../models/DailyMenu.php';
         
+        // Parámetros de vista
+        $view_mode = $_GET['view_mode'] ?? 'daily';
+        $selected_date = $_GET['date'] ?? date('Y-m-d');
+        $selected_month = $_GET['month'] ?? date('Y-m');
+
         // Obtener datos reales de la DB
         $orderModel = new Order();
-        $stats = $orderModel->getDashboardStats();
-        $today = date('Y-m-d');
-        
+
+        if ($view_mode === 'monthly') {
+            list($year, $month) = explode('-', $selected_month);
+            $mStats = $orderModel->getMonthlyStats($year, $month);
+            
+            $data = [
+                'view_mode' => 'monthly',
+                'title' => 'Resumen de ' . $this->getMonthName($month) . ' ' . $year,
+                'selected_month' => $selected_month,
+                'pedidos_pendientes' => $mStats['orders'], // En mensual lo usamos como total pedidos
+                'ingresos_hoy' => $mStats['income'],
+                'platos_vendidos' => $mStats['dishes'],
+                'chart_data' => $mStats['chart'],
+                'low_stock_items' => [] // No mostramos stock bajo en vista mensual
+            ];
+        } else {
+            $stats = $orderModel->getDashboardStats($selected_date);
+            $data = [
+                'view_mode' => 'daily',
+                'title' => ($selected_date === date('Y-m-d')) ? 'Resumen de Hoy' : 'Resumen del ' . date('d/m/Y', strtotime($selected_date)),
+                'selected_date' => $selected_date,
+                'pedidos_pendientes' => $stats['pending_orders'],
+                'ingresos_hoy' => $stats['income_today'],
+                'platos_vendidos' => $stats['dishes_sold'],
+            ];
+        }
+
         // Obtener cantidad de pedidos completados hoy para el gráfico
-        // Sincronizado con el estado 'completed' que usa logística
-        $stmtCompleted = $orderModel->readAll(['date' => $today, 'status' => 'completed']);
-        $completed_orders = $stmtCompleted ? count($stmtCompleted->fetchAll(PDO::FETCH_ASSOC)) : 0;
+        if ($view_mode === 'daily') {
+            $stmtCompleted = $orderModel->readAll(['date' => $selected_date, 'status' => 'completed']);
+            $data['pedidos_completados_hoy'] = $stmtCompleted ? count($stmtCompleted->fetchAll(PDO::FETCH_ASSOC)) : 0;
 
-        // Obtener menú de hoy para verificar stock
-        $dailyMenuModel = new DailyMenu();
-        $menus = $dailyMenuModel->readForDate($today)->fetchAll(PDO::FETCH_ASSOC);
-        
-        // Filtrar productos con stock bajo (ej. 5 o menos, si tienen stock definido)
-        $low_stock_items = array_filter($menus, function($item) {
-            return !is_null($item['daily_stock']) && $item['daily_stock'] <= 5;
-        });
+            $dailyMenuModel = new DailyMenu();
+            $menus = $dailyMenuModel->readForDate($selected_date)->fetchAll(PDO::FETCH_ASSOC);
+            $data['low_stock_items'] = array_filter($menus, function($item) {
+                return !is_null($item['daily_stock']) && $item['daily_stock'] <= 5;
+            });
+        }
 
-        $data = [
-            'title' => 'Resumen del Día',
-            'pedidos_pendientes' => $stats['pending_orders'],
-            'ingresos_hoy' => $stats['income_today'],
-            'platos_vendidos' => $stats['dishes_sold'],
-            'low_stock_items' => $low_stock_items,
-            'pedidos_completados_hoy' => $completed_orders,
-            'pedidos_pendientes_hoy' => $stats['pending_orders']
-        ];
-
-        // Definimos qué vista interna queremos cargar
         $content_view = '../views/admin/dashboard.php';
-        
-        // Cargamos el Layout Principal (que incluirá a $content_view)
         require_once '../views/layouts/admin_layout.php';
+    }
+
+    private function getMonthName($m) {
+        $meses = ["01"=>"Enero","02"=>"Febrero","03"=>"Marzo","04"=>"Abril","05"=>"Mayo","06"=>"Junio","07"=>"Julio","08"=>"Agosto","09"=>"Septiembre","10"=>"Octubre","11"=>"Noviembre","12"=>"Diciembre"];
+        return $meses[$m] ?? '';
     }
 
     public function pos() {

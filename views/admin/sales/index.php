@@ -26,9 +26,9 @@ $pendingInvoices = $orderModel->getOrdersAwaitingInvoice();
 
     <div class="card shadow-sm border-0">
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="bg-light">
+            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                <table class="table table-hover mb-0" style="border-collapse: separate; border-spacing: 0;">
+                    <thead class="bg-light sticky-top" style="top: 0; z-index: 10; background-color: #f8f9fa !important; box-shadow: 0 2px 2px -1px rgba(0,0,0,0.1);">
                         <tr>
                             <th class="px-4 py-3">Nro. Factura</th>
                             <th class="py-3">Fecha/Hora</th>

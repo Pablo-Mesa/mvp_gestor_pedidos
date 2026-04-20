@@ -254,11 +254,33 @@ class HomeController {
         }
 
         $locationModel = new ClientLocation();
-        $savedLocations = $locationModel->getAllByClient($_SESSION['client_id']);
+        $savedLocations = $this->getLocationsWithUsage($_SESSION['client_id']);
 
         $view_title = "Mis Direcciones";
         $content_view = '../views/home/locations.php';
         require_once '../views/layouts/client_layout.php';
+    }
+
+    /**
+     * Obtiene ubicaciones y verifica si tienen pedidos asociados
+     */
+    private function getLocationsWithUsage($clientId) {
+        $locationModel = new ClientLocation();
+        $locations = $locationModel->getAllByClient($clientId);
+        
+        if (empty($locations)) return [];
+
+        $db = (new Database())->getConnection();
+        foreach ($locations as &$loc) {
+            // Verificamos si la ubicación ha sido usada en algún envío (order_shipments)
+            $stmt = $db->prepare("SELECT COUNT(*) FROM order_shipments WHERE client_location_id = :id");
+            $stmt->execute([':id' => $loc['id']]);
+            $count = $stmt->fetchColumn();
+            
+            // Flag para la vista
+            $loc['has_orders'] = $count > 0;
+        }
+        return $locations;
     }
 
     /**

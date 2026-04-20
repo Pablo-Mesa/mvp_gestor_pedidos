@@ -383,7 +383,7 @@ class OrderController {
 
         // 2. Cargar ubicaciones guardadas
         $locationModel = new ClientLocation();
-        $savedLocations = $locationModel->getAllByClient($_SESSION['client_id']);
+        $savedLocations = $this->getLocationsWithUsage($_SESSION['client_id']);
 
         // 3. Cargar configuraciones y tarifas para el cálculo de delivery en el frontend
         $settingModel = new Setting();
@@ -416,7 +416,7 @@ class OrderController {
             
             if ($locationModel->create($input)) {
                 ob_clean(); // Limpiar el buffer antes de enviar el JSON real
-                echo json_encode(['success' => true, 'locations' => $locationModel->getAllByClient($_SESSION['client_id'])]);
+                echo json_encode(['success' => true, 'locations' => $this->getLocationsWithUsage($_SESSION['client_id'])]);
             } else {
                 throw new Exception('Error al guardar ubicación en la base de datos');
             }
@@ -446,7 +446,7 @@ class OrderController {
             
             if ($locationModel->update($input)) {
                 ob_clean();
-                echo json_encode(['success' => true, 'locations' => $locationModel->getAllByClient($_SESSION['client_id'])]);
+                echo json_encode(['success' => true, 'locations' => $this->getLocationsWithUsage($_SESSION['client_id'])]);
             } else {
                 throw new Exception('Error al actualizar ubicación en la base de datos');
             }
@@ -471,11 +471,18 @@ class OrderController {
             $input = json_decode(file_get_contents('php://input'), true);
             if (!$input || empty($input['id'])) throw new Exception('ID de ubicación no proporcionado');
 
+            $db = (new Database())->getConnection();
+            $check = $db->prepare("SELECT COUNT(*) FROM order_shipments WHERE client_location_id = :id");
+            $check->execute([':id' => $input['id']]);
+            if ($check->fetchColumn() > 0) {
+                throw new Exception('No se puede eliminar una ubicación que tiene pedidos registrados.');
+            }
+
             $locationModel = new ClientLocation();
             
             if ($locationModel->delete($input['id'], $_SESSION['client_id'])) {
                 ob_clean();
-                echo json_encode(['success' => true, 'locations' => $locationModel->getAllByClient($_SESSION['client_id'])]);
+                echo json_encode(['success' => true, 'locations' => $this->getLocationsWithUsage($_SESSION['client_id'])]);
             } else {
                 throw new Exception('Error al eliminar ubicación de la base de datos');
             }
@@ -484,6 +491,28 @@ class OrderController {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
         exit;
+    }
+
+    /**
+     * Obtiene ubicaciones y verifica si tienen pedidos asociados para restringir eliminación
+     */
+    private function getLocationsWithUsage($clientId) {
+        $locationModel = new ClientLocation();
+        $locations = $locationModel->getAllByClient($clientId);
+        
+        if (empty($locations)) return [];
+
+        $db = (new Database())->getConnection();
+        foreach ($locations as &$loc) {
+            // Verificamos si la ubicación ha sido usada en algún envío (order_shipments)
+            $stmt = $db->prepare("SELECT COUNT(*) FROM order_shipments WHERE client_location_id = :id");
+            $stmt->execute([':id' => $loc['id']]);
+            $count = $stmt->fetchColumn();
+            
+            // Flag para la vista: Solo es eliminable si no tiene pedidos
+            $loc['has_orders'] = $count > 0;
+        }
+        return $locations;
     }
 
     /**

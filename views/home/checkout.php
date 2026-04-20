@@ -158,14 +158,17 @@
                             <?php foreach($savedLocations as $loc): ?>
                                 <div class="location-card <?php if(!$firstLocationSelected) { echo 'selected'; $firstLocationSelected = true; } ?>" onclick="selectLocation(this)"
                                      data-id="<?= $loc['id'] ?>"
-                                     data-lat="<?= $loc['lat'] ?>" data-lng="<?= $loc['lng'] ?>" data-addr="<?= htmlspecialchars($loc['address']) ?>">
+                                     data-lat="<?= $loc['lat'] ?>" data-lng="<?= $loc['lng'] ?>" data-addr="<?= htmlspecialchars($loc['address']) ?>"
+                                     data-has-orders="<?= $loc['has_orders'] ? '1' : '0' ?>">
                                     <i class="fas fa-home"></i>
                                     <strong><?= htmlspecialchars($loc['title']) ?></strong>
                                     <small><?= htmlspecialchars($loc['address']) ?></small>
+                                    <?php if (!$loc['has_orders']): ?>
                                     <button type="button" class="btn-delete-checkout" 
                                             onclick="event.stopPropagation(); confirmDeleteLocation(<?= $loc['id'] ?>, '<?= addslashes($loc['title']) ?>')">
                                         <i class="fas fa-trash"></i>
                                     </button>
+                                    <?php endif; ?>
                                 </div>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -661,17 +664,22 @@
         if (locations && locations.length > 0) {
             locations.forEach(loc => {
                 const safeAddr = loc.address.replace(/"/g, '&quot;');
+                const deleteBtn = !loc.has_orders ? `
+                    <button type="button" class="btn-delete-checkout" 
+                            onclick="event.stopPropagation(); confirmDeleteLocation(${loc.id}, '${loc.title}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                ` : '';
+
                 html += `
                     <div class="location-card" onclick="selectLocation(this)"
                          data-id="${loc.id}"
-                         data-lat="${loc.lat}" data-lng="${loc.lng}" data-addr="${safeAddr}">
+                         data-lat="${loc.lat}" data-lng="${loc.lng}" data-addr="${safeAddr}"
+                         data-has-orders="${loc.has_orders ? '1' : '0'}">
                         <i class="fas fa-home"></i>
                         <strong>${loc.title}</strong>
                         <small>${loc.address}</small>
-                        <button type="button" class="btn-delete-checkout" 
-                                onclick="event.stopPropagation(); confirmDeleteLocation(${loc.id}, '${loc.title}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        ${deleteBtn}
                     </div>
                 `;
             });

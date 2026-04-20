@@ -8,9 +8,39 @@
     }
 
     .dashboard-header {
-        margin-bottom: 30px;
+        margin-bottom: 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         text-align: left;
     }
+
+    .date-filter-form {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: white;
+        padding: 8px 15px;
+        border-radius: 12px;
+        border: 1px solid #dfe6e9;
+    }
+
+    .view-switcher {
+        background: #f1f3f5;
+        padding: 4px;
+        border-radius: 10px;
+        display: inline-flex;
+        margin-bottom: 20px;
+    }
+    .view-switcher a {
+        padding: 6px 16px;
+        border-radius: 8px;
+        text-decoration: none;
+        color: #495057;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+    .view-switcher a.active { background: white; color: #0984e3; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
     .dashboard-header h1 { color: #2d3436; font-size: 2.2rem; font-weight: 800; margin-bottom: 5px; letter-spacing: -1px; }
     .dashboard-header p { color: #636e72; }
@@ -198,8 +228,25 @@
 <div class="dashboard-container">
     <!-- Encabezado del Dashboard -->
     <header class="dashboard-header">
-        <h1><i class="fas fa-chart-line"></i> <?php echo $data['title']; ?></h1>
-        <p>Resumen de actividad para el día de hoy.</p>
+        <div>
+            <h1><i class="fas fa-chart-line"></i> <?php echo $data['title']; ?></h1>
+            <p>Resumen de actividad del sistema.</p>
+        </div>
+        <div class="d-flex flex-column align-items-end gap-2">
+            <div class="view-switcher">
+                <a href="?route=admin&view_mode=daily" class="<?= $data['view_mode'] == 'daily' ? 'active' : '' ?>">Día</a>
+                <a href="?route=admin&view_mode=monthly" class="<?= $data['view_mode'] == 'monthly' ? 'active' : '' ?>">Mes</a>
+            </div>
+            <form action="" method="GET" class="date-filter-form">
+                <input type="hidden" name="route" value="admin">
+                <input type="hidden" name="view_mode" value="<?= $data['view_mode'] ?>">
+                <?php if($data['view_mode'] == 'daily'): ?>
+                    <input type="date" name="date" class="form-control form-control-sm" value="<?php echo $data['selected_date']; ?>" onchange="this.form.submit()">
+                <?php else: ?>
+                    <input type="month" name="month" class="form-control form-control-sm" value="<?php echo $data['selected_month']; ?>" onchange="this.form.submit()">
+                <?php endif; ?>
+            </form>
+        </div>
     </header>
 
     <!-- Sección de Alertas de Stock Bajo -->
@@ -209,7 +256,7 @@
         <div class="alert-banner warning">
             <i class="fas fa-exclamation-triangle"></i>
             <span><strong>Atención:</strong> Quedan pocas porciones de <strong><?php echo $item['product_name']; ?></strong> (Solo <?php echo $item['daily_stock']; ?> restantes).</span>
-            <a href="?route=menus&date=<?php echo date('Y-m-d'); ?>" class="btn-alert">Gestionar</a>
+            <a href="?route=menus&date=<?php echo $data['selected_date']; ?>" class="btn-alert">Gestionar</a>
         </div>
         <?php endforeach; ?>
     </div>
@@ -223,7 +270,7 @@
                 <i class="fas fa-clock"></i>
             </div>
             <div class="stat-info">
-                <h3>Pedidos Pendientes</h3>
+                <h3><?= $data['view_mode'] == 'daily' ? 'Pedidos Recibidos' : 'Total Pedidos' ?></h3>
                 <p class="stat-value"><?php echo $data['pedidos_pendientes']; ?></p>
             </div>
         </div>
@@ -233,7 +280,7 @@
                 <i class="fas fa-money-bill-wave"></i>
             </div>
             <div class="stat-info">
-                <h3>Ingresos Hoy</h3>
+                <h3><?= $data['view_mode'] == 'daily' ? 'Ingresos Hoy' : 'Ingresos Mes' ?></h3>
                 <p class="stat-value">Gs. <?php echo number_format($data['ingresos_hoy'], 0, ',', '.'); ?></p>
             </div>
         </div>
@@ -255,7 +302,7 @@
         <!-- Gráfico de Estado de Pedidos -->
         <div class="chart-container">
             <div class="chart-header">
-                <h2><i class="fas fa-chart-pie"></i> Rendimiento de Hoy</h2>
+                <h2><i class="fas <?= $data['view_mode'] == 'daily' ? 'fa-chart-pie' : 'fa-chart-bar' ?>"></i> <?= $data['view_mode'] == 'daily' ? 'Rendimiento del Día' : 'Ingresos por Día' ?></h2>
             </div>
             <div class="chart-wrapper">
                 <canvas id="orderStatusChart"></canvas>
@@ -263,6 +310,7 @@
         </div>
 
         <!-- Sección de Acciones Rápidas -->
+        <?php if ($data['view_mode'] === 'daily'): ?>
         <section class="quick-actions">
             <h2>Acciones Rápidas</h2>
             <div class="actions-grid">
@@ -284,6 +332,7 @@
                 </a>
             </div>
         </section>
+        <?php endif; ?>
 
     </div> 
     <!-- Cierre de dashboard-visuals -->
@@ -299,14 +348,47 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
+    const viewMode = '<?= $data['view_mode'] ?>';
     
+    if (viewMode === 'monthly') {
+        const chartData = <?php echo json_encode($data['chart_data'] ?? []); ?>;
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartData.map(d => d.day),
+                datasets: [{
+                    label: 'Ingresos (Gs.)',
+                    data: chartData.map(d => d.income),
+                    backgroundColor: '#0984e3',
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString('es-PY');
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        return;
+    }
+
     // Datos desde PHP
-    const pending = <?php echo (int)($data['pedidos_pendientes_hoy'] ?? 0); ?>;
+    const pending = <?php echo (int)($data['pedidos_pendientes'] ?? 0); ?>;
     const completed = <?php echo (int)($data['pedidos_completados_hoy'] ?? 0); ?>;
 
     // Lógica para mostrar gráfico vacío si no hay datos
     const hasData = (pending + completed) > 0;
-    const dataValues = hasData ? [pending, completed] : [1];
+    const dataValues = hasData ? [pending, completed] : [0, 0];
     const bgColors = hasData ? ['#ffc107', '#28a745'] : ['#dfe6e9'];
     const labels = hasData ? ['Pendientes', 'Completados'] : ['Sin pedidos'];
 

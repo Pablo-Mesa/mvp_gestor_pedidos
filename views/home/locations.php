@@ -26,10 +26,12 @@
                                     style="background: #ffc107; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer;">
                                 <i class="fas fa-pen"></i>
                             </button>
+                            <?php if (!$loc['has_orders']): ?>
                             <button onclick="confirmDelete(<?= $loc['id'] ?>, '<?= addslashes($loc['title']) ?>')" 
                                     style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; margin-left: 5px;">
                                 <i class="fas fa-trash"></i>
                             </button>
+                            <?php endif; ?>
                         </div>
                         <p style="color: #636e72; font-size: 0.9rem; margin: 0; line-height: 1.4;">
                             <?= htmlspecialchars($loc['address']) ?>
@@ -235,6 +237,12 @@ function renderLocalList(locations) {
     locations.forEach(loc => {
         const safeTitle = loc.title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         const safeAddr = loc.address.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const deleteBtn = !loc.has_orders ? `
+            <button onclick="confirmDelete(${loc.id}, '${safeTitle}')" 
+                    style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; margin-left: 5px;">
+                <i class="fas fa-trash"></i>
+            </button>` : '';
+
         html += `
             <div class="section-card" style="margin-bottom: 0; position: relative;">
                 <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -244,10 +252,7 @@ function renderLocalList(locations) {
                                 style="background: #ffc107; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer;">
                             <i class="fas fa-pen"></i>
                         </button>
-                        <button onclick="confirmDelete(${loc.id}, '${safeTitle}')" 
-                                style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; margin-left: 5px;">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        ${deleteBtn}
                     </div>
                     <p style="color: #636e72; font-size: 0.9rem; margin: 0; line-height: 1.4;">
                         ${loc.address}

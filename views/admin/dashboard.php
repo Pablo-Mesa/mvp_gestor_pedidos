@@ -30,7 +30,6 @@
         padding: 4px;
         border-radius: 10px;
         display: inline-flex;
-        margin-bottom: 20px;
     }
     .view-switcher a {
         padding: 6px 16px;
@@ -232,7 +231,7 @@
             <h1><i class="fas fa-chart-line"></i> <?php echo $data['title']; ?></h1>
             <p>Resumen de actividad del sistema.</p>
         </div>
-        <div class="d-flex flex-column align-items-end gap-2">
+        <div class="d-flex align-items-center gap-3">
             <div class="view-switcher">
                 <a href="?route=admin&view_mode=daily" class="<?= $data['view_mode'] == 'daily' ? 'active' : '' ?>">Día</a>
                 <a href="?route=admin&view_mode=monthly" class="<?= $data['view_mode'] == 'monthly' ? 'active' : '' ?>">Mes</a>

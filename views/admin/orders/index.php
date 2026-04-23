@@ -194,6 +194,7 @@
     .status-shipped { background: #1976d2; color: #fff; } /* Azul oscuro */
     .status-rejected { background: #6c757d; color: #fff; } /* Gris */
     .status-completed { background: #28a745; color: #fff; } /* Verde */
+    .status-paid { background: #6f42c1; color: #fff; } /* Púrpura */
     .status-cancelled { background: #dc3545; color: #fff; } /* Rojo */
 
     .btn-view { padding: 5px 10px; background: #007bff; color: white; border-radius: 4px; text-decoration: none; font-size: 0.85rem; }
@@ -365,6 +366,7 @@
                                     case 'shipped': $statusClass = 'status-shipped'; break;
                                     case 'completed': $statusClass = 'status-completed'; break;
                                     case 'rejected': $statusClass = 'status-rejected'; break;
+                                    case 'paid': $statusClass = 'status-paid'; break;
                                     case 'cancelled': $statusClass = 'status-cancelled'; break;
                                 }
 
@@ -381,10 +383,18 @@
                                 </option>
                                 <option value="confirmed" <?php echo $order['status']=='confirmed'?'selected':''; ?> disabled>Confirmado (Imprimir)</option>
                                 <option value="shipped" <?php echo $order['status']=='shipped'?'selected':''; ?> disabled>En Camino</option>
+                                <option value="paid" <?php echo $order['status']=='paid'?'selected':''; ?> disabled>Pagado</option>
                                 <option value="completed" <?php echo $order['status']=='completed'?'selected':''; ?> disabled>Entregado</option>
                                 <option value="rejected" <?php echo $order['status']=='rejected'?'selected':''; ?>>Rechazado</option>
                                 <option value="cancelled" <?php echo $order['status']=='cancelled'?'selected':''; ?>>Cancelado</option>
                             </select>
+                            
+                            <?php if ($order['status'] === 'paid' && $order['delivery_type'] === 'delivery'): ?>
+                                <div style="font-size: 0.7rem; color: #6f42c1; font-weight: bold; margin-top: 4px;">
+                                    <i class="fas fa-hourglass-half"></i> <?php echo empty($order['delivery_user_id']) ? 'PENDIENTE ASIGNACIÓN' : 'PENDIENTE DE ENVÍO'; ?>
+                                </div>
+                            <?php endif; ?>
+
                             <?php if (!empty($order['delivery_user_id']) && !in_array($order['status'], ['completed', 'rejected', 'cancelled'])): ?>
                                 <div style="font-size: 0.7rem; color: #28a745; font-weight: bold; margin-top: 4px;">
                                     <i class="fas fa-user-check"></i> DELIVERY ASIGNADO
@@ -601,7 +611,15 @@ if (empty($orders) && $hasFilter):
             
             // Requerimiento: Al abrir, el foco debe estar en el botón de 80mm
             modalEl.addEventListener('shown.bs.modal', () => {
-                document.getElementById('qa-btn-80').focus();
+                const payBtn = document.getElementById('qa-btn-pay');
+                const print80Btn = document.getElementById('qa-btn-80');
+
+                // Priorizar el botón "Cobrar Pedido" si está visible
+                if (payBtn && payBtn.style.display !== 'none') {
+                    payBtn.focus();
+                } else if (print80Btn) {
+                    print80Btn.focus();
+                }
             });
         }
         
@@ -705,7 +723,7 @@ if (empty($orders) && $hasFilter):
         // Lógica de navegación dentro del Modal
         if (isModalOpen) {
             const selectors = [
-                '#qa-btn-80', '#qa-btn-58', '#qa-btn-view', 
+                '#qa-btn-pay', '#qa-btn-80', '#qa-btn-58', '#qa-btn-view', 
                 '#qa-delivery-select', '#qa-btn-assign', '#qa-btn-close'
             ];
             const modalNavElements = selectors
@@ -922,6 +940,7 @@ if (empty($orders) && $hasFilter):
                 else if (order.status === 'shipped') statusClass = 'status-shipped';
                 else if (order.status === 'completed') statusClass = 'status-completed';
                 else if (order.status === 'rejected') statusClass = 'status-rejected';
+                else if (order.status === 'paid') statusClass = 'status-paid';
                 else if (order.status === 'cancelled') statusClass = 'status-cancelled';
 
                 return `
@@ -937,10 +956,16 @@ if (empty($orders) && $hasFilter):
                                 <option value="pending" ${order.status === 'pending' ? 'selected' : ''} ${(!isErrorState && order.status !== 'pending') ? 'disabled' : ''}>${isErrorState ? '🔄 Reabrir (Pendiente)' : 'Pendiente'}</option>
                                 <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''} disabled>Confirmado (Imprimir)</option>
                                 <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''} disabled>En Camino</option>
+                                <option value="paid" ${order.status === 'paid' ? 'selected' : ''} disabled>Pagado</option>
                                 <option value="completed" ${order.status === 'completed' ? 'selected' : ''} disabled>Entregado</option>
                                 <option value="rejected" ${order.status === 'rejected' ? 'selected' : ''}>Rechazado</option>
                                 <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancelado</option>
                             </select>
+                            ${order.status === 'paid' && order.delivery_type === 'delivery' ? `
+                                <div style="font-size: 0.7rem; color: #6f42c1; font-weight: bold; margin-top: 4px;">
+                                    <i class="fas fa-hourglass-half"></i> ${!order.delivery_user_id ? 'PENDIENTE ASIGNACIÓN' : 'PENDIENTE DE ENVÍO'}
+                                </div>
+                            ` : ''}
                             ${deliveryAssignedBadge}
                         </td>
                         <td>

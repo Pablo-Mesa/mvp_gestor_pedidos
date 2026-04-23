@@ -51,6 +51,11 @@ class HomeController {
         $dailyMenuModel = new DailyMenu();
         $daily_menus = $dailyMenuModel->readForDate($date, $clientId, true)->fetchAll(PDO::FETCH_ASSOC);
 
+        // Obtener Ajustes Globales (Para dirección, nombre, etc.)
+        if (!class_exists('Setting')) require_once '../models/Setting.php';
+        $settingModel = new Setting();
+        $siteSettings = $settingModel->getAll();
+
         // Obtener Recomendados (Top 8 más gustados de todo el catálogo para el Empty State)
         $productModel = new Product();
         $allActive = $productModel->readAllActive($clientId)->fetchAll(PDO::FETCH_ASSOC);
@@ -67,9 +72,82 @@ class HomeController {
         $db = null;
 
         foreach ($promos as $promo) {
-            if ($promo['type'] === 'reviews') {
-                if (!$db) $db = (new Database())->getConnection();
+            $promo['is_formatted'] = false; // Reset por seguridad
+            $type = strtolower(trim($promo['type'] ?? ''));
+            $rawContent = trim($promo['content'] ?? '');
+
+            // --- PROCESAMIENTO ESTRICTO DE HORARIOS ---
+            if ($type === 'hours' || $type === 'horarios') {
+                // Intentamos decodificar. Si falla, $schedule será null.
+                $schedule = json_decode($rawContent, true);
                 
+                // Si por algún error de guardado el JSON viene escapado doblemente (string de string)
+                if (is_string($schedule)) {
+                    $schedule = json_decode($schedule, true);
+                }
+
+                if (is_array($schedule) && !empty($schedule)) {
+                    $dayNum = (int)date('w');
+                    $now = date('H:i');
+                    $today = $schedule[$dayNum] ?? $schedule[(string)$dayNum] ?? null;
+
+                    $isOpen = ($today && !($today['closed'] ?? false) && $now >= ($today['open'] ?? '00:00') && $now <= ($today['close'] ?? '23:59'));
+                    $promo['title'] = $isOpen ? "🟢 ¡Estamos Abiertos!" : "🕒 Horarios de Atención";
+
+                    $daysES = [1 => 'Lun', 2 => 'Mar', 3 => 'Mié', 4 => 'Jue', 5 => 'Vie', 6 => 'Sáb', 0 => 'Dom'];
+                    $groups = [];
+                    $order = [1, 2, 3, 4, 5, 6, 0];
+                    
+                    foreach ($order as $d) {
+                        $dayInfo = $schedule[$d] ?? $schedule[(string)$d] ?? ['closed' => true];
+                        $timeStr = ($dayInfo['closed'] ?? false) ? "Cerrado" : ($dayInfo['open'] ?? '08:00') . " a " . ($dayInfo['close'] ?? '22:00') . " hs.";
+                        
+                        if (!empty($groups) && end($groups)['time'] === $timeStr) {
+                            $groups[count($groups)-1]['end'] = $daysES[$d];
+                        } else {
+                            $groups[] = ['start' => $daysES[$d], 'end' => $daysES[$d], 'time' => $timeStr];
+                        }
+                    }
+
+                    $formattedSchedule = [];
+                    foreach ($groups as $g) {
+                        $label = ($g['start'] === $g['end']) ? $g['start'] : $g['start'] . " a " . $g['end'];
+                        $formattedSchedule[] = "<strong>$label:</strong> " . $g['time'];
+                    }
+
+                    $promo['content'] = implode("<br>", $formattedSchedule);
+                    $promo['is_formatted'] = true;
+                } else {
+                    // Si los datos son basura, NO MOSTRAR EL JSON. Mostrar un fallback digno.
+                    $promo['title'] = "🕒 Horarios de Atención";
+                    $promo['content'] = "Atención de Lunes a Sábados.<br>Consultas al WhatsApp.";
+                    $promo['is_formatted'] = true;
+                }
+                $finalPromos[] = $promo;
+                continue;
+            }
+
+            // --- CASO 2: UBICACIÓN ---
+            if ($type === 'location' || $type === 'ubicacion') {
+                // Si el título está vacío, usamos el nombre del local o un valor por defecto
+                if (empty(trim($promo['title'] ?? ''))) {
+                    $promo['title'] = $siteSettings['site_name'] ?? "Nuestra Ubicación";
+                }
+
+                // Si el Hero Promo está vacío o contiene metadatos JSON (coordenadas),
+                // inyectamos la dirección física configurada en Ajustes Globales y marcamos como formateado.
+                $isJson = (strpos($rawContent, '{') === 0);
+                if ((empty($rawContent) || $isJson) && !empty($siteSettings['store_address'])) {
+                    $promo['content'] = $siteSettings['store_address'];
+                    $promo['is_formatted'] = true;
+                }
+                $finalPromos[] = $promo;
+                continue;
+            }
+
+            // --- CASO 3: RESEÑAS ---
+            if ($type === 'reviews') {
+                if (!$db) $db = (new Database())->getConnection();
                 // Buscamos una reseña aleatoria unida al nombre del producto
                 $sql = "SELECT r.comment, p.name as product_name 
                         FROM product_reviews r 
@@ -79,35 +157,9 @@ class HomeController {
                 if ($res) {
                     $promo['content'] = $res['comment'];
                     $promo['title'] = "Opinión: " . $res['product_name'];
+                    $promo['is_formatted'] = false; // Las reseñas no llevan HTML de horarios
                     $finalPromos[] = $promo;
                 }
-                // Si no hay reseñas en la DB, no la agregamos al array final
-            } elseif ($promo['type'] === 'hours') {
-                // Lógica de Horarios Dinámicos
-                $schedule = json_decode($promo['content'], true);
-                
-                if (json_last_error() === JSON_ERROR_NONE && is_array($schedule)) {
-                    $dayNum = date('w'); // 0 (Dom) a 6 (Sab)
-                    $now = date('H:i');
-                    $today = $schedule[$dayNum] ?? null;
-
-                    if ($today && !$today['closed']) {
-                        $isOpen = ($now >= $today['open'] && $now <= $today['close']);
-                        if ($isOpen) {
-                            $promo['title'] = "🟢 ¡Estamos Abiertos!";
-                            $promo['content'] = "Atendiendo hoy hasta las " . $today['close'] . ". ¡Haz tu pedido ahora!";
-                        } else {
-                            $promo['title'] = "🔴 Cerrado temporalmente";
-                            $nextOpen = ($now < $today['open']) ? "Abrimos hoy a las " . $today['open'] : "Abrimos mañana";
-                            $promo['content'] = $nextOpen . ". ¡Vuelve pronto!";
-                        }
-                    } else {
-                        $promo['title'] = "🗓️ Hoy Cerrado";
-                        $promo['content'] = "Hoy no abrimos al público. ¡Te esperamos en nuestro próximo horario!";
-                    }
-                }
-                // Si no es JSON (texto viejo), se muestra tal cual
-                $finalPromos[] = $promo;
             } else {
                 $finalPromos[] = $promo;
             }

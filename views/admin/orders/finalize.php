@@ -1,3 +1,15 @@
+<style>
+    /* Quitar flechas de los input de número para una estética más limpia */
+    input.payment-input::-webkit-outer-spin-button,
+    input.payment-input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    input.payment-input[type=number] {
+        -moz-appearance: textfield;
+    }
+</style>
+
 <div class="container-fluid py-4">
     <div class="row justify-content-center">
         <div class="col-md-8">
@@ -116,22 +128,65 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    inputs.forEach(input => {
+    inputs.forEach((input, index) => {
         input.addEventListener('input', calculate);
         // Limpiar el 0 al hacer click para facilitar el tipeo
         input.addEventListener('focus', function() { if(this.value == "0") this.value = ""; });
         input.addEventListener('blur', function() { if(this.value == "") this.value = "0"; });
-    });
 
+        // Navegación fluida con la tecla Enter
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const nextInput = inputs[index + 1];
+                if (nextInput) {
+                    nextInput.focus();
+                } else {
+                    btnSubmit.focus();
+                }
+            }
+        });
+    });
     calculate();
 
-    document.getElementById('form-finalize').onsubmit = function() {
+    // Enfocar automáticamente el campo de efectivo para agilizar la carga del cobro
+    document.querySelector('input[data-method="efectivo"]')?.focus();
+
+    const form = document.getElementById('form-finalize');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault(); // Detener el envío automático
+        
         let paid = 0;
         inputs.forEach(input => paid += parseFloat(input.value) || 0);
-        if(paid < total) {
-            alert("El monto pagado no puede ser menor al total del pedido.");
-            return false;
+        
+        // 1. Validación de seguridad
+        if (paid < total) {
+            Toast.fire("El monto pagado es insuficiente", "warning");
+            return;
         }
-    };
+
+        // 2. Preparar mensaje de confirmación
+        const change = paid - total;
+        let msg = "Se registrará el pago y se generará el comprobante de venta.";
+        if (change > 0) {
+            msg = `<strong>VUELTO A ENTREGAR: Gs. ${new Intl.NumberFormat('es-PY').format(change)}</strong><br><br>` + msg;
+        }
+
+        // 3. Lanzar confirmación
+        Swal.fire({
+            title: '¿Confirmar cobro?',
+            html: msg,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#00b894',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, finalizar venta',
+            cancelButtonText: 'No, revisar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit(); // Enviar el formulario físicamente
+            }
+        });
+    });
 });
 </script>

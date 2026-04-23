@@ -182,6 +182,7 @@
                 </div>
 
                 <!-- 3. Datos de Facturación -->
+                <?php if (isset($siteSettings['enable_legal_invoice']) && $siteSettings['enable_legal_invoice'] == '1'): ?>
                 <div class="section-card">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                         <h3 style="margin:0;"><i class="fas fa-file-invoice"></i> ¿Desea Factura Legal?</h3>
@@ -219,6 +220,7 @@
                     </div>
                     <div id="invoice_off_msg" style="color: #999; font-size: 0.85rem;">Se emitirá como "Sin Nombre" o Ticket Interno si no se marca esta opción.</div>
                 </div>
+                <?php endif; ?>
 
                 <!-- 3. Método de Pago -->
                 <div class="section-card">
@@ -818,7 +820,9 @@
         const data = Object.fromEntries(formData.entries());
 
         // Validación y Limpieza de Facturación
-        const wantsInvoice = document.getElementById('wants_invoice').checked;
+        const wantsInvoiceEl = document.getElementById('wants_invoice');
+        const wantsInvoice = wantsInvoiceEl ? wantsInvoiceEl.checked : false;
+        
         if (wantsInvoice) {
             if (!data.billing_name || !data.billing_ruc) {
                 Toast.fire("Datos de facturación incompletos", "Por favor ingrese el Nombre y RUC.", "warning");

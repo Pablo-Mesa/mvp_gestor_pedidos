@@ -34,9 +34,9 @@ class Setting {
                   ON DUPLICATE KEY UPDATE setting_value = :value2";
         
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':key', $key);
-        $stmt->bindParam(':value', $value);
-        $stmt->bindParam(':value2', $value);
+        $stmt->bindValue(':key', $key);
+        $stmt->bindValue(':value', $value);
+        $stmt->bindValue(':value2', $value);
         
         return $stmt->execute();
     }
@@ -52,7 +52,7 @@ class Setting {
         $db = (new Database())->getConnection();
         $query = "SELECT setting_value FROM settings WHERE setting_key = :key LIMIT 1";
         $stmt = $db->prepare($query);
-        $stmt->bindParam(':key', $key);
+        $stmt->bindValue(':key', $key);
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ? $row['setting_value'] : null;

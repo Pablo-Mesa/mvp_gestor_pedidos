@@ -1,180 +1,61 @@
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-cash-register me-2"></i>Gestión de Caja</h1>
-            <p class="text-muted">Control de ingresos, egresos y arqueo diario.</p>
-        </div>
-        <?php if (!$activeSession): ?>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalOpenCash">
-                <i class="fas fa-play me-2"></i>Abrir Caja
-            </button>
-        <?php else: ?>
-            <div class="d-flex gap-2">
-                <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalCloseCash">
-                    <i class="fas fa-stop me-2"></i>Cerrar Caja (Arqueo)
-                </button>
-                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalMovement">
-                    <i class="fas fa-plus me-2"></i>Nuevo Movimiento
-                </button>
-            </div>
-        <?php endif; ?>
+    <div class="mb-4">
+        <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-brush me-2"></i>Ajustes de Marca</h1>
+        <p class="text-muted">Personaliza la identidad visual y las funciones legales de tu plataforma.</p>
     </div>
 
-    <?php if ($activeSession): ?>
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card border-left-primary shadow h-100 py-2">
-                    <div class="card-body">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Monto de Apertura</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">Gs. <?php echo number_format($activeSession['opening_balance'], 0, ',', '.'); ?></div>
-                    </div>
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Información General</h6>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-left-success shadow h-100 py-2">
-                    <div class="card-body">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Ingresos</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">Gs. <?php echo number_format($totals['ingress'], 0, ',', '.'); ?></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-left-danger shadow h-100 py-2">
-                    <div class="card-body">
-                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Total Egresos</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">Gs. <?php echo number_format($totals['egress'], 0, ',', '.'); ?></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-left-info shadow h-100 py-2">
-                    <div class="card-body">
-                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Saldo Esperado</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">Gs. <?php echo number_format($activeSession['opening_balance'] + $totals['ingress'] - $totals['egress'], 0, ',', '.'); ?></div>
-                    </div>
+                <div class="card-body">
+                    <form action="?route=settings_update" method="POST" enctype="multipart/form-data">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Nombre del Establecimiento</label>
+                            <input type="text" name="site_name" class="form-control" 
+                                   value="<?= htmlspecialchars($settings['site_name'] ?? 'Solver') ?>" required>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Logotipo de la Marca</label>
+                            <div class="d-flex align-items-center gap-3">
+                                <?php if (!empty($settings['site_logo'])): ?>
+                                    <img src="uploads/<?= $settings['site_logo'] ?>" alt="Logo" class="img-thumbnail" style="height: 60px;">
+                                <?php endif; ?>
+                                <input type="file" name="site_logo" class="form-control" accept="image/*">
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save me-2"></i>Guardar Configuración
+                            </button>
+                            <a href="?route=settings_reset" class="btn btn-link text-muted" onclick="return confirm('¿Restaurar valores por defecto?')">Restaurar</a>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
 
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Movimientos de la Sesión Actual</h6>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Hora</th>
-                                <th>Descripción</th>
-                                <th>Origen</th>
-                                <th>Tipo</th>
-                                <th class="text-end">Monto</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($movements as $m): ?>
-                                <tr>
-                                    <td><?php echo date('H:i', strtotime($m['created_at'])); ?></td>
-                                    <td><?php echo htmlspecialchars($m['description']); ?></td>
-                                    <td><span class="badge bg-light text-dark"><?php echo strtoupper($m['source']); ?></span></td>
-                                    <td>
-                                        <i class="fas <?php echo $m['type'] === 'ingress' ? 'fa-arrow-up text-success' : 'fa-arrow-down text-danger'; ?> me-1"></i>
-                                        <?php echo $m['type'] === 'ingress' ? 'Ingreso' : 'Egreso'; ?>
-                                    </td>
-                                    <td class="text-end font-weight-bold">Gs. <?php echo number_format($m['amount'], 0, ',', '.'); ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+        <div class="col-lg-4 text-center">
+            <div class="card shadow mb-4 text-center">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Vista Previa</h6>
+                </div>
+                <div class="card-body py-4">
+                    <div class="mb-3">
+                        <?php if (!empty($settings['site_logo'])): ?>
+                            <img src="uploads/<?= $settings['site_logo'] ?>" style="height: 100px; object-fit: contain;" alt="Logo">
+                        <?php else: ?>
+                            <img src="assets/icono_solver_nobg.png" style="height: 100px; opacity: 0.3;" alt="Default Logo">
+                        <?php endif; ?>
+                    </div>
+                    <h4 class="fw-bold"><?= htmlspecialchars($settings['site_name'] ?? 'Solver') ?></h4>
+                    <p class="text-muted small">Así se verá tu marca en el portal del cliente.</p>
                 </div>
             </div>
         </div>
-    <?php else: ?>
-        <div class="text-center py-5">
-            <i class="fas fa-lock fa-4x text-gray-300 mb-3"></i>
-            <h3>Caja Cerrada</h3>
-            <p class="text-muted">Debes abrir una sesión de caja para registrar movimientos y ventas en efectivo.</p>
-        </div>
-    <?php endif; ?>
-</div>
-
-<!-- Modal Abrir Caja -->
-<div class="modal fade" id="modalOpenCash" tabindex="-1">
-    <div class="modal-dialog">
-        <form action="?route=cash_open" method="POST" class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Apertura de Caja</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <label class="form-label">Monto Inicial (Gs.)</label>
-                <input type="number" name="opening_balance" class="form-control" placeholder="0" required autofocus>
-                <small class="text-muted">Monto físico disponible en caja al iniciar el turno.</small>
-            </div>
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Modal Movimiento Manual -->
-<div class="modal fade" id="modalMovement" tabindex="-1">
-    <div class="modal-dialog">
-        <form action="?route=cash_movement_store" method="POST" class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Registrar Movimiento</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Tipo</label>
-                    <select name="type" class="form-select" required>
-                        <option value="ingress">Ingreso (Extra)</option>
-                        <option value="egress">Egreso (Gasto/Pago)</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Monto (Gs.)</label>
-                    <input type="number" name="amount" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Descripción</label>
-                    <input type="text" name="description" class="form-control" placeholder="Ej: Pago de hielo, Aporte capital..." required>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-success w-100">Guardar Movimiento</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Modal Arqueo de Cierre -->
-<div class="modal fade" id="modalCloseCash" tabindex="-1">
-    <div class="modal-dialog">
-        <form action="?route=cash_close" method="POST" class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">Cierre de Caja y Arqueo</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" name="ingress_total" value="<?php echo $totals['ingress']; ?>">
-                <input type="hidden" name="egress_total" value="<?php echo $totals['egress']; ?>">
-                
-                <div class="alert alert-info">
-                    El sistema espera que tengas: <br>
-                    <strong>Gs. <?php echo number_format($activeSession['opening_balance'] + $totals['ingress'] - $totals['egress'], 0, ',', '.'); ?></strong>
-                </div>
-                
-                <label class="form-label font-weight-bold">Monto Físico Real (Gs.)</label>
-                <input type="number" name="physical_balance" class="form-control form-control-lg" placeholder="Cuenta el dinero en caja..." required>
-                <small class="text-muted">Si hay diferencia, se registrará como faltante o sobrante.</small>
-            </div>
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-danger w-100">Finalizar Jornada</button>
-            </div>
-        </form>
     </div>
 </div>

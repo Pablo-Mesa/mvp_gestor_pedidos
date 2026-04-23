@@ -43,10 +43,11 @@ colocar un marcador. -->
                         </div>
 
                         <div class="mb-4">
-                            <label class="form-label fw-bold">Dirección Referencial</label>
+                            <label class="form-label fw-bold">Dirección Física del Local</label>
                             <input type="text" name="store_address" class="form-control" 
                                    value="<?php echo htmlspecialchars($settings['store_address'] ?? ''); ?>" 
-                                   placeholder="Ej: Calle 14 de Mayo casi Avda. Principal">
+                                   placeholder="Ej: Calle 14 de Mayo casi Avda. Principal" required>
+                            <small class="text-muted">Esta dirección se utilizará en los banners de ubicación y facturación.</small>
                         </div>
 
                         <div class="pt-3 border-top">

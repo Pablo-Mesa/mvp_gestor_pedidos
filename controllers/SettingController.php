@@ -27,6 +27,14 @@ class SettingController {
         require_once '../views/layouts/admin_layout.php';
     }
 
+    public function checkout() {
+        $model = new Setting();
+        $settings = $model->getAll();
+        
+        $content_view = '../views/admin/settings/checkout.php';
+        require_once '../views/layouts/admin_layout.php';
+    }
+
     public function shortcuts() {
         $content_view = '../views/admin/settings/shortcuts.php';
         require_once '../views/layouts/admin_layout.php';
@@ -126,10 +134,17 @@ class SettingController {
     public function update() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $model = new Setting();
+            $redirectRoute = 'settings';
             
             // Actualizar Nombre
             if (isset($_POST['site_name'])) {
                 $model->update('site_name', $_POST['site_name']);
+            }
+
+            // Actualizar Módulos de Checkout
+            if (isset($_POST['checkout_settings'])) {
+                $model->update('enable_legal_invoice', isset($_POST['enable_legal_invoice']) ? '1' : '0');
+                $redirectRoute = 'settings_checkout';
             }
 
             // Actualizar Tarifas de Delivery
@@ -178,7 +193,7 @@ class SettingController {
                 }
             }
 
-            header('Location: ?route=settings&success=1');
+            header('Location: ?route=' . $redirectRoute . '&success=1');
             exit;
         }
     }

@@ -34,6 +34,26 @@ body.is-compact {
     padding-top: var(--compact-header-height);
 }
 
+/* Ajuste extra cuando el banner de cierre está presente */
+body.is-closed.is-compact {
+    padding-top: 100px; /* Navbar (65px) + Banner (~35px) */
+}
+
+/* Banner de Estado (Cerrado) */
+.status-banner {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 8px 1rem;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border-bottom: 1px solid rgba(133, 100, 4, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
 /* Header Contenedor Fijo (Navbar + Categorías) */
 .fixed-header {
     position: fixed;

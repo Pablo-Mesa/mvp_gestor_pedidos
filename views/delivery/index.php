@@ -80,6 +80,7 @@
     }
     .status-badge-header.completed { background: #c8e6c9; color: #2e7d32; }
     .status-badge-header.shipped { background: #e3f2fd; color: #1976d2; }
+    .status-badge-header.paid { background: #e1d5f2; color: #6f42c1; }
     .status-badge-header.rejected { background: #e0e0e0; color: #616161; }
     .status-badge-header.cancelled { background: #ffcdd2; color: #c62828; }
 
@@ -233,10 +234,10 @@
  */
 function renderOrderCardHTML($order) {
     $phone = preg_replace('/[^0-9]/', '', $order['user_phone'] ?? '');
-    // TEMPORAL: Forzamos a cobrar hasta implementar gestión de Caja
-    $mustCollect = true; 
+    // Se debe cobrar solo si no hay pagos registrados y el estado no es "Pagado"
+    $mustCollect = (intval($order['is_paid'] ?? 0) === 0 && $order['status'] !== 'paid'); 
     // Agregamos 'confirmed' a los colapsados por defecto para mejorar rendimiento y orden
-    $isCollapsed = in_array($order['status'], ['confirmed', 'completed', 'rejected', 'cancelled']) ? 'collapsed' : '';
+    $isCollapsed = in_array($order['status'], ['confirmed', 'paid', 'completed', 'rejected', 'cancelled']) ? 'collapsed' : '';
     
     ob_start(); ?>
     <div class="order-card <?php echo $order['status'] . ' ' . $isCollapsed; ?>" data-status="<?php echo $order['status']; ?>" id="card-<?php echo $order['id']; ?>">
@@ -258,6 +259,8 @@ function renderOrderCardHTML($order) {
                             <span class="status-badge-header rejected"><i class="fas fa-undo"></i> Rechazado</span>
                         <?php elseif($order['status'] === 'cancelled'): ?>
                             <span class="status-badge-header cancelled"><i class="fas fa-times-circle"></i> Cancelado</span>
+                        <?php elseif($order['status'] === 'paid'): ?>
+                            <span class="status-badge-header paid"><i class="fas fa-hand-holding-usd"></i> Pagado</span>
                         <?php elseif($order['status'] === 'confirmed'): ?>
                             <span class="status-badge-header shipped" style="background:#fff3cd; color:#856404;"><i class="fas fa-clock"></i> Asignado</span>
                         <?php elseif($order['status'] === 'shipped'): ?>
@@ -318,7 +321,7 @@ function renderOrderCardHTML($order) {
                 <?php endif; ?>
 
                 <div class="delivery-actions">
-                    <?php if($order['status'] === 'confirmed'): ?>
+                    <?php if($order['status'] === 'confirmed' || $order['status'] === 'paid'): ?>
                         <!-- El pedido está asignado y listo para que el repartidor inicie el viaje -->
                         <button class="btn-logistics btn-start" style="background: #ffc107; color: #000;" onclick="updateOrderStatus(<?php echo $order['id']; ?>, 'shipped')">
                             <i class="fas fa-play"></i> Iniciar Entrega
@@ -457,15 +460,16 @@ function updateOrdersUI(orders) {
  */
 function renderOrderCardJS(order) {
     const phone = (order.user_phone || '').replace(/\D/g, '');
-    // TEMPORAL: Forzamos a cobrar hasta implementar gestión de Caja
-    const mustCollect = true; 
-    const isCollapsed = ['confirmed', 'completed', 'rejected', 'cancelled'].includes(order.status) ? 'collapsed' : '';
+    // El polling actualizará este valor si el administrador registra el pago remotamente
+    const mustCollect = (parseInt(order.is_paid) === 0 && order.status !== 'paid'); 
+    const isCollapsed = ['confirmed', 'paid', 'completed', 'rejected', 'cancelled'].includes(order.status) ? 'collapsed' : '';
     const formattedTotal = new Intl.NumberFormat('es-PY').format(order.total);
     const formattedEarnings = new Intl.NumberFormat('es-PY').format(order.delivery_cost || 0);
     const time = (order.created_at.split(' ')[1] || '').substring(0, 5);
     
     let statusBadge = '';
     if (order.status === 'completed') statusBadge = '<span class="status-badge-header completed"><i class="fas fa-check-circle"></i> Entregado</span>';
+    else if (order.status === 'paid') statusBadge = '<span class="status-badge-header paid"><i class="fas fa-hand-holding-usd"></i> Pagado</span>';
     else if (order.status === 'rejected') statusBadge = '<span class="status-badge-header rejected"><i class="fas fa-undo"></i> Rechazado</span>';
     else if (order.status === 'cancelled') statusBadge = '<span class="status-badge-header cancelled"><i class="fas fa-times-circle"></i> Cancelado</span>';
     else if (order.status === 'confirmed') statusBadge = '<span class="status-badge-header shipped" style="background:#fff3cd; color:#856404;"><i class="fas fa-clock"></i> Asignado</span>';
@@ -515,7 +519,7 @@ function renderOrderCardJS(order) {
                 </div>
                 ${order.delivery_lat ? `<div class="map-wrapper"><div id="map-${order.id}" class="map-preview"></div><a href="https://www.google.com/maps/search/?api=1&query=${order.delivery_lat},${order.delivery_lng}" target="_blank" class="map-overlay-btn"><i class="fas fa-directions"></i> GPS</a></div>` : ''}
                 <div class="delivery-actions">
-                    ${order.status === 'confirmed' ? `<button class="btn-logistics btn-start" style="background: #ffc107; color: #000; cursor: pointer;" onclick="event.stopPropagation(); updateOrderStatus(${order.id}, 'shipped')"><i class="fas fa-play"></i> Iniciar Entrega</button>` : ''}
+                    ${(order.status === 'confirmed' || order.status === 'paid') ? `<button class="btn-logistics btn-start" style="background: #ffc107; color: #000; cursor: pointer;" onclick="event.stopPropagation(); updateOrderStatus(${order.id}, 'shipped')"><i class="fas fa-play"></i> Iniciar Entrega</button>` : ''}
                     ${order.status === 'shipped' ? `
                         <div style="display: flex; flex-direction: column; gap: 10px;">
                             <button class="btn-logistics btn-complete" style="cursor: pointer;" onclick="updateOrderStatus(${order.id}, 'completed')"><i class="fas fa-check-circle"></i> CONFIRMAR ENTREGA</button>

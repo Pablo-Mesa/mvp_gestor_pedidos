@@ -32,6 +32,10 @@
                                     <td>Ir al Punto de Venta (POS)</td>
                                 </tr>
                                 <tr>
+                                    <td><kbd>Alt</kbd> + <kbd>F</kbd></td>
+                                    <td>Abrir modal 'Facturar Pedido'</td>
+                                </tr>
+                                <tr>
                                     <td><kbd>Alt</kbd> + <kbd>C</kbd></td>
                                     <td>Caja y Arqueo Diario</td>
                                 </tr>

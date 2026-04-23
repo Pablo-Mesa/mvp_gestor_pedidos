@@ -17,12 +17,10 @@
                         onclick="prepareCloseModal('<?php echo $activeSession['id']; ?>', '<?php echo $activeSession['cash_station']; ?>', '<?php echo $activeSession['opening_amount'] + $totals['ingress'] - $totals['egress']; ?>')">
                     <i class="fas fa-stop me-2"></i>Cerrar Caja (Arqueo)
                 </button>
-                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalMovement">
-                    <i class="fas fa-plus me-2"></i>Nuevo Movimiento
-                </button>
             <?php endif; ?>
         </div>
-    </div> <!-- /Cierre de d-flex header -->
+    </div>
+    <!-- /Cierre de d-flex header -->
 
     <?php if ($activeSession): ?>
         <div class="row mb-4">
@@ -195,38 +193,6 @@
             </div>
             <div class="modal-footer">
                 <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Modal Movimiento Manual -->
-<div class="modal fade" id="modalMovement" tabindex="-1">
-    <div class="modal-dialog">
-        <form action="?route=cash_movement_store" method="POST" class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Registrar Movimiento</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Tipo</label>
-                    <select name="type" class="form-select" required>
-                        <option value="ingress">Ingreso (Extra)</option>
-                        <option value="egress">Egreso (Gasto/Pago)</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Monto (Gs.)</label>
-                    <input type="number" name="amount" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Descripción</label>
-                    <input type="text" name="description" class="form-control" placeholder="Ej: Pago de hielo, Aporte capital..." required>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-success w-100">Guardar Movimiento</button>
             </div>
         </form>
     </div>

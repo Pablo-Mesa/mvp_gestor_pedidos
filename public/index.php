@@ -329,6 +329,12 @@ switch ($route) {
         $controller->location();
         break;
 
+    case 'settings_checkout':
+        require_once '../controllers/SettingController.php';
+        $controller = new SettingController();
+        $controller->checkout();
+        break;
+
     case 'settings_location_update':
         require_once '../controllers/SettingController.php';
         $controller = new SettingController();
@@ -530,6 +536,12 @@ switch ($route) {
         $controller->resolveMapUrl();
         break;
 
+    case 'admin_client_locations':
+        require_once '../controllers/ClientController.php';
+        $controller = new ClientController();
+        $controller->getLocationsApi();
+        break;
+
     // --- Gestión de Empresa ---
     case 'empresa':
         require_once '../controllers/EmpresaController.php';
@@ -560,6 +572,11 @@ switch ($route) {
         require_once '../controllers/EmpresaController.php';
         $controller = new EmpresaController();
         $controller->delete();
+        break;
+
+    case 'test_limpio':
+        // Servir el archivo HTML refactorizado para pruebas de diseño
+        require_once 'html_en_bruto.html';
         break;
 
     default:

@@ -300,10 +300,12 @@
                 'children' => [
                     ['route' => 'empresa',          'label' => 'Datos de Empresa',     'icon' => 'fas fa-building'],
                     ['route' => 'settings',          'label' => 'Ajustes de Marca',     'icon' => 'fas fa-brush'],
+                    ['route' => 'settings_checkout', 'label' => 'Ajustes de Checkout',  'icon' => 'fas fa-shopping-cart'],
                     ['route' => 'hero_promos',       'label' => 'Hero Promo',           'icon' => 'fas fa-palette'],
                     ['route' => 'settings_location', 'label' => 'Ajustes de Ubicación', 'icon' => 'fas fa-map-marker-alt'],
                     ['route' => 'users',             'label' => 'Staff / Usuarios',     'icon' => 'fas fa-users', 'roles' => ['admin']],
                     ['route' => 'shortcuts',         'label' => 'Atajos de Teclado',    'icon' => 'fas fa-keyboard'],
+                    ['route' => 'test_limpio',       'label' => 'Vista Limpia (Test)',  'icon' => 'fas fa-vial'],
                 ]
             ],
         ];

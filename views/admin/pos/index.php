@@ -238,6 +238,13 @@
     .pos-location-card.selected { border-color: #00b894; background: #f0fdf4; border-width: 2px; }
     .pos-location-card strong { color: #2d3436; display: block; }
     .pos-location-card small { color: #636e72; font-size: 0.7rem; line-height: 1.2; }
+
+    /* Tabla de Clientes en Modal */
+    .pos-client-table { width: 100%; font-size: 0.85rem; border-collapse: collapse; }
+    .pos-client-table th { background: #f8fafc; padding: 10px; border-bottom: 2px solid #e2e8f0; text-align: left; color: #64748b; }
+    .pos-client-table td { padding: 10px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
+    .pos-client-table tr:hover td { background: #f0f7ff; color: #0984e3; }
+    .pos-client-table tr:focus { background: #e0f2fe; outline: 2px solid #0984e3; outline-offset: -2px; }
 </style>
 
 <!-- Vista para el Punto de Venta (POS) -->
@@ -340,6 +347,20 @@
     let selectedClientId = 1; // 1 = Cliente Ocasional por defecto
     let posDeliveryLat = null;
     let posDeliveryLng = null;
+    // Estado persistente para el modal de finalización
+    let posFinalizeState = {
+        clientId: 1,
+        clientName: 'Cliente Ocasional',
+        observation: '',
+        deliveryType: 'local',
+        paymentMethod: 'efectivo',
+        deliveryMode: 'new',
+        lat: null,
+        lng: null,
+        locationUrl: '',
+        newTitle: '',
+        newAddress: ''
+    };
     const totalEl = document.getElementById('posTotal');
     const itemsEl = document.getElementById('ticketItems');
 
@@ -450,13 +471,17 @@
     async function openFinalizeModal(preData = {}) {
         if(posCart.length === 0) return Toast.fire("Agrega productos al ticket", "warning");
 
-        const { 
-            clientId = 1, 
-            clientName = '', 
-            observation = document.getElementById('posObservation').value,
-            deliveryType = 'local',
-            paymentMethod = 'efectivo'
-        } = preData;
+        // Combinar datos entrantes (como cuando vienes de buscar cliente) con el estado persistente
+        if (preData.clientId) posFinalizeState.clientId = preData.clientId;
+        if (preData.clientName) posFinalizeState.clientName = preData.clientName;
+        if (preData.observation !== undefined) posFinalizeState.observation = preData.observation;
+        
+        // Si el estado está vacío (primera vez), tomar nota del campo rápido del POS
+        if (!posFinalizeState.observation) {
+            posFinalizeState.observation = document.getElementById('posObservation').value;
+        }
+
+        const { clientId, clientName, observation, deliveryType, paymentMethod, deliveryMode } = posFinalizeState;
 
         const totalFormatted = totalEl.innerText;
 
@@ -465,42 +490,39 @@
             html: `
                 <div class="text-start" style="font-size: 0.9rem;">
                     <div class="mb-3">
-                        <label class="form-label fw-bold"><i class="fas fa-user"></i> Cliente (Opcional)</label>
+                        <label class="form-label fw-bold"><i class="fas fa-user"></i> Cliente</label>
                         <div class="input-group">
-                            <input type="text" id="swal-client-search" class="form-control form-control-sm" placeholder="Buscar por nombre o tel..." oninput="window.debounceSearchClient()">
-                            <button class="btn btn-dark btn-sm" type="button" onclick="searchClientInModal()" title="Buscar">
-                                <i class="fas fa-search"></i>
+                            <input type="hidden" id="swal-client-id" value="${clientId}">
+                            <input type="text" id="swal-client-name-display" class="form-control form-control-sm bg-light" value="${clientName}" readonly>
+                            <button id="swal-btn-search" class="btn btn-dark btn-sm" type="button" onclick="searchClientListModal()" title="Buscar Cliente (F3)">
+                                <i class="fas fa-search"></i> <small style="font-size: 0.7rem;">[F3]</small>
                             </button>
                             <button class="btn btn-success btn-sm" type="button" onclick="quickCreateClient()" title="Nuevo Cliente (F4)">
                                 <i class="fas fa-user-plus"></i>
                             </button>
                         </div>
-                        <div id="swal-search-feedback" class="text-muted mt-1" style="font-size: 0.7rem; min-height: 1rem;"></div>
-                        <select id="swal-client-id" class="form-select form-select-sm mt-1" onchange="window.loadClientLocations(this.value)">
-                            <option value="1">-- Cliente Ocasional --</option>
-                        </select>
                     </div>
 
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label class="form-label fw-bold"><i class="fas fa-truck"></i> Tipo de Entrega</label>
                             <select id="swal-delivery-type" class="form-select form-select-sm" onchange="window.togglePosDeliveryFields(this.value)">
-                                <option value="local" ${deliveryType === 'local' ? 'selected' : ''}>Consumo Local</option>
-                                <option value="pickup" ${deliveryType === 'pickup' ? 'selected' : ''}>Para Retirar</option>
-                                <option value="delivery" ${deliveryType === 'delivery' ? 'selected' : ''}>Delivery / WhatsApp</option>
+                                <option value="local" ${posFinalizeState.deliveryType === 'local' ? 'selected' : ''}>Consumo Local</option>
+                                <option value="pickup" ${posFinalizeState.deliveryType === 'pickup' ? 'selected' : ''}>Para Retirar</option>
+                                <option value="delivery" ${posFinalizeState.deliveryType === 'delivery' ? 'selected' : ''}>Delivery / WhatsApp</option>
                             </select>
                         </div>
                         <div class="col-6">
                             <label class="form-label fw-bold"><i class="fas fa-wallet"></i> Pago</label>
                             <select id="swal-payment-method" class="form-select form-select-sm">
-                                <option value="efectivo" ${paymentMethod === 'efectivo' ? 'selected' : ''}>Efectivo</option>
-                                <option value="pos" ${paymentMethod === 'pos' ? 'selected' : ''}>Tarjeta / POS</option>
-                                <option value="transferencia" ${paymentMethod === 'transferencia' ? 'selected' : ''}>Transferencia</option>
+                                <option value="efectivo" ${posFinalizeState.paymentMethod === 'efectivo' ? 'selected' : ''}>Efectivo</option>
+                                <option value="pos" ${posFinalizeState.paymentMethod === 'pos' ? 'selected' : ''}>Tarjeta / POS</option>
+                                <option value="transferencia" ${posFinalizeState.paymentMethod === 'transferencia' ? 'selected' : ''}>Transferencia</option>
                             </select>
                         </div>
                     </div>
 
-                    <div id="pos-delivery-extra" style="display: ${deliveryType === 'delivery' ? 'block' : 'none'};">
+                    <div id="pos-delivery-extra" style="display: ${posFinalizeState.deliveryType === 'delivery' ? 'block' : 'none'};">
                         <div class="btn-group w-100 mb-3" role="group">
                             <button type="button" id="btn-mode-saved" class="btn btn-outline-primary btn-sm btn-delivery-mode" style="display:none;" onclick="window.setDeliveryMode('saved')">
                                 <i class="fas fa-list"></i> Lista
@@ -521,10 +543,10 @@
                         <div id="mode-new" class="mb-2">
                             <div class="row g-2 mb-2">
                                 <div class="col-5">
-                                    <input type="text" id="swal-new-loc-title" class="form-control form-control-sm" placeholder="Ej: Casa, Trabajo">
+                                    <input type="text" id="swal-new-loc-title" class="form-control form-control-sm" placeholder="Ej: Casa, Trabajo" value="${posFinalizeState.newTitle}">
                                 </div>
                                 <div class="col-7">
-                                    <input type="text" id="swal-new-loc-address" class="form-control form-control-sm" placeholder="Dirección escrita (Opcional)">
+                                    <input type="text" id="swal-new-loc-address" class="form-control form-control-sm" placeholder="Dirección escrita (Opcional)" value="${posFinalizeState.newAddress}">
                                 </div>
                             </div>
                             <p class="text-primary small mb-1" style="font-size: 0.7rem;"><i class="fas fa-mouse-pointer"></i> Haga clic en el mapa para marcar el punto.</p>
@@ -532,7 +554,7 @@
 
                         <div id="mode-link" class="mb-2" style="display:none;">
                             <label class="form-label fw-bold small text-success"><i class="fas fa-link"></i> Link de WhatsApp o Google Maps</label>
-                            <input type="text" id="swal-location-url" class="form-control form-control-sm" placeholder="Pegue el link recibido aquí..." oninput="window.processLocationUrl(this.value)">
+                            <input type="text" id="swal-location-url" class="form-control form-control-sm" placeholder="Pegue el link recibido aquí..." oninput="window.processLocationUrl(this.value)" value="${posFinalizeState.locationUrl}">
                         </div>
 
                         <div id="swal-pos-map"></div>
@@ -542,7 +564,7 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-bold small">Notas del pedido</label>
-                        <textarea id="swal-observation" class="form-control form-control-sm" rows="2">${observation}</textarea>
+                        <textarea id="swal-observation" class="form-control form-control-sm" rows="2">${posFinalizeState.observation}</textarea>
                     </div>
 
                     <div class="alert alert-success d-flex justify-content-between align-items-center p-2 mb-0">
@@ -557,29 +579,80 @@
             confirmButtonColor: '#00b894',
             focusConfirm: false,
             didOpen: () => {
-                const searchInput = document.getElementById('swal-client-search');
-                searchInput?.focus();
+                const searchBtn = document.getElementById('swal-btn-search');
+                const delivery = document.getElementById('swal-delivery-type');
+                const payment = document.getElementById('swal-payment-method');
+                const observation = document.getElementById('swal-observation');
+                const confirmBtn = Swal.getConfirmButton();
+                const cancelBtn = Swal.getCancelButton();
 
-                // Al presionar Enter, saltar al siguiente campo (Tipo de Entrega)
-                searchInput?.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        document.getElementById('swal-delivery-type')?.focus();
-                    }
+                // Foco inicial
+                searchBtn?.focus();
+
+                // Manejo de Enter para recorrer campos
+                const focusPath = [searchBtn, delivery, payment, observation];
+                focusPath.forEach((el, index) => {
+                    el?.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            // Si es el botón buscar, el Enter nativo abriría el modal, 
+                            // aquí permitimos que el Enter lo mueva al siguiente campo.
+                            e.preventDefault();
+                            const next = focusPath[index + 1] || confirmBtn;
+                            next?.focus();
+                        }
+                    });
                 });
-                
+
+                // Navegación entre botones de Confirmar/Cancelar con flechas
+                const handleButtonNav = (e) => {
+                    if (e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        cancelBtn?.focus();
+                    } else if (e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        confirmBtn?.focus();
+                    }
+                };
+
+                confirmBtn?.addEventListener('keydown', handleButtonNav);
+                cancelBtn?.addEventListener('keydown', handleButtonNav);
+
+                // Cargar coordenadas previas si existen
+                if (posFinalizeState.lat && posFinalizeState.lng) {
+                    document.getElementById('swal-lat').value = posFinalizeState.lat;
+                    document.getElementById('swal-lng').value = posFinalizeState.lng;
+                }
+
                 // Inicialización con un retraso de seguridad para que el DOM esté 100% listo
                 setTimeout(() => {
                     window.initPosMap();
+                    // Si ya teníamos modo y coordenadas, restaurar marcador
+                    if (posFinalizeState.lat && posFinalizeState.lng) {
+                        window.updatePosMapMarker(posFinalizeState.lat, posFinalizeState.lng);
+                    }
+                    // Restaurar modo de delivery visualmente
+                    if (posFinalizeState.deliveryType === 'delivery') {
+                        window.setDeliveryMode(posFinalizeState.deliveryMode);
+                    }
                 }, 100);
 
-                // Si venimos de registrar un cliente nuevo, lo inyectamos manualmente en el select
-                if (clientId != 1 && clientName) {
-                    const select = document.getElementById('swal-client-id');
-                    const newOpt = new Option(clientName, clientId, true, true);
-                    select.add(newOpt);
+                if (clientId != 1) {
                     window.loadClientLocations(clientId);
                 }
+            },
+            willClose: () => {
+                // ESTA ES LA CLAVE: Capturar TODO antes de que el modal desaparezca (incluso si se cancela)
+                const mode = document.querySelector('.btn-delivery-mode.active')?.id.replace('btn-mode-', '') || 'new';
+                
+                posFinalizeState.deliveryType = document.getElementById('swal-delivery-type')?.value || posFinalizeState.deliveryType;
+                posFinalizeState.paymentMethod = document.getElementById('swal-payment-method')?.value || posFinalizeState.paymentMethod;
+                posFinalizeState.observation = document.getElementById('swal-observation')?.value || posFinalizeState.observation;
+                posFinalizeState.deliveryMode = mode;
+                posFinalizeState.lat = document.getElementById('swal-lat')?.value || posFinalizeState.lat;
+                posFinalizeState.lng = document.getElementById('swal-lng')?.value || posFinalizeState.lng;
+                posFinalizeState.newTitle = document.getElementById('swal-new-loc-title')?.value || '';
+                posFinalizeState.newAddress = document.getElementById('swal-new-loc-address')?.value || '';
+                posFinalizeState.locationUrl = document.getElementById('swal-location-url')?.value || '';
             },
             preConfirm: () => {
                 const mode = document.querySelector('.btn-delivery-mode.active')?.id.replace('btn-mode-', '') || 'saved';
@@ -600,7 +673,18 @@
         });
 
         if (formValues) {
+            // Al confirmar, limpiar el estado persistente para la siguiente venta
             submitPOS(formValues);
+            posFinalizeState = {
+                clientId: 1,
+                clientName: 'Cliente Ocasional',
+                observation: '',
+                deliveryType: 'local',
+                paymentMethod: 'efectivo',
+                deliveryMode: 'new',
+                lat: null,
+                lng: null
+            };
         }
     }
 
@@ -816,56 +900,152 @@
     }
 
     /**
-     * Debounce para búsqueda de clientes
+     * Abre modal de búsqueda de clientes en formato lista/tabla
      */
-    let searchTimeout;
-    window.debounceSearchClient = function() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-            searchClientInModal();
-        }, 400); // 400ms de espera tras dejar de escribir
+    window.searchClientListModal = async function() {
+        // Persistir estado actual de los inputs antes de que el modal se cierre
+        posFinalizeState.observation = document.getElementById('swal-observation')?.value || posFinalizeState.observation;
+        posFinalizeState.deliveryType = document.getElementById('swal-delivery-type')?.value || posFinalizeState.deliveryType;
+        posFinalizeState.paymentMethod = document.getElementById('swal-payment-method')?.value || posFinalizeState.paymentMethod;
+
+        window.clientSelectedInList = false;
+
+        await Swal.fire({
+            title: 'Buscar Cliente',
+            width: '650px',
+            html: `
+                <div class="text-start">
+                    <input type="text" id="swal-client-list-search" class="form-control mb-3" placeholder="Nombre, RUC o Teléfono..." oninput="window.debounceSearchClientList()">
+                    <div style="max-height: 350px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px;">
+                        <table class="pos-client-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>RUC/CI</th>
+                                    <th>Teléfono</th>
+                                </tr>
+                            </thead>
+                            <tbody id="swal-client-list-results">
+                                <tr onclick="window.selectClientFromList(1, 'Cliente Ocasional', '')">
+                                    <td colspan="3" class="text-center py-3 text-primary fw-bold italic">-- Seleccionar Cliente Ocasional --</td>
+                                </tr>
+                                <tr><td colspan="3" class="text-center py-4 text-muted small">Escriba para buscar en la base de datos...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            cancelButtonText: 'Volver',
+            showConfirmButton: false,
+            didOpen: () => {
+                const searchInput = document.getElementById('swal-client-list-search');
+                const resultsBody = document.getElementById('swal-client-list-results');
+                
+                searchInput?.focus();
+
+                // Navegación desde el campo de búsqueda
+                searchInput?.addEventListener('keydown', (e) => {
+                    const rows = resultsBody.querySelectorAll('tr.selectable-client');
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (rows.length > 0) rows[0].focus();
+                    } else if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (rows.length === 1) {
+                            rows[0].click(); // Seleccionar si es el único
+                        } else if (rows.length > 1) {
+                            rows[0].focus(); // Bajar a la tabla si hay varios
+                        }
+                    }
+                });
+
+                // Navegación dentro de la tabla (Delegación de eventos)
+                resultsBody?.addEventListener('keydown', (e) => {
+                    const currentRow = e.target.closest('tr.selectable-client');
+                    if (!currentRow) return;
+
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        const next = currentRow.nextElementSibling;
+                        if (next && next.classList.contains('selectable-client')) next.focus();
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        const prev = currentRow.previousElementSibling;
+                        if (prev && prev.classList.contains('selectable-client')) {
+                            prev.focus();
+                        } else {
+                            searchInput.focus(); // Volver al buscador desde la primera fila
+                        }
+                    } else if (e.key === 'Enter') {
+                        currentRow.click();
+                    }
+                });
+
+                // Carga inicial de los 10 primeros clientes
+                window.searchClientListApi();
+            },
+            willClose: () => {
+                // Si se cierra sin seleccionar (clic fuera o cancelar), reabrir el principal con los datos preservados
+                if (!window.clientSelectedInList) {
+                    openFinalizeModal(posFinalizeState);
+                }
+            }
+        });
+    }
+
+    let searchListTimeout;
+    window.debounceSearchClientList = function() {
+        clearTimeout(searchListTimeout);
+        searchListTimeout = setTimeout(() => {
+            searchClientListApi();
+        }, 350);
     };
 
-    /**
-     * Función auxiliar para buscar clientes registrados dentro del modal
-     */
-    window.searchClientInModal = async function() {
-        const termInput = document.getElementById('swal-client-search');
-        const term = termInput ? termInput.value.trim() : '';
-        const feedback = document.getElementById('swal-search-feedback');
-        const select = document.getElementById('swal-client-id');
-        
-        if(term.length < 2) { // Bajamos a 2 caracteres para mayor agilidad
-            if(feedback) feedback.innerText = term.length > 0 ? "Escribe al menos 2 caracteres..." : "";
-            if(select) select.innerHTML = '<option value="1">-- Cliente Ocasional --</option>';
-            return;
-        }
+    window.searchClientListApi = async function() {
+        const term = document.getElementById('swal-client-list-search').value.trim();
+        const tbody = document.getElementById('swal-client-list-results');
 
-        if(feedback) feedback.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Buscando...';
+        // Si el término tiene un solo caracter, no buscamos (esperamos al segundo)
+        // Si está vacío, traemos los primeros 10 por defecto
+        if (term.length === 1) return;
+        
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Buscando...</td></tr>';
 
         try {
-            const resp = await fetch(`?route=admin_clients_search&term=${encodeURIComponent(term)}`);
+            const resp = await fetch(`?route=admin_clients_search&term=${encodeURIComponent(term)}&limit=10&order=name_asc`);
             const clients = await resp.json();
             
-            // Limpiar y poblar el selector de una sola vez
-            let options = '<option value="1">-- Cliente Ocasional --</option>';
-            clients.forEach(c => {
-                options += `<option value="${c.id}">${c.name} (${c.phone || 'Sin tel'})</option>`;
-            });
-            select.innerHTML = options;
+            let html = `<tr class="selectable-client" tabindex="0" onclick="window.selectClientFromList(1, 'Cliente Ocasional', '')">
+                            <td colspan="3" class="text-center py-3 text-primary fw-bold">-- Seleccionar Cliente Ocasional --</td>
+                        </tr>`;
             
-            if(clients.length > 0) {
-                // Seleccionar automáticamente el primer resultado y cargar sus ubicaciones
-                select.value = clients[0].id;
-                if(feedback) feedback.innerHTML = `<span class="text-primary fw-bold small">✅ ${clients.length} encontrados</span>`;
-                window.loadClientLocations(clients[0].id);
+            if (clients.length === 0) {
+                html += '<tr><td colspan="3" class="text-center py-4">Sin resultados</td></tr>';
             } else {
-                if(feedback) feedback.innerText = "❌ No se encontraron coincidencias";
+                clients.forEach(c => {
+                    html += `
+                        <tr class="selectable-client" tabindex="0" onclick="window.selectClientFromList(${c.id}, '${c.name.replace(/'/g, "\\'")}', '${c.phone || ''}')">
+                            <td><strong>${c.name}</strong></td>
+                            <td>${c.billing_ruc || '---'}</td>
+                            <td>${c.phone || '---'}</td>
+                        </tr>
+                    `;
+                });
             }
-        } catch(e) { 
-            console.error(e); 
-            if(feedback) feedback.innerText = "⚠️ Error en la búsqueda";
+            tbody.innerHTML = html;
+        } catch(e) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-danger">Error en búsqueda</td></tr>';
         }
+    }
+
+    window.selectClientFromList = function(id, name, phone) {
+        window.clientSelectedInList = true;
+        posFinalizeState.clientId = id;
+        posFinalizeState.clientName = id == 1 ? 'Cliente Ocasional' : `${name} (${phone || 'S/T'})`;
+        
+        Swal.close();
+        openFinalizeModal(posFinalizeState);
     }
 
     /**
@@ -873,9 +1053,9 @@
      */
     window.quickCreateClient = async function() {
         // Capturar estado actual de los inputs antes de que el modal se cierre
-        const currentObs = document.getElementById('swal-observation')?.value || '';
-        const currentDelivery = document.getElementById('swal-delivery-type')?.value || 'local';
-        const currentPayment = document.getElementById('swal-payment-method')?.value || 'efectivo';
+        posFinalizeState.observation = document.getElementById('swal-observation')?.value || posFinalizeState.observation;
+        posFinalizeState.deliveryType = document.getElementById('swal-delivery-type')?.value || posFinalizeState.deliveryType;
+        posFinalizeState.paymentMethod = document.getElementById('swal-payment-method')?.value || posFinalizeState.paymentMethod;
 
         const result = await Swal.fire({
             title: 'Nuevo Cliente',
@@ -1033,6 +1213,23 @@
             posCart = [];
             document.getElementById('posObservation').value = "";
             renderTicket();
+
+            // Flujo de cobranza: Preguntar si desea registrar el pago ahora
+            Swal.fire({
+                title: '¿Registrar pago?',
+                text: "El pedido se guardó como 'Confirmado'. ¿Desea proceder al cobro y facturación ahora?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#00b894',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, cobrar ahora',
+                cancelButtonText: 'No, cerrar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Redirigir a la vista de finalizar venta y cobro mixtos
+                    window.location.href = `?route=orders_finalize&id=${res.order_id}`;
+                }
+            });
         } else {
             Toast.fire(res.message, "error");
         }
@@ -1045,6 +1242,11 @@
         if (e.key === 'F2') {
             e.preventDefault();
             openFinalizeModal();
+        }
+        // F3 para Buscar Cliente en lista
+        if (e.key === 'F3' || e.code === 'F3') {
+            e.preventDefault();
+            searchClientListModal();
         }
         // F4 para Registrar Nuevo Cliente
         if (e.key === 'F4' || e.code === 'F4') {

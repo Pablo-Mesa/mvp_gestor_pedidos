@@ -1,67 +1,125 @@
 <!DOCTYPE html>
 <?php
-// Calcular la ruta base para que los recursos carguen siempre bien en PC y Móvil
-$baseUrl = str_replace('index.php', '', $_SERVER['SCRIPT_NAME']);
+    // Calcular la ruta base para que los recursos carguen siempre bien en PC y Móvil
+    date_default_timezone_set('America/Asuncion');
 
-// Lógica para obtener categorías disponibles para la navegación
-if (!class_exists('Setting')) {
-    $path = 'models/Setting.php';
-    if (file_exists($path)) require_once $path;
-    elseif (file_exists('../' . $path)) require_once '../' . $path;
-}
-if (!class_exists('Category')) {
-    // Intentar cargar el modelo si no está cargado
-    $path = 'models/Category.php';
-    if (file_exists($path)) require_once $path;
-    elseif (file_exists('../' . $path)) require_once '../' . $path;
-}
-if (!class_exists('Product')) {
-    $path = 'models/Product.php';
-    if (file_exists($path)) require_once $path;
-    elseif (file_exists('../' . $path)) require_once '../' . $path;
-}
+    $baseUrl = str_replace('index.php', '', $_SERVER['SCRIPT_NAME']);
 
-$navCategories = [];
-if (class_exists('Category') && class_exists('Product')) {
-    $catModel = new Category();
-    $prodModel = new Product();
-    $clientId = $_SESSION['client_id'] ?? null;
+    // Lógica para obtener categorías disponibles para la navegación
+    if (!class_exists('Setting')) {
+        $path = 'models/Setting.php';
+        if (file_exists($path)) require_once $path;
+        elseif (file_exists('../' . $path)) require_once '../' . $path;
+    }
+    if (!class_exists('Category')) {
+        // Intentar cargar el modelo si no está cargado
+        $path = 'models/Category.php';
+        if (file_exists($path)) require_once $path;
+        elseif (file_exists('../' . $path)) require_once '../' . $path;
+    }
+    if (!class_exists('Product')) {
+        $path = 'models/Product.php';
+        if (file_exists($path)) require_once $path;
+        elseif (file_exists('../' . $path)) require_once '../' . $path;
+    }
+    if (!class_exists('HeroPromo')) {
+        $path = 'models/HeroPromo.php';
+        if (file_exists($path)) require_once $path;
+        elseif (file_exists('../' . $path)) require_once '../' . $path;
+    }
+    $navCategories = [];
+    if (class_exists('Category') && class_exists('Product')) {
+        $catModel = new Category();
+        $prodModel = new Product();
+        $clientId = $_SESSION['client_id'] ?? null;
 
-    // Obtenemos todas las categorías y los productos activos para validar
-    $allCategories = $catModel->readAll()->fetchAll(PDO::FETCH_ASSOC);
-    $activeProds = $prodModel->readAllActive($clientId)->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Extraemos los IDs de categorías que tienen al menos un producto activo
-    $activeCategoryIds = array_unique(array_column($activeProds, 'category_id'));
+        // Obtenemos todas las categorías y los productos activos para validar
+        $allCategories = $catModel->readAll()->fetchAll(PDO::FETCH_ASSOC);
+        $activeProds = $prodModel->readAllActive($clientId)->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Extraemos los IDs de categorías que tienen al menos un producto activo
+        $activeCategoryIds = array_unique(array_column($activeProds, 'category_id'));
 
-    // Filtramos la lista: Solo incluimos categorías con contenido disponible y excluimos "Almuerzos"
-    $navCategories = array_filter($allCategories, function($cat) use ($activeCategoryIds) {
-        $isAlmuerzo = (stripos($cat['name'], 'almuerzo') !== false);
-        return in_array($cat['id'], $activeCategoryIds) && !$isAlmuerzo;
-    });
-}
+        // Filtramos la lista: Solo incluimos categorías con contenido disponible y excluimos "Almuerzos"
+        $navCategories = array_filter($allCategories, function($cat) use ($activeCategoryIds) {
+            $isAlmuerzo = (stripos($cat['name'], 'almuerzo') !== false);
+            return in_array($cat['id'], $activeCategoryIds) && !$isAlmuerzo;
+        });
+    }
+    // Lógica de Horario de Apertura
+    $isStoreOpen = true; // Por defecto abierto si no hay configuración de horarios
+    $nextOpeningMsg = ""; // Mensaje para el banner de cierre
+    if (class_exists('HeroPromo')) {
+        $heroModel = new HeroPromo();
+        $promos = $heroModel->readActive();
+        foreach ($promos as $promo) {
+            if ($promo['type'] === 'hours') {
+                $schedule = $promo['content'];
+                // Decodificación robusta para el layout
+                for ($i = 0; $i < 3; $i++) {
+                    if (!is_string($schedule)) break;
+                    $decoded = json_decode($schedule, true);
+                    if (json_last_error() !== JSON_ERROR_NONE) break;
+                    $schedule = $decoded;
+                }
 
-// Detectar si estamos en la Home para mostrar categorías
-$currentRoute = $_GET['route'] ?? 'home';
-$showCategories = ($currentRoute === 'home');
+                if (is_array($schedule) && !empty($schedule)) {
+                    $dayNum = (int)date('w'); // 0 (Dom) a 6 (Sab)
+                    $now = date('H:i');
+                    $today = $schedule[$dayNum] ?? null;
 
-// Cargar Ajustes de Identidad (Siempre disponible)
-$settingModel = new Setting();
-$siteSettings = $settingModel->getAll();
-$siteName = !empty($siteSettings['site_name']) ? $siteSettings['site_name'] : 'Solver';
-$siteLogo = !empty($siteSettings['site_logo']) ? $baseUrl . 'uploads/' . $siteSettings['site_logo'] : $baseUrl . 'assets/icono_solver_nobg.png';
+                    // Verificar si está abierto hoy
+                    if ($today && isset($today['closed']) && $today['closed']) {
+                        $isStoreOpen = false;
+                    } elseif ($today) {
+                        $isStoreOpen = ($now >= ($today['open'] ?? '00:00') && $now <= ($today['close'] ?? '23:59'));
+                    }
+
+                    // Si está cerrado, buscar la próxima apertura
+                    if (!$isStoreOpen) {
+                        $daysES = [0 => 'Domingo', 1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado'];
+                        for ($i = 0; $i < 7; $i++) {
+                            $checkIndex = ($dayNum + $i) % 7;
+                            $sched = $schedule[$checkIndex] ?? null;
+
+                            if ($sched && (!isset($sched['closed']) || !$sched['closed'])) {
+                                // Si es hoy pero ya cerró, saltar al siguiente día en el ciclo
+                                if ($i === 0 && $now > ($sched['close'] ?? '23:59')) continue;
+
+                                $time = $sched['open'] ?? '00:00';
+                                if ($i === 0) $nextOpeningMsg = "Abrimos hoy a las $time";
+                                elseif ($i === 1) $nextOpeningMsg = "Abrimos mañana a las $time";
+                                else $nextOpeningMsg = "Abrimos el " . $daysES[$checkIndex] . " a las $time";
+                                break;
+                            }
+                        }
+                    }
+                }
+                break; // Solo procesamos el primer bloque de horarios encontrado
+            }
+        }
+    }
+
+    // Detectar si estamos en la Home para mostrar categorías
+    $currentRoute = $_GET['route'] ?? 'home';
+    $showCategories = ($currentRoute === 'home' && $isStoreOpen);
+
+    // Cargar Ajustes de Identidad (Siempre disponible)
+    $settingModel = new Setting();
+    $siteSettings = $settingModel->getAll();
+    $siteName = !empty($siteSettings['site_name']) ? $siteSettings['site_name'] : 'Solver';
+    $siteLogo = !empty($siteSettings['site_logo']) ? $baseUrl . 'uploads/' . $siteSettings['site_logo'] : $baseUrl . 'assets/icono_solver_nobg.png';
 ?>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>Solver - Home</title>
+    <title><?php echo htmlspecialchars($siteName); ?> - Home</title>
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#2d3436">
     <link rel="manifest" href="<?php echo $baseUrl; ?>manifest.json">
-    <link rel="apple-touch-icon" href="<?php echo $baseUrl; ?>assets/icono_solver_nobg.png">
-    <link rel="icon" type="image/png" href="<?php echo $baseUrl; ?>assets/icono_solver_nobg.png">    
+    <link rel="apple-touch-icon" href="<?php echo $siteLogo; ?>">
+    <link rel="icon" type="image/png" href="<?php echo $siteLogo; ?>">    
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/css_cubo.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/client_layout.css">   
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/toast.css"> <!-- Estilos de Alertas -->
@@ -69,10 +127,16 @@ $siteLogo = !empty($siteSettings['site_logo']) ? $baseUrl . 'uploads/' . $siteSe
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
-<body class="<?php echo !$showCategories ? 'is-compact' : ''; ?>">
+<body class="<?php echo !$showCategories ? 'is-compact' : ''; ?> <?php echo !$isStoreOpen ? 'is-closed' : ''; ?>">
 
     <!-- Header fijo que agrupa Navbar y Categorías -->
     <header class="fixed-header">
+
+        <?php if (!$isStoreOpen && !empty($nextOpeningMsg)): ?>
+            <div class="status-banner">
+                <i class="fas fa-clock"></i> Local Cerrado. <?php echo $nextOpeningMsg; ?>
+            </div>
+        <?php endif;?>
         
         <div class="header-content">
 
@@ -170,6 +234,40 @@ $siteLogo = !empty($siteSettings['site_logo']) ? $baseUrl . 'uploads/' . $siteSe
             <?php endif; ?>
         </div>
     </header>
+
+    <!-- Header -->
+   <header class="fixed-header" style="display: none;">
+    <!-- Este header se oculta en móviles para dar paso a una versión más compacta -->
+    <?php if (!$isStoreOpen && !empty($nextOpeningMsg)): ?>
+        <div class="status-banner">
+            <i class="fas fa-clock"></i> Local Cerrado. <?php echo $nextOpeningMsg; ?>
+        </div>
+    <?php endif;?>
+    <div class="header-content">
+        <button class="md:hidden text-bark" onclick="toggleMobileNav()">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+        <a href="#" onclick="navigateTo('home');return false" class="font-display text-xl sm:text-2xl text-spice" id="brand-name">Vianda Express</a>
+        <nav class="hidden md:flex items-center gap-6 text-sm" id="desktop-nav">
+            <a href="#" class="nav-link active" onclick="navigateTo('home');return false">Inicio</a>
+            <a href="#" class="nav-link" onclick="navigateTo('menu');return false">Menú</a>
+            <a href="#" class="nav-link" onclick="navigateTo('history');return false">Pedidos</a>
+            <a href="#" class="nav-link" onclick="navigateTo('addresses');return false">Direcciones</a>
+            <a href="#" class="nav-link" onclick="navigateTo('billing');return false">Facturación</a>
+        </nav>
+     <div class="flex items-center gap-3">
+        <button onclick="toggleCart()" class="relative p-2 hover:bg-sand/50 rounded-xl transition">
+            <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+            <span id="cart-badge" class="absolute -top-0.5 -right-0.5 bg-spice text-white rounded-full badge items-center justify-center font-bold hidden"></span>
+        </button>
+        <button onclick="openAuth('login')" class="hidden sm:flex items-center gap-1.5 text-sm font-medium hover:text-spice transition" id="auth-btn">
+            <i data-lucide="user" class="w-4 h-4">                
+            </i>
+            <span>Ingresar</span>
+        </button>
+     </div>
+    </div>
+   </header>
     
     <!-- Overlay y Sidebar del Carrito -->
     <div class="cart-overlay" onclick="toggleCart()"></div>
@@ -339,6 +437,7 @@ $siteLogo = !empty($siteSettings['site_logo']) ? $baseUrl . 'uploads/' . $siteSe
             console.warn('Solver PWA: La instalación no funcionará en móviles sin HTTPS.');
         }
     </script>
+
     <script>
         const isUserLoggedIn = <?php echo isset($_SESSION['client_id']) ? 'true' : 'false'; ?>;
 
@@ -548,5 +647,6 @@ $siteLogo = !empty($siteSettings['site_logo']) ? $baseUrl . 'uploads/' . $siteSe
             }
         });
     </script>
+
 </body>
 </html>

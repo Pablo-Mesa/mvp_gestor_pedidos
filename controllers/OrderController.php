@@ -565,6 +565,11 @@ class OrderController {
             exit;
         }
 
+        // Cargar configuraciones para validar si la facturación está permitida
+        $settingModel = new Setting();
+        $siteSettings = $settingModel->getAll();
+        $enableInvoice = $siteSettings['enable_legal_invoice'] ?? '1';
+
         // Crear Orden
         $order = new Order();
         $order->user_id = null; // Web no tiene usuario de staff
@@ -576,11 +581,12 @@ class OrderController {
         $order->observation = $input['observation'] ?? ''; // Guardamos la observación
         
         // Capturar datos de facturación
-        $order->billing_name = $input['billing_name'] ?? null;
-        $order->billing_ruc = $input['billing_ruc'] ?? null;
+        // Solo si la opción global está activa en configuraciones
+        $order->billing_name = ($enableInvoice == '1') ? ($input['billing_name'] ?? null) : null;
+        $order->billing_ruc = ($enableInvoice == '1') ? ($input['billing_ruc'] ?? null) : null;
 
         // Si se enviaron datos de facturación, actualizamos el perfil del cliente "de paso"
-        if (!empty($order->billing_name) && !empty($order->billing_ruc)) {
+        if ($enableInvoice == '1' && !empty($order->billing_name) && !empty($order->billing_ruc)) {
             // Solo actualizamos si son diferentes a lo que ya tenemos en sesión para ahorrar recursos
             if ($order->billing_name !== ($_SESSION['client_billing_name'] ?? '') || 
                 $order->billing_ruc !== ($_SESSION['client_billing_ruc'] ?? '')) {
@@ -712,14 +718,13 @@ class OrderController {
         $order->total = $total + $deliveryCost;
 
         if ($order->create()) {
-            // Al ser Venta Directa, formalizamos la venta y el pago inmediatamente
+            // El pedido queda en estado "Confirmado" por defecto para permitir flujo posterior
             $order->user_id = $_SESSION['user_id'];
-            $order->finalizeSale();
 
             echo json_encode([
                 'success' => true, 
                 'order_id' => $order->id,
-                'message' => 'Venta registrada correctamente'
+                'message' => 'Pedido registrado correctamente'
             ]);
         } else {
             echo json_encode(['success' => false, 'message' => $order->error]);

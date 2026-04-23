@@ -300,7 +300,7 @@ $localPlaceholder = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22
 
     /* Compensación automática: Cuando el hero colapsa, aumentamos el margen del grid 
        para que la primera fila sea totalmente visible bajo el header fijo */
-    .hero-promo.collapsed + .product-grid {
+    .hero-promo.collapsed ~ .product-grid {
         margin-top: 4.5rem;
     }
 
@@ -365,7 +365,14 @@ $localPlaceholder = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22
     }
 
     .info-content h3 { color: #fff; margin-bottom: 10px; font-family: 'Segoe UI', sans-serif; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-    .info-content p { font-size: 0.9rem; color: #eee; }
+    .info-content p { 
+        font-size: 0.82rem; 
+        color: rgba(255,255,255,0.95); 
+        line-height: 1.4;
+        font-weight: 500;
+        letter-spacing: -0.2px;
+        margin: 0;
+    }
     .info-content ul { list-style: none; padding: 0; }
     .info-content li { margin: 8px 0; font-size: 0.9rem; color: rgba(255,255,255,0.9); }
     .info-content li strong { color: #d4a373; }
@@ -421,14 +428,25 @@ $localPlaceholder = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22
                                 </p>
                                 <div style="color: #ffa502; font-size: 0.7rem;">
                                     <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                                </div>
+                                </div>                                
                             </div>
                         <?php else: ?>
-                            <p><?php echo nl2br(htmlspecialchars($promo['content'])); ?></p>
+                            <p>
+                                <?php if (isset($promo['is_formatted']) && $promo['is_formatted']): ?>
+                                    <?php echo $promo['content']; // Aquí sale el texto lindo formateado ?>
+                                <?php else: ?>
+                                    <?php 
+                                        $cleanContent = trim($promo['content']);
+                                        // Si empieza con { es un JSON que no se procesó, no lo mostramos
+                                        if (strpos($cleanContent, '{') === 0) echo "Información no disponible.";
+                                        else echo nl2br(htmlspecialchars($cleanContent));
+                                    ?>
+                                <?php endif; ?>                                
+                            </p>
                         <?php endif; ?>
                         
-                        <?php if($promo['type'] === 'hours' || $promo['type'] === 'location'): ?>
-                            <span class="badge">¡Te esperamos!</span>
+                        <?php if(in_array(strtolower($promo['type']), ['hours', 'horarios', 'location', 'ubicacion'])): ?>
+                            <span class="badge">¡Te esperamos!</span>                            
                         <?php endif; ?>
                     </div>
                 </div>
@@ -436,6 +454,7 @@ $localPlaceholder = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22
             </div>
         </div>
     </div>
+
     <!-- Grid de Productos -->
     <div class="product-grid">
         <?php if(empty($menu_items)): ?>

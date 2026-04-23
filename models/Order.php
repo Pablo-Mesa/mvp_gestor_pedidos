@@ -127,7 +127,8 @@ class Order {
 
         $query = "SELECT o.*, c.name as user_name, c.phone as user_phone, ch.name as channel_name, ch.icon as channel_icon, 
                          s.address_snapshot as delivery_address, s.lat_snapshot as delivery_lat, s.lng_snapshot as delivery_lng, 
-                         s.delivery_user_id, d.name as delivery_name, drd.price as delivery_cost, drd.km_from, drd.km_to
+                         s.delivery_user_id, d.name as delivery_name, drd.price as delivery_cost, drd.km_from, drd.km_to,
+                         (SELECT COUNT(*) FROM pagos p JOIN pos_ventas_cabecera v ON p.venta_id = v.id WHERE v.order_id = o.id) as is_paid
                   FROM " . $this->table . " o
                   LEFT JOIN clients c ON o.client_id = c.id 
                   LEFT JOIN order_channels ch ON o.channel_id = ch.id
@@ -225,7 +226,8 @@ class Order {
     public function readOne() {
         $query = "SELECT o.*, c.name as user_name, c.email as user_email, c.phone as user_phone,
                          s.address_snapshot as delivery_address, s.lat_snapshot as delivery_lat, s.lng_snapshot as delivery_lng,
-                         s.delivery_user_id, st.name as staff_name, drd.price as delivery_cost
+                         s.delivery_user_id, st.name as staff_name, drd.price as delivery_cost,
+                         (SELECT COUNT(*) FROM pagos p JOIN pos_ventas_cabecera v ON p.venta_id = v.id WHERE v.order_id = o.id) as is_paid
                   FROM " . $this->table . " o
                   JOIN clients c ON o.client_id = c.id
                   LEFT JOIN order_shipments s ON o.id = s.order_id
@@ -328,12 +330,12 @@ class Order {
      * Se consideran pedidos confirmados, en cocina o enviados.
      */
     public function getOrdersAwaitingInvoice() {
-        $query = "SELECT o.id, o.created_at, o.total, o.delivery_type, c.name as client_name 
+        $query = "SELECT o.id, o.created_at, o.total, o.delivery_type, IFNULL(c.name, 'Cliente Ocasional') as client_name 
                   FROM " . $this->table . " o
-                  JOIN clients c ON o.client_id = c.id
+                  LEFT JOIN clients c ON o.client_id = c.id
                   LEFT JOIN pos_ventas_cabecera v ON o.id = v.order_id
                   WHERE v.id IS NULL 
-                  AND o.status IN ('confirmed', 'shipped', 'completed')
+                  AND o.status IN ('pending', 'confirmed', 'shipped', 'completed')
                   ORDER BY o.created_at ASC";
         
         $stmt = $this->conn->prepare($query);
@@ -460,8 +462,14 @@ class Order {
                 }
             }
 
-            // 7. Actualizar el pedido a completado
-            $this->status = 'completed';
+            // 7. Actualizar el estado: Si es delivery y no se ha entregado aún, queda como "paid"
+            // para que logística sepa que debe despacharlo. Si es local/retiro, se completa.
+            $orderData = $this->readOne();
+            if ($orderData['delivery_type'] === 'delivery' && !in_array($orderData['status'], ['completed', 'shipped'])) {
+                $this->status = 'paid';
+            } else {
+                $this->status = 'completed';
+            }
             $this->updateStatus();
 
             if (!$isNested) $this->conn->commit();

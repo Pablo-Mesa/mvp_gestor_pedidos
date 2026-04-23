@@ -35,6 +35,15 @@ class HeroPromoController {
             $id = $_POST['id'];
             $model = new HeroPromo();
 
+            // Validación: No permitir guardar JSON inválido en tipos 'hours'
+            if (trim($_POST['type'] ?? '') === 'hours') {
+                $test = json_decode($_POST['content'], true);
+                if (json_last_error() !== JSON_ERROR_NONE || !is_array($test)) {
+                    header('Location: ?route=hero_promos_edit&id=' . $id . '&error=invalid_json');
+                    exit;
+                }
+            }
+
             $data = [
                 'title' => $_POST['title'],
                 'content' => $_POST['content'],

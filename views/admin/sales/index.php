@@ -11,8 +11,8 @@ $pendingInvoices = $orderModel->getOrdersAwaitingInvoice();
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-file-invoice-dollar me-2"></i>Facturación / Tickets</h1>
         <div class="d-flex gap-2">
-            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalPendingOrders">
-                <i class="fas fa-plus-circle me-1"></i> Facturar Pedido
+            <button type="button" class="btn btn-success" id="btn-open-facturar" data-bs-toggle="modal" data-bs-target="#modalPendingOrders">
+                <i class="fas fa-plus-circle me-1"></i> Facturar Pedido <small style="font-size: 0.7rem; opacity: 0.8;">[Alt + F]</small>
             </button>
             <form action="index.php" method="GET" class="d-flex gap-2">
             <input type="hidden" name="route" value="sales_history">
@@ -109,9 +109,9 @@ $pendingInvoices = $orderModel->getOrdersAwaitingInvoice();
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
+                <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                    <table class="table table-hover mb-0" style="border-collapse: separate; border-spacing: 0;">
+                        <thead class="table-light sticky-top" style="top: 0; z-index: 10; background-color: #f8f9fa !important; box-shadow: 0 2px 2px -1px rgba(0,0,0,0.1);">
                             <tr>
                                 <th class="ps-3">Pedido</th>
                                 <th>Cliente</th>
@@ -135,7 +135,7 @@ $pendingInvoices = $orderModel->getOrdersAwaitingInvoice();
                                         <input type="hidden" name="route" value="orders_finalize">
                                         <input type="hidden" name="id" value="<?php echo $p['id']; ?>">
                                         <input type="hidden" name="quick" value="1">
-                                        <button type="submit" class="btn btn-sm btn-primary">Generar Factura/Ticket</button>
+                                        <button type="submit" class="btn btn-sm btn-primary btn-generate-ticket">Generar Factura/Ticket</button>
                                     </form>
                                 </td>
                             </tr>
@@ -160,4 +160,43 @@ function viewSaleDetail(id) {
         Toast.fire("El detalle ampliado se habilitará en el módulo de facturación legal avanzada.", "info");
     }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const modalPending = document.getElementById('modalPendingOrders');
+    if (!modalPending) return;
+
+    // Al abrir el modal, enfocar el primer botón disponible para flujo rápido
+    modalPending.addEventListener('shown.bs.modal', function () {
+        const firstBtn = modalPending.querySelector('.btn-generate-ticket');
+        if (firstBtn) firstBtn.focus();
+    });
+
+    // Navegación por teclado dentro del modal (Flechas Arriba/Abajo)
+    modalPending.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            const btns = Array.from(modalPending.querySelectorAll('.btn-generate-ticket'));
+            if (btns.length === 0) return;
+
+            e.preventDefault();
+            const currentIndex = btns.indexOf(document.activeElement);
+            let nextIndex;
+
+            if (e.key === 'ArrowDown') {
+                nextIndex = (currentIndex + 1) % btns.length;
+            } else {
+                nextIndex = (currentIndex - 1 + btns.length) % btns.length;
+            }
+            btns[nextIndex].focus();
+        }
+    });
+
+    // Atajo global Alt + F para abrir el modal de Facturar Pedido
+    document.addEventListener('keydown', function(e) {
+        if (e.altKey && e.key.toLowerCase() === 'f') {
+            e.preventDefault();
+            const btn = document.getElementById('btn-open-facturar');
+            if (btn) btn.click();
+        }
+    });
+});
 </script>

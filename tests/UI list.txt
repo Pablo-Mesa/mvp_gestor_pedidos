@@ -1,0 +1,32 @@
+LISTA DE INTERFACES DE USUARIO (UI) - PROYECTO SOLVER
+=====================================================
+
+ADMINISTRACIÓN (Staff/Admin)
+1. Dashboard: Resumen operativo diario/mensual con gráficas.
+2. POS (Punto de Venta): Interfaz para toma de pedidos presenciales.
+3. Listado de Pedidos: Gestión de órdenes, filtros y asignación de delivery.
+4. Detalle de Pedido: Vista técnica completa de un pedido específico.
+5. Interfaz de Cobro (Finalize): Gestión de pagos mixtos y cierre de venta.
+6. Historial de Ventas: Registro de facturas emitidas y tickets.
+7. Reporte de Pagos (Caja): Auditoría de ingresos por método de pago.
+8. Gestión de Menús: Planificación del menú del día y control de stock.
+9. Gestión de Productos: Catálogo de platos, precios y fotos.
+10. Gestión de Categorías: Clasificación de productos.
+11. Asistencias Repartidores: Supervisión global de entradas de logística.
+
+CLIENTE (Web/PWA)
+12. Menú Principal (Home): Catálogo público, Hero Promos y reacciones.
+13. Checkout: Selección de entrega, mapa de ubicación y facturación.
+14. Confirmación de Pedido: Pantalla de éxito post-compra.
+15. Mis Pedidos: Historial personal del comensal.
+16. Mis Direcciones: Agenda de ubicaciones guardadas en el mapa.
+17. Datos de Facturación: Gestión de RUC y Razón Social del perfil.
+
+LOGÍSTICA (Delivery App)
+18. Panel de Repartidor: Hoja de ruta y gestión de estados (En camino/Entregado).
+19. Historial de Entregas: Resumen de cobros a rendir.
+20. Marcado de Llegada: Registro de asistencia vía geolocalización.
+
+FORMATOS DE IMPRESIÓN (Tickets)
+21. Ticket de Comanda: Formato de 80mm/58mm para preparación en cocina.
+22. Ticket de Venta: Comprobante interno para el cliente.

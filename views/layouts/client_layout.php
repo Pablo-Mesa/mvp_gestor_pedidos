@@ -142,33 +142,34 @@
 
             <!-- Barra Superior -->
             <nav class="navbar">
+                <!-- Lado Izquierdo: Usuario / Hamburguesa -->
+                <div class="user-menu">
+                    <?php if(isset($_SESSION['client_id'])): ?>                                                
+                        <button class="btn-std" onclick="toggleUserSidebar()" title="Menú de usuario">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                    <?php else: ?>
+                        <button id="openModal" class="btn-std">
+                            <i class="far fa-user"></i>
+                        </button>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Al medio: Título -->
                 <div class="container-logo-title">
                     <a href="?route=home" class="brand-link">
                         <img src="<?php echo $siteLogo; ?>" alt="Logo" class="brand-logo">
                         <span class="brand-text"><?php echo htmlspecialchars($siteName); ?></span>
                     </a>
-                </div>        
-                
-                <div class="container-control-nav">
-                    <!-- Botón del Carrito -->
+                </div>
+
+                <!-- Lado Derecho: Carrito -->
+                <div class="cart-menu">
                     <button class="btn-std" onclick="toggleCart()">
                         <i class="fas fa-shopping-cart"></i>
                         <span class="badge-count" id="cart-count" style="display: none;">0</span>
                     </button>
-
-                    <!-- Botón de Usuario / Hamburguesa -->
-                    <div class="user-menu">
-                        <?php if(isset($_SESSION['client_id'])): ?>                                                
-                            <button class="btn-std" onclick="toggleUserSidebar()" title="Menú de usuario">
-                                <i class="fas fa-bars"></i>
-                            </button>
-                        <?php else: ?>
-                            <button id="openModal" class="btn-std">
-                                <i class="far fa-user"></i>
-                            </button>
-                        <?php endif; ?>
-                    </div>
-                </div>              
+                </div>
             </nav>
             
             <!-- Lista de Categorías -->

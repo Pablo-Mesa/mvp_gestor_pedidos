@@ -177,23 +177,24 @@
 
     .actions-grid {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 15px;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
     }
 
     .action-btn {
         background: white;
-        border: 1px solid #dfe6e9;
-        padding: 20px;
-        border-radius: 12px;
+        border: 1px solid #e9ecef;
+        padding: 12px 15px;
+        border-radius: 10px;
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
         text-decoration: none;
-        color: #2d3436;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        color: #495057;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        text-align: left;
     }
 
     @keyframes fadeIn {
@@ -201,13 +202,18 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    .action-btn i { font-size: 1.5rem; color: #0984e3; }
-    .action-btn span { font-weight: 500; font-size: 0.95rem; }
+    .action-btn i { 
+        font-size: 1.1rem; 
+        color: #0984e3; 
+        width: 20px;
+        text-align: center;
+    }
+    .action-btn span { font-weight: 600; font-size: 0.85rem; line-height: 1.2; }
 
     .action-btn:hover {
         border-color: #0984e3;
-        background: #f0f7ff;
-        transform: translateY(-3px);
+        background: #f8fbff;
+        transform: translateX(4px);
     }
 
     @media (max-width: 768px) {
@@ -320,6 +326,14 @@
                 <a href="?route=orders" class="action-btn">
                     <i class="fas fa-list-ul"></i>
                     <span>Ver Pedidos <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + O]</small></span>
+                </a>
+                <a href="?route=sales_history" class="action-btn">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <span>Facturación / Tickets</span>
+                </a>
+                <a href="?route=payments_report" class="action-btn">
+                    <i class="fas fa-money-check-alt"></i>
+                    <span>Pagos Recibidos</span>
                 </a>
                 <a href="?route=menus" class="action-btn">
                     <i class="fas fa-calendar-alt"></i>

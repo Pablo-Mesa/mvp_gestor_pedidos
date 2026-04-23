@@ -86,13 +86,21 @@ body.is-closed.is-compact {
 }
 
 .container-logo-title {
-    flex: 1;
+    flex: 2;
     display: flex;
-    justify-content: flex-start;
+    justify-content: center;
     align-items: center;
-    min-width: 120px;
     background-color: transparent;
 }
+
+.user-menu, .cart-menu {
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.user-menu { justify-content: flex-start; }
+.cart-menu { justify-content: flex-end; }
 
 .brand-link {
     display: flex;
@@ -112,12 +120,9 @@ body.is-closed.is-compact {
     font-size: 1.25rem;
     color: #2d3436;
     letter-spacing: -0.5px;
-}
-
-.container-control-nav {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Botones y Utilidades */
@@ -422,21 +427,28 @@ body.is-closed.is-compact {
     
     .navbar {
         padding: 0.5rem 0rem;
-        flex-direction: row; /* Mantenemos una sola fila para el logo y acciones */
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: 1fr 2fr 1fr;
+        align-items: center;
+        width: 100%;
     }
 
     .container-logo-title {
-        width: auto !important;
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 0 5px;
     }
 
-    .container-control-nav {
-        width: auto !important;
-        gap: 8px !important;
+    .brand-logo {
+        display: none; /* Centramos mejor el texto ocultando el logo en móvil */
     }
 
-    .user-menu {
-        gap: 4px !important;
+    .brand-text {
+        font-size: 1.1rem;
+    }
+
+    .user-menu, .cart-menu {
+        flex: none;
     }
 
     .span-user {

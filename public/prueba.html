@@ -6,61 +6,107 @@
     <title>Menú del Día | Restaurante</title>
     <link rel="stylesheet" href="prueba.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- Iconos para la sección de ubicación -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .location-section {
+            margin-top: 3rem;
+            padding: 2rem;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border: 1px solid #eee;
+            width: 100%;
+            box-sizing: border-box;
+
+        }
+        .map-container {
+            width: 100%;
+            height: 350px;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-top: 1.5rem;
+            border: 1px solid #eee;
+        }
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        /* Ajuste para el contenedor de la prueba */
+        .status-card-container { max-width: 800px; margin: 0 auto; padding: 20px; }
+
+    </style>
 </head>
 <body>
 
-    <main class="container">
-        <section class="content">
-            <header>
-                <h1 class="title-main">Menú <span class="accent-text">del día</span></h1>
-                <p class="schedule">Disponible de 11 a.m. a 2 p.m.</p>
-            </header>
+<div class="status-card-container">
+    <div class="status-card">
+        <div class="card-deco">
+            <span class="icon-olive">🌿</span> 
+        </div>
 
-            <div class="menu-items">
-                <div class="category">
-                    <h3>Sopa</h3>
-                    <div class="pill">Lentejas rancheras</div>
-                </div>
+        <div class="card-content">
+            <h2 class="status-day">DOMINGO 29</h2>
+            <p class="status-hours">ABIERTO de 19 a 00hs</p>
+            
+            <hr class="status-divider">
+            
+            <address class="status-address">
+                Calle Cualquiera 123,<br>
+                Cualquier Lugar
+            </address>
 
-                <div class="category">
-                    <h3>Proteína</h3>
-                    <div class="pill">Carne o Pollo</div>
-                </div>
-
-                <div class="category">
-                    <h3>Acompañante</h3>
-                    <div class="pill">Arroz con fideos</div>
-                </div>
-
-                <div class="category">
-                    <h3>Principio</h3>
-                    <div class="pill">Frijoles o Pasta</div>
+            <div class="status-reservation">
+                RESERVAS: 1234-5678
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sección de Ubicación (Referencia de Diseño) -->
+    <div class="location-section">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
+            <div style="flex: 1; min-width: 280px;">
+                <h3 style="font-weight: 800; color: #2d3436; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-map-marker-alt" style="color: #ff4757;"></i> ¿Cómo llegar?
+                </h3>
+                <p style="color: #636e72; font-size: 0.95rem; line-height: 1.6;">
+                    Estamos ubicados en el corazón de la ciudad. <br>
+                    <strong>Calle Falsa 123, Asunción, Paraguay.</strong>
+                </p>
+                <div style="margin-top: 1rem; display: flex; gap: 10px;">
+                    <span style="background: #f1f2f6; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; color: #2d3436; font-weight: 600;"><i class="fas fa-parking"></i> Estacionamiento gratuito</span>
                 </div>
             </div>
-
-            <footer class="actions">
-                <a href="tel:3162123456" class="btn-delivery">Solicitar Delivery</a>
-                <div class="contact-info">
-                    <p>Pedidos:</p>
-                    <span class="phone">✆ (316) 212-3456</span>
-                </div>
-            </footer>
-        </section>
-
-        <section class="visual">
-            <div class="image-grid">
-                <div class="img-box img1">
-                    <img src="assets/pastas.jpg" alt="Pastas">
-                </div>
-                <div class="img-box img2">
-                    <img src="assets/pollos.jpg" alt="Pollos">
-                </div>
-                <div class="img-box img3">
-                    <img src="assets/ensaladas.jpg" alt="Ensaladas">
-                </div>
+            <div style="text-align: right; min-width: 200px;">
+                <a href="https://maps.google.com" target="_blank" class="btn-primary" style="background: #2d3436; color: white; border: none; text-decoration: none; font-size: 0.8rem;">
+                    Abrir en Google Maps <i class="fas fa-external-link-alt"></i>
+                </a>
             </div>
-        </section>
-    </main>
+        </div>
+
+        <div class="map-container">
+            <!-- Iframe de referencia (Ubicación genérica en Asunción) -->
+            <iframe 
+                width="100%" 
+                height="100%" 
+                frameborder="0" 
+                style="border:0; filter: grayscale(0.2) contrast(1.1);" 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3606.505000000000!2d-57.6359!3d-25.3006!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjXCsDE4JzAyLjIiUyA1N8KwMzgnMDkuMiJX!5e0!3m2!1ses!2spy!4v1620000000000!5m2!1ses!2spy" 
+                allowfullscreen>
+            </iframe>
+        </div>
+    </div>
+
+</div>
 
 </body>
 </html>

@@ -139,6 +139,11 @@ class OrderController {
             $order['channel_icon'] = htmlspecialchars($order['channel_icon'] ?? 'fas fa-globe');
             $order['formatted_date'] = date('d/m/Y H:i', strtotime($order['created_at']));
             $order['formatted_total'] = number_format($order['total'], 0, ',', '.');
+            
+            // Integridad de pago: Es pagado solo si el monto en la tabla 'pagos' cubre el total de la orden
+            $totalPaid = (float)($order['total_paid'] ?? 0);
+            $order['is_paid'] = ($totalPaid >= (float)$order['total']) ? 1 : 0;
+            $order['has_invoice'] = (int)($order['has_invoice'] ?? 0) > 0 ? 1 : 0;
         }
 
         echo json_encode($orders);
@@ -306,13 +311,33 @@ class OrderController {
 
             // Si el pedido se completa, formalizar la Venta y el Pago (Segunda Propuesta)
             if ($success && $_POST['status'] === 'completed') {
+                $payment_confirm = $_POST['payment_confirm'] ?? 'order_method';
+                $orderData = $order->readOne();
+                
+                $payData = [];
+                if ($payment_confirm === 'none') {
+                    // Caso: Entregado sin cobrar (Autorizado). No registramos pago, queda como deuda.
+                    $payData = null; 
+                } elseif ($payment_confirm === 'cash') {
+                    $payData = [['metodo' => 'efectivo', 'monto' => $orderData['total'], 'referencia' => 'Cobrado por Delivery']];
+                } elseif ($payment_confirm === 'digital') {
+                    $payData = [['metodo' => 'transferencia', 'monto' => $orderData['total'], 'referencia' => 'Verificado por Delivery']];
+                } else {
+                    // Por defecto: Usar el método que ya tenía el pedido
+                    $payData = [[
+                        'metodo' => $orderData['payment_method'],
+                        'monto' => $orderData['total'],
+                        'referencia' => 'Pago automático en entrega'
+                    ]];
+                }
+
                 // Intentamos obtener sesión de caja para el cierre automático
                 $cashModel = new CashRegister();
                 $activeSession = $cashModel->getActiveSession($_SESSION['user_id']);
                 
                 // En el cierre automático, si no hay caja abierta, finalizeSale lanzará error o se puede manejar
                 $registerId = $activeSession ? $activeSession['id'] : null;
-                $order->finalizeSale([], $registerId);
+                $order->finalizeSale($payData, $registerId);
             }
 
             // Si es una petición AJAX (como al imprimir), respondemos JSON

@@ -335,6 +335,17 @@ switch ($route) {
         $controller->checkout();
         break;
 
+    case 'settings_contact':
+        require_once '../controllers/SettingController.php';
+        $controller = new SettingController();
+        $controller->contactSettings();
+        break;
+    case 'save_contact_settings':
+        require_once '../controllers/SettingController.php';
+        $controller = new SettingController();
+        $controller->saveContactSettings();
+        break;
+
     case 'settings_location_update':
         require_once '../controllers/SettingController.php';
         $controller = new SettingController();

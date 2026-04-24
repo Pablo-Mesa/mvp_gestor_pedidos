@@ -82,7 +82,29 @@ function showToast(message, color){
 //FIN showToast
 
 /* card */
-function card(donde, ruta_imagen, descripcion, precio, codigo){
+/**
+ * Versión optimizada de creación de tarjetas usando Template Literals
+ */
+function card(donde, ruta_imagen, descripcion, precio, codigo) {
+    const tarjetero = document.getElementById(donde);
+    if (!tarjetero) return;
+
+    const html = `
+        <div class="menu-card-basic">
+            <div class="item-imagen">
+                <img src="${ruta_imagen}" alt="${descripcion}">
+            </div>
+            <h3>${descripcion}</h3>
+            <div class="contenedor-control">
+                <div><span>Gs. ${new Intl.NumberFormat('es-PY').format(precio)}</span></div>
+                <button onclick="addToCart('${codigo}', '${descripcion}', ${precio}, '${ruta_imagen}', 1)">
+                    Agregar
+                </button>
+            </div>
+        </div>`;
+    
+    tarjetero.insertAdjacentHTML('beforeend', html);
+}
     
     //obtener referencia del elemento contenedor de las tarjetas
     const tarjetero = document.getElementById(donde);

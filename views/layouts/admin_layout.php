@@ -299,6 +299,7 @@
                 'id' => 'menuSettings',
                 'children' => [
                     ['route' => 'empresa',          'label' => 'Datos de Empresa',     'icon' => 'fas fa-building'],
+                    ['route' => 'settings_contact',  'label' => 'Canales de Contacto',  'icon' => 'fas fa-phone-volume'],
                     ['route' => 'settings',          'label' => 'Ajustes de Marca',     'icon' => 'fas fa-brush'],
                     ['route' => 'settings_checkout', 'label' => 'Ajustes de Checkout',  'icon' => 'fas fa-shopping-cart'],
                     ['route' => 'hero_promos',       'label' => 'Hero Promo',           'icon' => 'fas fa-palette'],

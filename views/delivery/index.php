@@ -234,8 +234,10 @@
  */
 function renderOrderCardHTML($order) {
     $phone = preg_replace('/[^0-9]/', '', $order['user_phone'] ?? '');
-    // Se debe cobrar solo si no hay pagos registrados y el estado no es "Pagado"
-    $mustCollect = (intval($order['is_paid'] ?? 0) === 0 && $order['status'] !== 'paid'); 
+    // Integridad: El cobro depende estrictamente del registro contable (is_paid)
+    $mustCollect = (intval($order['is_paid'] ?? 0) === 0); 
+    $hasInvoice = (intval($order['has_invoice'] ?? 0) > 0);
+
     // Agregamos 'confirmed' a los colapsados por defecto para mejorar rendimiento y orden
     $isCollapsed = in_array($order['status'], ['confirmed', 'paid', 'completed', 'rejected', 'cancelled']) ? 'collapsed' : '';
     
@@ -282,6 +284,11 @@ function renderOrderCardHTML($order) {
                 <div class="payment-summary">
                     <div class="payment-row">
                         <span class="payment-label">Método: <?php echo htmlspecialchars($order['payment_method'] ?? 'No especificado'); ?></span>
+                        <?php if($hasInvoice): ?>
+                            <span class="badge-payment" style="background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; margin-right: 5px;" title="Factura/Ticket emitido">
+                                <i class="fas fa-file-invoice"></i> Ticket Listo
+                            </span>
+                        <?php endif; ?>
                         <span class="badge-payment <?php echo $mustCollect ? 'bg-collect' : 'bg-paid'; ?>">
                             <?php echo $mustCollect ? 'A Cobrar' : 'Ya Pagado'; ?>
                         </span>
@@ -460,8 +467,10 @@ function updateOrdersUI(orders) {
  */
 function renderOrderCardJS(order) {
     const phone = (order.user_phone || '').replace(/\D/g, '');
-    // El polling actualizará este valor si el administrador registra el pago remotamente
-    const mustCollect = (parseInt(order.is_paid) === 0 && order.status !== 'paid'); 
+    // El cobro ahora es estrictamente financiero (basado en sumatoria de la tabla pagos)
+    const mustCollect = (parseInt(order.is_paid) === 0); 
+    const hasInvoice = (parseInt(order.has_invoice) > 0);
+
     const isCollapsed = ['confirmed', 'paid', 'completed', 'rejected', 'cancelled'].includes(order.status) ? 'collapsed' : '';
     const formattedTotal = new Intl.NumberFormat('es-PY').format(order.total);
     const formattedEarnings = new Intl.NumberFormat('es-PY').format(order.delivery_cost || 0);
@@ -497,6 +506,10 @@ function renderOrderCardJS(order) {
                 <div class="payment-summary">
                     <div class="payment-row">
                         <span class="payment-label">Método: ${order.payment_method}</span>
+                        ${hasInvoice ? `
+                            <span class="badge-payment" style="background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; margin-right: 5px;">
+                                <i class="fas fa-file-invoice"></i> Ticket Listo
+                            </span>` : ''}
                         <span class="badge-payment ${mustCollect ? 'bg-collect' : 'bg-paid'}">${mustCollect ? 'A Cobrar' : 'Ya Pagado'}</span>
                     </div>
                     <div class="payment-row" style="margin-top: 5px;">
@@ -569,7 +582,13 @@ function initMapForOrder(order) {
 }
 
 // Iniciar polling inteligente cada 15 segundos
-setInterval(refreshDeliveryOrders, 15000);
+
+// Polling inteligente: Solo si la pestaña está visible
+setInterval(() => {
+    if (!document.hidden) {
+        refreshDeliveryOrders();
+    }
+}, 15000);
 
 // Carga inicial de mapas (solo para los que arrancan expandidos)
 document.addEventListener('DOMContentLoaded', () => {
@@ -651,13 +670,44 @@ function sendWA(phone, text) {
 /**
  * Actualiza el estado del pedido vía AJAX
  */
-function updateOrderStatus(orderId, newStatus) {
+async function updateOrderStatus(orderId, newStatus) {
+    const order = currentOrdersData.find(o => String(o.id) === String(orderId));
+    let paymentConfirm = 'order_method';
+
+    // Si el pedido se va a completar y no está pagado, preguntamos cómo se cobró
+    if (newStatus === 'completed' && parseInt(order.is_paid) === 0) {
+        const { value: selection } = await Swal.fire({
+            title: 'Confirmar Cobro',
+            text: `El pedido #${orderId} figura "A Cobrar". ¿Cómo recibiste el pago?`,
+            icon: 'dollar-sign',
+            showCancelButton: true,
+            confirmButtonColor: '#00c853',
+            cancelButtonText: 'Cancelar',
+            html: `
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                    <button onclick="Swal.clickConfirm()" data-val="cash" class="btn-logistics" style="background:#2d3436; color:white; padding:15px; font-size:0.9rem;">💵 COBRÉ EN EFECTIVO</button>
+                    <button onclick="Swal.clickConfirm()" data-val="digital" class="btn-logistics" style="background:#0984e3; color:white; padding:15px; font-size:0.9rem;">📱 PAGO DIGITAL (QR/TRANSF)</button>
+                    <button onclick="Swal.clickConfirm()" data-val="none" class="btn-logistics" style="background:#eee; color:#666; padding:15px; font-size:0.8rem; box-shadow:none; border:1px solid #ddd;">🤝 ENTREGAR SIN COBRAR (AUTORIZADO)</button>
+                </div>
+            `,
+            showConfirmButton: false,
+            didOpen: () => {
+                const btns = Swal.getHtmlContainer().querySelectorAll('button');
+                btns.forEach(b => b.addEventListener('click', () => {
+                    paymentConfirm = b.getAttribute('data-val');
+                }));
+            }
+        });
+
+        if (selection === undefined && !paymentConfirm) return; // El usuario canceló el modal
+    } else {
+        // Flujo estándar de confirmación para otros estados
     let confirmText = '¿Confirmas esta acción?';
     if (newStatus === 'completed') confirmText = '¿Confirmas que el pedido fue ENTREGADO con éxito?';
     if (newStatus === 'rejected') confirmText = '¿El cliente rechazó el pedido?';
     if (newStatus === 'cancelled') confirmText = '¿Deseas CANCELAR esta entrega por algún inconveniente?';
     
-    Swal.fire({
+        const result = await Swal.fire({
         title: 'Gestión de Pedido',
         text: confirmText,
         icon: 'question',
@@ -665,11 +715,15 @@ function updateOrderStatus(orderId, newStatus) {
         confirmButtonColor: newStatus === 'completed' ? '#00e676' : '#636e72',
         cancelButtonColor: '#d33',
         confirmButtonText: 'Sí, proceder'
-    }).then((result) => {
-        if (result.isConfirmed) {
+        });
+        if (!result.isConfirmed) return;
+    }
+
+    // Proceder con el envío de datos
             const formData = new FormData();
             formData.append('id', orderId);
             formData.append('status', newStatus);
+    formData.append('payment_confirm', paymentConfirm);
 
             fetch('?route=orders_update_status', {
                 method: 'POST',
@@ -693,7 +747,5 @@ function updateOrderStatus(orderId, newStatus) {
                 });
                 }
             });
-        }
-    });
 }
 </script>

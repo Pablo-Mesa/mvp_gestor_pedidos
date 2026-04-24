@@ -40,10 +40,9 @@
         // Extraemos los IDs de categorías que tienen al menos un producto activo
         $activeCategoryIds = array_unique(array_column($activeProds, 'category_id'));
 
-        // Filtramos la lista: Solo incluimos categorías con contenido disponible y excluimos "Almuerzos"
+        // Filtramos la lista: Solo incluimos categorías con contenido disponible
         $navCategories = array_filter($allCategories, function($cat) use ($activeCategoryIds) {
-            $isAlmuerzo = (stripos($cat['name'], 'almuerzo') !== false);
-            return in_array($cat['id'], $activeCategoryIds) && !$isAlmuerzo;
+            return in_array($cat['id'], $activeCategoryIds);
         });
     }
     // Lógica de Horario de Apertura
@@ -102,7 +101,7 @@
 
     // Detectar si estamos en la Home para mostrar categorías
     $currentRoute = $_GET['route'] ?? 'home';
-    $showCategories = ($currentRoute === 'home' && $isStoreOpen);
+    $showCategories = ($currentRoute === 'home' && isset($_SESSION['client_id']));
 
     // Cargar Ajustes de Identidad (Siempre disponible)
     $settingModel = new Setting();
@@ -164,7 +163,7 @@
                 </div>
 
                 <!-- Lado Derecho: Carrito -->
-                <div class="cart-menu">
+                <div class="cart-menu" style="display: none;">
                     <button class="btn-std" onclick="toggleCart()">
                         <i class="fas fa-shopping-cart"></i>
                         <span class="badge-count" id="cart-count" style="display: none;">0</span>
@@ -175,7 +174,15 @@
             <!-- Lista de Categorías -->
             <?php if ($showCategories): ?>            
             <div class="scroll-container">
-                <a href="?route=home" class="category-btn <?php echo !isset($_GET['category_id']) ? 'active' : ''; ?>">🏠 Menú del Día</a>
+                <?php 
+                    // Verificamos si el menú del día está vacío para activar la lógica de ocultación
+                    $isDailyMenuEmpty = empty($daily_menus);
+                    $isHomeNoFilter = !isset($_GET['category_id']);
+                ?>
+
+                <?php if (!$isDailyMenuEmpty): ?>
+                    <a href="?route=home" class="category-btn <?php echo $isHomeNoFilter ? 'active' : ''; ?>">🏠 Menú del Día</a>
+                <?php endif; ?>
                 
                 <?php foreach($navCategories as $cat): ?>
                     <?php 
@@ -184,7 +191,16 @@
                         if (stripos($cat['name'], 'postre') !== false) $emoji = '🍦';
                         if (stripos($cat['name'], 'desayuno') !== false) $emoji = '☕';
                         if (stripos($cat['name'], 'minuta') !== false || stripos($cat['name'], 'hamburguesa') !== false) $emoji = '🍔';
-                        $isActive = (isset($_GET['category_id']) && $_GET['category_id'] == $cat['id']) ? 'active' : '';
+                        
+                        // Lógica de estado activo:
+                        // 1. Si la categoría coincide con el ID del GET.
+                        // 2. O si estamos en el Home sin filtro y el menú está vacío (Fallback), marcamos "Almuerzos" como activo.
+                        $isActive = '';
+                        if (isset($_GET['category_id']) && $_GET['category_id'] == $cat['id']) {
+                            $isActive = 'active';
+                        } elseif ($isHomeNoFilter && $isDailyMenuEmpty && stripos($cat['name'], 'almuerzo') !== false) {
+                            $isActive = 'active';
+                        }
                     ?>
                     <a href="?route=home&category_id=<?php echo $cat['id']; ?>" class="category-btn <?php echo $isActive; ?>">
                         <?php echo $emoji . ' ' . htmlspecialchars($cat['name']); ?>
@@ -244,6 +260,7 @@
             <i class="fas fa-clock"></i> Local Cerrado. <?php echo $nextOpeningMsg; ?>
         </div>
     <?php endif;?>
+
     <div class="header-content">
         <button class="md:hidden text-bark" onclick="toggleMobileNav()">
             <i data-lucide="menu" class="w-6 h-6"></i>
@@ -256,17 +273,17 @@
             <a href="#" class="nav-link" onclick="navigateTo('addresses');return false">Direcciones</a>
             <a href="#" class="nav-link" onclick="navigateTo('billing');return false">Facturación</a>
         </nav>
-     <div class="flex items-center gap-3">
-        <button onclick="toggleCart()" class="relative p-2 hover:bg-sand/50 rounded-xl transition">
-            <i data-lucide="shopping-bag" class="w-5 h-5"></i>
-            <span id="cart-badge" class="absolute -top-0.5 -right-0.5 bg-spice text-white rounded-full badge items-center justify-center font-bold hidden"></span>
-        </button>
-        <button onclick="openAuth('login')" class="hidden sm:flex items-center gap-1.5 text-sm font-medium hover:text-spice transition" id="auth-btn">
-            <i data-lucide="user" class="w-4 h-4">                
-            </i>
-            <span>Ingresar</span>
-        </button>
-     </div>
+        <div class="flex items-center gap-3">
+            <button onclick="toggleCart()" class="relative p-2 hover:bg-sand/50 rounded-xl transition">
+                <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+                <span id="cart-badge" class="absolute -top-0.5 -right-0.5 bg-spice text-white rounded-full badge items-center justify-center font-bold hidden"></span>
+            </button>
+            <button onclick="openAuth('login')" class="hidden sm:flex items-center gap-1.5 text-sm font-medium hover:text-spice transition" id="auth-btn">
+                <i data-lucide="user" class="w-4 h-4">                
+                </i>
+                <span>Ingresar</span>
+            </button>
+        </div>
     </div>
    </header>
     
@@ -333,12 +350,6 @@
                     <button type="submit" class="btn-main">Iniciar Sesión</button>
                 </form>
                 
-                <div style="text-align: center; margin-top: 1rem; border-top: 1px solid #eee; padding-top: 1rem;">
-                    <a href="?route=login" style="font-size: 0.8rem; color: #888; text-decoration: none;">
-                        <i class="fas fa-id-badge"></i> Acceso para Repartidores y Staff
-                    </a>
-                </div>
-
                 <!-- Formulario de Registro -->
                 <form id="registerForm" class="auth-form" action="?route=client_register" method="POST">
                     <!-- Campo oculto para redirección -->
@@ -508,6 +519,12 @@
             const badge = document.getElementById('cart-count');
             badge.innerText = count;
             badge.style.display = count > 0 ? 'block' : 'none';
+            
+            // Comportamiento inteligente: Mostrar el icono del carrito solo si tiene productos
+            const cartMenu = document.querySelector('.cart-menu');
+            if (cartMenu) {
+                cartMenu.style.display = count > 0 ? 'flex' : 'none';
+            }
 
             // Actualizar Lista Visual
             const container = document.getElementById('cart-items-container');

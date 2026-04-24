@@ -26,6 +26,18 @@ class Setting {
     }
 
     /**
+     * Obtiene un valor específico por su clave (Instancia)
+     */
+    public function get($key) {
+        $query = "SELECT setting_value FROM " . $this->table . " WHERE setting_key = :key LIMIT 1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindValue(':key', $key);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ? $row['setting_value'] : null;
+    }
+
+    /**
      * Actualiza o crea un ajuste
      */
     public function update($key, $value) {

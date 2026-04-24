@@ -41,12 +41,38 @@ if ($filter_category_id) {
 } else {
     // Si no hay filtro, usamos la variable $daily_menus que viene del controlador
     $menu_items = isset($daily_menus) ? $daily_menus : [];
-}
 
-// Preparamos las promociones para el Hero (se necesita aquí arriba para el cálculo del CSS)
-$promosList = !empty($promos) ? $promos : [
-    ['type' => 'offer', 'title' => 'Bienvenido', 'content' => 'Explora nuestro menú del día.', 'css_class' => 'ambient', 'image' => '']
-];
+    // Fallback: Si el menú del día está vacío, mostramos automáticamente la categoría "Almuerzos"
+    if (empty($menu_items)) {
+        if (!class_exists('Product')) {
+            $path = 'models/Product.php';
+            if (file_exists($path)) require_once $path;
+            elseif (file_exists('../' . $path)) require_once '../' . $path;
+        }
+        $prodModel = new Product();
+        $fallback_prods = $prodModel->readAllActive($clientId)->fetchAll(PDO::FETCH_ASSOC);
+        
+        foreach($fallback_prods as $p) {
+            if (stripos($p['category_name'] ?? '', 'almuerzo') !== false) {
+                $menu_items[] = [
+                    'id' => $p['id'],
+                    'product_id' => $p['id'],
+                    'product_name' => $p['name'],
+                    'product_price' => $p['price'],
+                    'price_half' => $p['price_half'],
+                    'image' => $p['image'],
+                    'category_name' => $p['category_name'] ?? 'Almuerzos',
+                    'fav_count' => $p['fav_count'] ?? 0,
+                    'likes_count' => $p['likes_count'] ?? 0,
+                    'reviews_count' => $p['reviews_count'] ?? 0,
+                    'is_favorite' => $p['is_favorite'] ?? false,
+                    'is_liked' => $p['is_liked'] ?? false
+                ];
+            }
+        }
+        if (!empty($menu_items)) $view_title = "Almuerzos Disponibles";
+    }
+}
 ?>
 <?php // Definimos el placeholder globalmente para evitar errores de variable indefinida
 $localPlaceholder = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22%20height%3D%22300%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23eee%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%23aaa%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20dy%3D%22.3em%22%20text-anchor%3D%22middle%22%3ESin%20Imagen%3C%2Ftext%3E%3C%2Fsvg%3E"; ?>
@@ -244,273 +270,106 @@ $localPlaceholder = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22
         cursor: pointer; display: flex; align-items: center; gap: 4px; color: #555;
     }
 
-    :root {
-    --slide-width: 280px;
-    --slide-height: 180px; /* Altura reducida a menos de la mitad */
-    --gap: 15px;
-    }
-
-    .hero-promo {
-    /* Break-out para ocupar todo el ancho de la pantalla ignorando el .container */
-    width: 100vw;
-    position: relative;
-    left: 50%;
-    right: 50%;
-    margin-left: -50vw;
-    margin-right: -50vw;
-    margin-top: 0; 
-    margin-bottom: 0;    
-    overflow: hidden;
-    background: linear-gradient(135deg, #1a1a1a 0%, #2d3436 100%); /* Fondo oscuro para resaltar el cristal */
-    padding: 10px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    
-    /* Efecto de transición para el colapso */
-    transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease, margin 0.5s ease, transform 0.5s ease;
-    max-height: 400px; 
-    opacity: 1;
-    transform: scaleY(1);
-    transform-origin: top;
-
-    /* Aseguramos que el Hero esté en una capa inferior al Header */
-    position: relative; 
-    z-index: 5; /* Menor que el header (1100) */
-    }
-
-    /* Clase que se activará al hacer scroll */
-    .hero-promo.collapsed {
-        max-height: 0 !important;
-        opacity: 0;
-        transform: scaleY(0);
-        margin-top: 0; /* Eliminamos el margen negativo para evitar que succione el grid hacia arriba */
-        margin-bottom: 0;
-        padding: 0;
-        pointer-events: none; /* Evita interacciones mientras está oculto */
-        border: none;
-    }
-
     /* Ajuste para la cuadrícula de productos para que no se pegue al header */
     .product-grid {
-        margin-top: 2rem; 
+        margin-top: 1rem; 
         padding-top: 10px;
         transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
         z-index: 1;
     }
+</style>    
 
-    /* Compensación automática: Cuando el hero colapsa, aumentamos el margen del grid 
-       para que la primera fila sea totalmente visible bajo el header fijo */
-    .hero-promo.collapsed ~ .product-grid {
-        margin-top: 4.5rem;
-    }
+<?php if (!isset($_SESSION['client_id'])): ?>
+    <!-- VISTA PARA USUARIOS NO LOGUEADOS (GUESTS) -->
+    <?php $contactChannels = !empty($siteSettings['contact_channels']) ? json_decode($siteSettings['contact_channels'], true) : []; ?>
+    <div class="guest-container" style="padding: 2rem 0;">
+        
+        <?php if ($isStoreOpen): ?>
+            <!-- CASO: LOCAL ABIERTO - Banners Promocionales (Espacio para tu nuevo diseño) -->
+            <div class="promo-banners-placeholder" style="text-align: center; padding: 3rem; background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 24px; border: 2px dashed #ccc;">
+                <i class="fas fa-ad" style="font-size: 3rem; color: #0984e3; margin-bottom: 1.5rem;"></i>
+                <h2 style="font-weight: 800; color: #2d3436; margin-bottom: 1rem;">¡Bienvenido a <?php echo htmlspecialchars($siteName); ?>!</h2>
+                <p style="color: #636e72; margin-bottom: 2rem;">Inicia sesión para descubrir nuestras ofertas exclusivas y realizar tu pedido.</p>
+                
+                <!-- Aquí puedes empezar a diseñar tus banners -->
+                <div style="display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none;">
+                    <div style="min-width: 280px; height: 150px; background: #fff; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; font-weight: bold; color: #aaa;">Placeholder Banner 1</div>
+                    <div style="min-width: 280px; height: 150px; background: #fff; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; font-weight: bold; color: #aaa;">Placeholder Banner 2</div>
+                </div>
+            </div>
 
-    .carousel-container {
-    display: flex;
-    width: 100%;
-    }
-
-    .carousel-track {
-    display: flex;
-    gap: var(--gap);
-    /* El ancho total del grupo original (4 slides * 400px + gaps) */
-    animation: scroll 40s linear infinite;
-    }
-
-    .carousel-track:hover {
-    animation-play-state: paused; /* Pausa al pasar el mouse */
-    }
-
-    @keyframes scroll {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(calc(-1 * (var(--slide-width) + var(--gap)) * <?php echo count($promosList); ?>)); }
-    }
-
-    .slide {
-    flex: 0 0 var(--slide-width);
-    height: var(--slide-height);
-    border-radius: 12px;
-    position: relative;
-    overflow: hidden;
-    background-size: cover;
-    background-position: center;
-    transition: transform 0.3s ease;
-    }
-
-    /* Imágenes de ejemplo locales (Data URI) para evitar 404s y errores de red */
-    .ambient { background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22600%22%20height%3D%22400%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23333%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%23555%22%20font-family%3D%22sans-serif%22%20font-size%3D%2224%22%20dy%3D%22.3em%22%20text-anchor%3D%22middle%22%3EAmbiente%3C%2Ftext%3E%3C%2Fsvg%3E'); }
-    .food-1 { background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22600%22%20height%3D%22400%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23333%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%23555%22%20font-family%3D%22sans-serif%22%20font-size%3D%2224%22%20dy%3D%22.3em%22%20text-anchor%3D%22middle%22%3EPlato%20D%C3%ADa%3C%2Ftext%3E%3C%2Fsvg%3E'); }
-    .process { background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22600%22%20height%3D%22400%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23333%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%23555%22%20font-family%3D%22sans-serif%22%20font-size%3D%2224%22%20dy%3D%22.3em%22%20text-anchor%3D%22middle%22%3EProceso%3C%2Ftext%3E%3C%2Fsvg%3E'); }
-
-    .info-card {
-    background: rgba(255, 255, 255, 0.1); /* Fondo semi-transparente */
-    backdrop-filter: blur(12px); /* Efecto de cristal esmerilado */
-    -webkit-backdrop-filter: blur(12px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: #fff;
-    padding: 15px;
-    border: 1px solid rgba(255, 255, 255, 0.2); /* Borde sutil como el de tus botones */
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-    }
-
-    .overlay {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    padding: 20px;
-    background: linear-gradient(transparent, rgba(0,0,0,0.8));
-    color: white;
-    }
-
-    .info-content h3 { color: #fff; margin-bottom: 10px; font-family: 'Segoe UI', sans-serif; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-    .info-content p { 
-        font-size: 0.82rem; 
-        color: rgba(255,255,255,0.95); 
-        line-height: 1.4;
-        font-weight: 500;
-        letter-spacing: -0.2px;
-        margin: 0;
-    }
-    .info-content ul { list-style: none; padding: 0; }
-    .info-content li { margin: 8px 0; font-size: 0.9rem; color: rgba(255,255,255,0.9); }
-    .info-content li strong { color: #d4a373; }
-
-    /* Estilos para los pasos de "Cómo funciona" */
-    .steps-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-        margin-top: 10px;
-        gap: 10px;
-    }
-    .step-box { text-align: center; flex: 1; }
-    .step-box i { display: block; font-size: 1.4rem; color: #d4a373; margin-bottom: 4px; }
-    .step-box span { font-size: 0.65rem; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; color: #fff; }
-    .step-sep { color: rgba(255,255,255,0.3); font-size: 0.8rem; }
-
-    .badge {
-    display: inline-block;
-    margin-top: 8px;
-    background: rgba(212, 163, 115, 0.8); /* Badge con transparencia */
-    backdrop-filter: blur(4px);
-    color: white;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    }
-
-</style>
-
-    <div class="hero-promo">
-        <div class="carousel-container">
-            <div class="carousel-track">
-            <?php             
-            // Duplicamos la lista para el efecto de scroll infinito seamless
-            $displayItems = array_merge($promosList, $promosList); 
-            
-            foreach($displayItems as $index => $promo): 
-                $isDuplicate = $index >= count($promosList);
-                $bgStyle = !empty($promo['image']) ? "style='background-image: url(\"uploads/{$promo['image']}\")'" : "";
-                $isInfoCard = ($promo['css_class'] === 'info-card');
-            ?>
-                <div class="slide <?php echo $promo['css_class']; ?>" <?php echo $bgStyle; ?> <?php echo $isDuplicate ? 'aria-hidden="true"' : ''; ?>>
-                    <div class="<?php echo $isInfoCard ? 'info-content' : 'overlay'; ?>">
-                        <h3><?php echo htmlspecialchars($promo['title']); ?></h3>
-                        
-                        <?php if($promo['type'] === 'reviews'): ?>
-                            <div class="review-mini-slider">
-                                <i class="fas fa-quote-left" style="opacity: 0.5; font-size: 0.8rem;"></i>
-                                <p style="font-style: italic; font-size: 0.85rem; margin: 5px 0;">
-                                    <?php echo htmlspecialchars($promo['content']); ?>
-                                </p>
-                                <div style="color: #ffa502; font-size: 0.7rem;">
-                                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                                </div>                                
-                            </div>
-                        <?php else: ?>
-                            <p>
-                                <?php if (isset($promo['is_formatted']) && $promo['is_formatted']): ?>
-                                    <?php echo $promo['content']; // Aquí sale el texto lindo formateado ?>
-                                <?php else: ?>
-                                    <?php 
-                                        $cleanContent = trim($promo['content']);
-                                        // Si empieza con { es un JSON que no se procesó, no lo mostramos
-                                        if (strpos($cleanContent, '{') === 0) echo "Información no disponible.";
-                                        else echo nl2br(htmlspecialchars($cleanContent));
-                                    ?>
-                                <?php endif; ?>                                
-                            </p>
-                        <?php endif; ?>
-                        
-                        <?php if(in_array(strtolower($promo['type']), ['hours', 'horarios', 'location', 'ubicacion'])): ?>
-                            <span class="badge">¡Te esperamos!</span>                            
-                        <?php endif; ?>
+        <?php else: ?>
+            <!-- CASO: LOCAL CERRADO - Info Operativa y Ubicación -->
+            <div class="closed-info-container">
+                <div style="background: white; padding: 2.5rem; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #eee; text-align: center; margin-bottom: 2rem;">
+                    <div style="width: 80px; height: 80px; background: #fff3cd; color: #856404; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto; font-size: 2rem;">
+                        <i class="fas fa-moon"></i>
+                    </div>
+                    <h2 style="font-weight: 800; color: #2d3436; margin-bottom: 0.5rem;">Local Cerrado</h2>
+                    <p style="color: #856404; font-weight: 700; font-size: 1.1rem; margin-bottom: 1.5rem;"><?php echo $nextOpeningMsg; ?></p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; text-align: left; margin-top: 2rem; border-top: 1px solid #eee; padding-top: 2rem;">
+                        <div>
+                            <h4 style="font-size: 0.8rem; text-transform: uppercase; color: #aaa; margin-bottom: 12px;">Contacto</h4>
+                            <?php if (empty($contactChannels)): ?>
+                                <p style="font-weight: 600; color: #2d3436;"><i class="fas fa-phone-alt" style="color: #0984e3;"></i> <?php echo htmlspecialchars($siteSettings['store_phone'] ?? 'Consultar al local'); ?></p>
+                            <?php else: ?>
+                                <?php foreach ($contactChannels as $channel): ?>
+                                    <div style="margin-bottom: 12px;">
+                                        <span style="display: block; font-size: 0.7rem; color: #888; text-transform: uppercase; margin-bottom: 2px;"><?php echo htmlspecialchars($channel['label']); ?></span>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="font-weight: 700; color: #2d3436; font-size: 1rem;"><?php echo htmlspecialchars($channel['phone']); ?></span>
+                                            <div style="display: flex; gap: 6px; font-size: 0.85rem;">
+                                                <?php if(!empty($channel['calls'])): ?><i class="fas fa-phone-alt" style="color: #0984e3;" title="Soporta llamadas"></i><?php endif; ?>
+                                                <?php if(!empty($channel['sms'])): ?><i class="fas fa-comment-alt" style="color: #636e72;" title="Soporta mensajes"></i><?php endif; ?>
+                                                <?php if(!empty($channel['whatsapp'])): ?><i class="fab fa-whatsapp" style="color: #25D366;" title="WhatsApp habilitado"></i><?php endif; ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                        <div>
+                            <h4 style="font-size: 0.8rem; text-transform: uppercase; color: #aaa; margin-bottom: 10px;">Dirección</h4>
+                            <p style="font-weight: 600; color: #2d3436;"><i class="fas fa-map-marker-alt" style="color: #ff4757;"></i> <?php echo htmlspecialchars($siteSettings['store_address'] ?? 'Asunción, Paraguay'); ?></p>
+                        </div>
                     </div>
                 </div>
-            <?php endforeach; ?>
+
+                <!-- Mapa de Ubicación Real -->
+                <?php if (!empty($siteSettings['store_lat']) && !empty($siteSettings['store_lng'])): ?>
+                <div class="location-map" style="height: 350px; border-radius: 24px; overflow: hidden; border: 1px solid #eee; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+                    <iframe 
+                        width="100%" 
+                        height="100%" 
+                        frameborder="0" 
+                        style="border:0; filter: grayscale(0.1);" 
+                        src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d1000!2d<?php echo $siteSettings['store_lng']; ?>!3d<?php echo $siteSettings['store_lat']; ?>!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1ses!2spy!4v<?php echo time(); ?>" 
+                        allowfullscreen>
+                    </iframe>
+                </div>
+                <?php endif; ?>
             </div>
+        <?php endif; ?>
+
+        <!-- Botón de acceso para invitados -->
+        <div style="margin-top: 3rem; text-align: center;">
+            <p style="color: #aaa; font-size: 0.9rem; margin-bottom: 1rem;">Inicia sesión para ver nuestra variedad de platos</p>
+            <button onclick="openAuthModal()" class="btn-primary" style="background: #2d3436; color: white; border: none; padding: 15px 40px; font-size: 1rem;">
+                Ingresar Ahora <i class="fas fa-sign-in-alt" style="margin-left: 10px;"></i>
+            </button>
         </div>
     </div>
 
+<?php else: ?>
     <!-- Grid de Productos -->
     <div class="product-grid">
         <?php if(empty($menu_items)): ?>
-            <div class="empty-state-container" style="grid-column: 1/-1; text-align: center; padding: 4rem 2rem; background: linear-gradient(145deg, #ffffff, #f0f2f5); border-radius: 24px; border: 1px dashed #d1d8e0; margin-top: 1rem;">
-                <!-- Espacio para Animación Lottie o Icono Gigante -->
-                <div class="empty-state-icon" style="font-size: 4rem; margin-bottom: 1.5rem; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1));">
-                    🍳
-                </div>
-                
-                <h3 style="font-weight: 800; color: #2d3436; margin-bottom: 0.5rem; font-size: 1.5rem;">
-                    ¡Estamos preparando algo delicioso!
-                </h3>
-                <p style="color: #636e72; max-width: 400px; margin: 0 auto 2rem auto; line-height: 1.6;">
-                    Esta categoría se está renovando con los mejores ingredientes. ¿Por qué no exploras lo más pedido de hoy?
-                </p>
-
-                <!-- Botón de Acción sugerido: Regresar o Sugerir -->
-                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                    <a href="?route=home" class="btn-primary" style="background: #2d3436; color: white; border: none; text-decoration: none;">
-                        Ver Menú del Día <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>
-                    </a>
-                    <button class="btn-primary" onclick="Toast.fire('¡Gracias! Tomamos nota de tu antojo 📝', 'success')" style="background: white; color: #2d3436; border: 1px solid #eee;">
-                        Sugerir un Plato <i class="fas fa-lightbulb" style="margin-left: 8px; color: #ffa502;"></i>
-                    </button>
-                </div>
-
-                <?php if(!empty($recommended_items)): ?>
-                    <div class="recommended-section">
-                        <h4 class="recommended-title">
-                            <i class="fas fa-fire" style="color: #ff4757;"></i> Te podría gustar...
-                        </h4>
-                        <div class="slider-container-rel">
-                            <div class="slider-wrapper">
-                                <button class="slider-arrow prev" onclick="scrollSlider(this, -200)"><i class="fas fa-chevron-left"></i></button>
-                                <div class="horizontal-slider">
-                                    <?php foreach($recommended_items as $rec): 
-                                        $recImg = (!empty($rec['image']) && file_exists('uploads/'.$rec['image'])) ? $baseUrl . 'uploads/'.rawurlencode($rec['image']) : $localPlaceholder;
-                                    ?>
-                                        <div class="mini-card">
-                                            <img src="<?php echo $recImg; ?>" alt="img">
-                                            <div class="mini-card-body">
-                                                <div class="mini-card-title"><?php echo htmlspecialchars($rec['name']); ?></div>
-                                                <div class="mini-card-price">Gs. <?php echo number_format($rec['price'], 0, ',', '.'); ?></div>
-                                                <button class="btn btn-primary" style="padding: 8px; font-size: 0.75rem; width: 100%;" 
-                                                    onclick="handleAddToCart(this, '<?php echo $rec['id']; ?>', '<?php echo addslashes($rec['name']); ?>', <?php echo $rec['price']; ?>, '<?php echo htmlspecialchars($rec['image']); ?>', 1)">
-                                                    Agregar <i class="fas fa-plus"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                                <button class="slider-arrow next" onclick="scrollSlider(this, 200)"><i class="fas fa-chevron-right"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                <?php endif; ?>
+            <div style="grid-column: 1/-1; text-align: center; padding: 4rem 2rem; color: #636e72;">
+                <i class="fas fa-utensils" style="font-size: 3rem; margin-bottom: 1.5rem; opacity: 0.2;"></i>
+                <h3 style="font-weight: 700; color: #2d3436;">Menú no disponible</h3>
+                <p style="font-size: 0.95rem;">Estamos actualizando nuestra lista de platos. <br>¡Vuelve a revisar en unos minutos!</p>
             </div>
         <?php else: ?>
             <?php $delay = 0; foreach($menu_items as $item): ?>
@@ -604,6 +463,7 @@ $localPlaceholder = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22
             <?php $delay += 0.08; endforeach; ?>
         <?php endif; ?>
     </div>
+<?php endif; ?>
 
 <script>
     
@@ -769,24 +629,4 @@ function filterCategory(cat, btn) {
         }
     });
 }
-
-// Lógica para colapsar el Hero al hacer scroll
-let lastScrollY = window.scrollY;
-window.addEventListener('scroll', () => {
-    const hero = document.querySelector('.hero-promo');
-    if (!hero) return;
-
-    const currentScroll = window.scrollY;
-
-    // Umbral de colapso aumentado para dar margen de lectura inicial
-    // Umbral de retorno mucho más bajo (20px) para que el hero no reaparezca 
-    // mientras el usuario intenta ver o interactuar con las primeras tarjetas.
-    if (currentScroll > 150) {
-        hero.classList.add('collapsed');
-    } else if (currentScroll < 20) {
-        hero.classList.remove('collapsed');
-    }
-    
-    lastScrollY = currentScroll;
-}, { passive: true });
 </script>

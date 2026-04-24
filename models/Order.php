@@ -128,7 +128,8 @@ class Order {
         $query = "SELECT o.*, c.name as user_name, c.phone as user_phone, ch.name as channel_name, ch.icon as channel_icon, 
                          s.address_snapshot as delivery_address, s.lat_snapshot as delivery_lat, s.lng_snapshot as delivery_lng, 
                          s.delivery_user_id, d.name as delivery_name, drd.price as delivery_cost, drd.km_from, drd.km_to,
-                         (SELECT COUNT(*) FROM pagos p JOIN pos_ventas_cabecera v ON p.venta_id = v.id WHERE v.order_id = o.id) as is_paid
+                         (SELECT COALESCE(SUM(p.monto_total), 0) FROM pagos p JOIN pos_ventas_cabecera v ON p.venta_id = v.id WHERE v.order_id = o.id) as total_paid,
+                         (SELECT COUNT(*) FROM pos_ventas_cabecera WHERE order_id = o.id) as has_invoice
                   FROM " . $this->table . " o
                   LEFT JOIN clients c ON o.client_id = c.id 
                   LEFT JOIN order_channels ch ON o.channel_id = ch.id
@@ -227,7 +228,8 @@ class Order {
         $query = "SELECT o.*, c.name as user_name, c.email as user_email, c.phone as user_phone,
                          s.address_snapshot as delivery_address, s.lat_snapshot as delivery_lat, s.lng_snapshot as delivery_lng,
                          s.delivery_user_id, st.name as staff_name, drd.price as delivery_cost,
-                         (SELECT COUNT(*) FROM pagos p JOIN pos_ventas_cabecera v ON p.venta_id = v.id WHERE v.order_id = o.id) as is_paid
+                         (SELECT COALESCE(SUM(p.monto_total), 0) FROM pagos p JOIN pos_ventas_cabecera v ON p.venta_id = v.id WHERE v.order_id = o.id) as total_paid,
+                         (SELECT COUNT(*) FROM pos_ventas_cabecera WHERE order_id = o.id) as has_invoice
                   FROM " . $this->table . " o
                   JOIN clients c ON o.client_id = c.id
                   LEFT JOIN order_shipments s ON o.id = s.order_id

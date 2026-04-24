@@ -213,4 +213,44 @@ class SettingController {
 
         header('Location: ?route=settings&success=reset');
     }
+
+    public function contactSettings() {
+        $settingModel = new Setting();
+        $rawContacts = $settingModel->get('contact_channels');
+        
+        $contacts = $rawContacts ? json_decode($rawContacts, true) : [];
+
+        $content_view = '../views/admin/settings_contact.php';
+        require_once '../views/layouts/admin_layout.php';
+    }
+
+    public function saveContactSettings() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $settingModel = new Setting();
+            
+            $rawContacts = $_POST['contacts'] ?? [];
+            $processedContacts = [];
+
+            foreach ($rawContacts as $c) {
+                if (!empty(trim($c['phone']))) {
+                    $processedContacts[] = [
+                        'label'    => htmlspecialchars(strip_tags($c['label'])),
+                        'phone'    => htmlspecialchars(strip_tags($c['phone'])),
+                        'calls'    => isset($c['calls']) ? 1 : 0,
+                        'sms'      => isset($c['sms']) ? 1 : 0,
+                        'whatsapp' => isset($c['whatsapp']) ? 1 : 0
+                    ];
+                }
+            }
+
+            $jsonContacts = json_encode($processedContacts, JSON_UNESCAPED_UNICODE);
+            
+            if ($settingModel->update('contact_channels', $jsonContacts)) {
+                header('Location: ?route=settings_contact&success=1');
+            } else {
+                header('Location: ?route=settings_contact&error=save_failed');
+            }
+            exit;
+        }
+    }
 }

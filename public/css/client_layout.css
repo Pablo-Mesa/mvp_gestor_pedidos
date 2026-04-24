@@ -1006,3 +1006,10 @@ input:checked + .slider {
     background: linear-gradient(to right, transparent, rgba(255,255,255,0.8));
     pointer-events: none;
 }
+
+/* Evitar que los mensajes Toast cubran el botón del carrito en el header */
+.swal2-container.swal2-top-end, 
+.swal2-container.swal2-top-right {
+    top: 70px !important; /* Altura suficiente para despejar la Navbar superior */
+    padding-top: 0;
+}

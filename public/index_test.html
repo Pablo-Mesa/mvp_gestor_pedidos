@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vianda Express</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css_test.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cream: '#FDF6EC',
+            bark: '#2C1810',
+            spice: '#C45D2C',
+            sage: '#7A8B6F',
+            sand: '#E8DDD3',
+          },
+          fontFamily: {
+            display: ['Playfair Display', 'serif'],
+            body: ['DM Sans', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+<base target="_blank">
+</head>
+<body class="h-full bg-cream font-body text-bark">
+  <div class="app-root" id="app">
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] hidden">
+      <div class="bg-bark text-cream px-5 py-3 rounded-xl shadow-lg text-sm font-medium flex items-center gap-2 toast-enter">
+        <i data-lucide="check-circle" class="w-4 h-4 text-sage"></i>
+        <span id="toast-msg"></span>
+      </div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="fixed inset-0 z-50 hidden overlay flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 relative fade-in">
+        <button onclick="closeAuth()" class="absolute top-4 right-4 text-bark/40 hover:text-bark">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <div id="auth-content"></div>
+      </div>
+    </div>
+
+    <!-- Cart Drawer -->
+    <div id="cart-overlay" class="fixed inset-0 z-40 hidden overlay" onclick="toggleCart()"></div>
+    <div id="cart-drawer" class="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 translate-x-full transition-transform duration-300 flex flex-col">
+      <div class="p-6 border-b border-sand flex items-center justify-between">
+        <h2 class="font-display text-xl">Tu carrito</h2>
+        <button onclick="toggleCart()" class="text-bark/40 hover:text-bark">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div id="cart-items" class="flex-1 overflow-y-auto p-6"></div>
+      <div id="cart-footer" class="p-6 border-t border-sand hidden">
+        <div class="flex justify-between mb-4 font-medium text-lg">
+          <span>Total</span>
+          <span id="cart-total"></span>
+        </div>
+        <button onclick="navigateTo('checkout')" class="w-full bg-spice text-white py-3 rounded-xl font-medium hover:bg-spice/90 transition">Confirmar pedido</button>
+      </div>
+    </div>
+
+    <!-- Mobile Nav Drawer -->
+    <div id="mobile-nav-overlay" class="fixed inset-0 z-30 hidden overlay" onclick="toggleMobileNav()"></div>
+    <div id="mobile-nav" class="fixed top-0 left-0 h-full w-72 bg-white shadow-2xl z-30 -translate-x-full transition-transform duration-300 flex flex-col p-6">
+      <button onclick="toggleMobileNav()" class="self-end mb-6 text-bark/40 hover:text-bark">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <nav class="flex flex-col gap-4" id="mobile-nav-links"></nav>
+    </div>
+
+    <!-- Header -->
+    <header class="sticky top-0 z-20 bg-cream/90 backdrop-blur-md border-b border-sand/60">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <button class="md:hidden text-bark" onclick="toggleMobileNav()">
+          <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+        <a href="#" onclick="navigateTo('home');return false" class="font-display text-xl sm:text-2xl text-spice" id="brand-name">Vianda Express</a>
+        <nav class="hidden md:flex items-center gap-6 text-sm" id="desktop-nav">
+          <a href="#" class="nav-link active" onclick="navigateTo('home');return false">Inicio</a>
+          <a href="#" class="nav-link" onclick="navigateTo('menu');return false">Menú</a>
+          <a href="#" class="nav-link" onclick="navigateTo('history');return false">Pedidos</a>
+          <a href="#" class="nav-link" onclick="navigateTo('addresses');return false">Direcciones</a>
+          <a href="#" class="nav-link" onclick="navigateTo('billing');return false">Facturación</a>
+        </nav>
+        <div class="flex items-center gap-3">
+          <button onclick="toggleCart()" class="relative p-2 hover:bg-sand/50 rounded-xl transition">
+            <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+            <span id="cart-badge" class="absolute -top-0.5 -right-0.5 bg-spice text-white rounded-full badge items-center justify-center font-bold hidden"></span>
+          </button>
+          <button onclick="openAuth('login')" class="hidden sm:flex items-center gap-1.5 text-sm font-medium hover:text-spice transition" id="auth-btn">
+            <i data-lucide="user" class="w-4 h-4"></i>
+            <span>Ingresar</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main-content" class="flex-1"></main>
+
+    <!-- Footer -->
+    <footer class="bg-bark text-cream/70 text-sm mt-auto">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10 grid grid-cols-1 sm:grid-cols-3 gap-8">
+        <div>
+          <p class="font-display text-lg text-cream mb-2" id="footer-brand">Vianda Express</p>
+          <p>Comida casera preparada con los mejores ingredientes, directo a tu mesa.</p>
+        </div>
+        <div>
+          <p class="font-medium text-cream mb-2">Contacto</p>
+          <p>hola@viandaexpress.com</p>
+          <p>+54 11 2345-6789</p>
+        </div>
+        <div>
+          <p class="font-medium text-cream mb-2">Horarios</p>
+          <p>Lun a Vie: 10:00 – 15:00</p>
+          <p>Sáb: 10:00 – 14:00</p>
+        </div>
+      </div>
+      <div class="border-t border-cream/10 text-center py-4 text-xs text-cream/40">
+        © 2025 Vianda Express. Todos los derechos reservados.
+      </div>
+    </footer>
+  </div>
+
+  <script src="js_test.js"></script>
+</body>
+</html>

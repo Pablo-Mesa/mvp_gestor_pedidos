@@ -79,16 +79,22 @@
                                     case 'transferencia': $methodClass = 'info'; break;
                                     case 'qr': $methodClass = 'warning'; break;
                                 }
+
+                                // Identificar si la transacción corresponde a una factura anulada (Pedido rechazado/cancelado)
+                                $isAnnulled = (isset($pay['estado']) && $pay['estado'] == 0);
                             ?>
-                                <tr>
+                                <tr <?php echo $isAnnulled ? 'style="background-color: #fff5f5;"' : ''; ?>>
                                     <td class="px-4 align-middle">
                                         <?php echo date('H:i', strtotime($pay['fecha_pago'])); ?>
                                         <small class="text-muted d-block"><?php echo date('d/m/Y', strtotime($pay['fecha_pago'])); ?></small>
                                     </td>
                                     <td class="align-middle">
-                                        <span class="badge bg-<?php echo $methodClass; ?>-subtle text-<?php echo $methodClass; ?> border border-<?php echo $methodClass; ?>-subtle">
+                                        <span class="badge bg-<?php echo $methodClass; ?>-subtle text-<?php echo $methodClass; ?> border border-<?php echo $methodClass; ?>-subtle" <?php echo $isAnnulled ? 'style="opacity: 0.6;"' : ''; ?>>
                                             <?php echo $methodLabel; ?>
                                         </span>
+                                        <?php if ($isAnnulled): ?>
+                                            <span class="badge bg-danger ms-1" style="font-size: 0.65rem; letter-spacing: 0.5px;">ANULADO</span>
+                                        <?php endif; ?>
                                     </td>
                                     <td class="align-middle">
                                         <span class="text-dark fw-bold"><?php echo $pay['nro_factura']; ?></span>
@@ -97,7 +103,7 @@
                                     <td class="align-middle">
                                         <span class="text-muted small"><?php echo htmlspecialchars($pay['referencia'] ?: '-'); ?></span>
                                     </td>
-                                    <td class="align-middle text-end fw-bold px-4">
+                                    <td class="align-middle text-end fw-bold px-4 <?php echo $isAnnulled ? 'text-danger' : ''; ?>">
                                         Gs. <?php echo number_format($pay['monto'], 0, ',', '.'); ?>
                                     </td>
                                 </tr>

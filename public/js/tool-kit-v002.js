@@ -105,47 +105,6 @@ function card(donde, ruta_imagen, descripcion, precio, codigo) {
     
     tarjetero.insertAdjacentHTML('beforeend', html);
 }
-    
-    //obtener referencia del elemento contenedor de las tarjetas
-    const tarjetero = document.getElementById(donde);
-    //
-    const tarjeta = document.createElement('div');
-    tarjeta.className = 'menu-card-basic';      
-    //contenedor img
-    const contenedor_imagen = document.createElement('div');
-    contenedor_imagen.className = 'item-imagen';
-    //img
-    const item_imagen = document.createElement('img');
-    item_imagen.src = ruta_imagen;
-    //descripcion
-    const item_name = document.createElement('h3');
-    item_name.textContent = descripcion;
-    //contenedor controles
-    const contenedor_control = document.createElement('div');
-    contenedor_control.className = 'contenedor-control';    
-    const contenedor_precio_2 = document.createElement('div');    
-    const item_precio_2 = document.createElement('span');
-    item_precio_2.textContent = 'Gs. ' + formatearNumero(precio);
-    contenedor_precio_2.appendChild(item_precio_2);
-    contenedor_control.appendChild(contenedor_precio_2);
-    //btn agregar
-    const boton_agregar = document.createElement('button');
-    boton_agregar.textContent = 'Agregar';    
-    boton_agregar.setAttribute('onclick', 'addToCart("' + codigo + '")');
-    
-    contenedor_control.appendChild(boton_agregar);    
-    //agregar imagen al contenedor
-    contenedor_imagen.appendChild(item_imagen);
-    //agregar contenedor imagen a tarjeta
-    tarjeta.appendChild(contenedor_imagen);
-    //agregar item name
-    tarjeta.appendChild(item_name);        
-    //agregar contenedor control
-    tarjeta.appendChild(contenedor_control);
-    //agregar tarjeta al tarjetero
-    tarjetero.appendChild(tarjeta);
-    
-}
 // FIN card
 
 /* item (into a cart) */

@@ -56,14 +56,22 @@
                                     foreach($methods as $key => $m): 
                                     ?>
                                     <tr>
-                                        <td class="align-middle fw-bold <?php echo $m['class']; ?>">
-                                            <?php echo $m['label']; ?>
+                                        <td class="align-middle <?php echo $m['class']; ?>">
+                                            <div class="fw-bold mb-1"><?php echo $m['label']; ?></div>
                                             <input type="hidden" name="payments[<?php echo $i; ?>][metodo]" value="<?php echo $key; ?>">
                                         </td>
                                         <td>
-                                            <input type="number" name="payments[<?php echo $i; ?>][monto]" 
-                                                   class="form-control form-control-lg payment-input" 
-                                                   data-method="<?php echo $key; ?>" value="0" min="0" step="1">
+                                            <div class="input-group">
+                                                <input type="number" name="payments[<?php echo $i; ?>][monto]" 
+                                                       class="form-control form-control-lg payment-input" 
+                                                       id="input-<?php echo $key; ?>"
+                                                       data-method="<?php echo $key; ?>" value="0" min="0" step="1">
+                                                <button class="btn btn-outline-secondary" type="button" 
+                                                        title="Cobrar saldo pendiente"
+                                                        onclick="fillRemaining('input-<?php echo $key; ?>')">
+                                                    <i class="fas fa-magic"></i>
+                                                </button>
+                                            </div>
                                         </td>
                                         <td>
                                             <input type="text" name="payments[<?php echo $i; ?>][referencia]" 
@@ -77,8 +85,8 @@
 
                         <div class="row mt-4 align-items-center">
                             <div class="col-md-6">
-                                <div class="p-3 border rounded bg-white text-center shadow-sm">
-                                    <p class="mb-0 small text-uppercase fw-bold">Resta cobrar</p>
+                                <div id="balance-card" class="p-3 border rounded bg-white text-center shadow-sm" style="transition: all 0.3s ease; height: 105px; width: 100%; display: flex; flex-direction: column; justify-content: center; overflow: hidden;">
+                                    <p id="balance-label" class="mb-0 small text-uppercase fw-bold text-muted">Resta cobrar</p>
                                     <h3 id="balance-display" class="mb-0">Gs. 0</h3>
                                 </div>
                             </div>
@@ -100,6 +108,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const total = parseFloat(document.getElementById('order-total').dataset.total);
     const inputs = document.querySelectorAll('.payment-input');
     const balanceDisplay = document.getElementById('balance-display');
+    const balanceCard = document.getElementById('balance-card');
+    const balanceLabel = document.getElementById('balance-label');
     const btnSubmit = document.getElementById('btn-submit');
 
     // Si el pedido solo tenía un método, lo precargamos (Opcional)
@@ -113,20 +123,46 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const remaining = total - paid;
         
+        // Reset de estilos base
+        balanceCard.style.backgroundColor = '#fff';
+        balanceCard.className = 'p-3 border rounded text-center shadow-sm';
+        balanceLabel.className = 'mb-0 small text-uppercase fw-bold text-muted';
+        balanceDisplay.className = 'mb-0 fw-bold';
+
         if (remaining > 0) {
+            balanceLabel.innerText = 'Resta cobrar';
             balanceDisplay.innerText = `Gs. ${new Intl.NumberFormat('es-PY').format(remaining)}`;
-            balanceDisplay.className = 'mb-0 text-danger fw-bold';
+            balanceDisplay.className = 'mb-0 fw-bold text-danger';
             btnSubmit.disabled = true;
         } else if (remaining < 0) {
-            balanceDisplay.innerText = `Vuelto: Gs. ${new Intl.NumberFormat('es-PY').format(Math.abs(remaining))}`;
-            balanceDisplay.className = 'mb-0 text-primary fw-bold';
+            // Resalte visual fuerte para el vuelto
+            balanceLabel.innerText = 'Vuelto a entregar';
+            balanceLabel.className = 'mb-0 small text-uppercase fw-bold text-white';
+            balanceDisplay.innerText = `Gs. ${new Intl.NumberFormat('es-PY').format(Math.abs(remaining))}`;
+            balanceDisplay.className = 'mb-0 fw-bold text-white'; 
+            balanceCard.style.backgroundColor = '#0984e3'; // Azul llamativo
+            balanceCard.classList.add('border-primary');
             btnSubmit.disabled = false;
         } else {
-            balanceDisplay.innerText = 'Cerrado ✅';
-            balanceDisplay.className = 'mb-0 text-success fw-bold';
+            balanceLabel.innerText = 'Estado';
+            balanceDisplay.innerText = 'Monto Exacto ✅';
+            balanceDisplay.className = 'mb-0 fw-bold text-success';
+            balanceCard.style.backgroundColor = '#f8fff9';
+            balanceCard.classList.add('border-success');
             btnSubmit.disabled = false;
         }
     }
+
+    // Función para llenar automáticamente lo que falta cobrar
+    window.fillRemaining = function(inputId) {
+        let paidOthers = 0;
+        inputs.forEach(inp => {
+            if (inp.id !== inputId) paidOthers += parseFloat(inp.value) || 0;
+        });
+        const needed = Math.max(0, total - paidOthers);
+        document.getElementById(inputId).value = needed;
+        calculate();
+    };
 
     inputs.forEach((input, index) => {
         input.addEventListener('input', calculate);
@@ -184,6 +220,18 @@ document.addEventListener('DOMContentLoaded', function() {
             cancelButtonText: 'No, revisar'
         }).then((result) => {
             if (result.isConfirmed) {
+                // Ajuste automático: Si el cajero ingresó un billete grande (ej: 100k para deuda 86k),
+                // ajustamos el valor del input al neto (86k) antes de enviar.
+                // Esto garantiza que los reportes de ingresos de tesorería sean exactos.
+                const cashInput = document.getElementById('input-efectivo');
+                if (cashInput && change > 0) {
+                    const cashVal = parseFloat(cashInput.value) || 0;
+                    // Solo restamos si el vuelto sale efectivamente del efectivo
+                    if (cashVal >= change) {
+                        cashInput.value = cashVal - change;
+                    }
+                }
+                
                 form.submit(); // Enviar el formulario físicamente
             }
         });

@@ -128,7 +128,7 @@ class Order {
         $query = "SELECT o.*, c.name as user_name, c.phone as user_phone, ch.name as channel_name, ch.icon as channel_icon, 
                          s.address_snapshot as delivery_address, s.lat_snapshot as delivery_lat, s.lng_snapshot as delivery_lng, 
                          s.delivery_user_id, d.name as delivery_name, drd.price as delivery_cost, drd.km_from, drd.km_to,
-                         (SELECT COALESCE(SUM(p.monto_total), 0) FROM pagos p JOIN pos_ventas_cabecera v ON p.venta_id = v.id WHERE v.order_id = o.id) as total_paid,
+                         (SELECT COALESCE(SUM(p.monto_total), 0) FROM pagos p JOIN pos_ventas_cabecera v ON p.venta_id = v.id WHERE v.order_id = o.id AND v.estado = 1) as total_paid,
                          (SELECT COUNT(*) FROM pos_ventas_cabecera WHERE order_id = o.id) as has_invoice
                   FROM " . $this->table . " o
                   LEFT JOIN clients c ON o.client_id = c.id 
@@ -228,7 +228,7 @@ class Order {
         $query = "SELECT o.*, c.name as user_name, c.email as user_email, c.phone as user_phone,
                          s.address_snapshot as delivery_address, s.lat_snapshot as delivery_lat, s.lng_snapshot as delivery_lng,
                          s.delivery_user_id, st.name as staff_name, drd.price as delivery_cost,
-                         (SELECT COALESCE(SUM(p.monto_total), 0) FROM pagos p JOIN pos_ventas_cabecera v ON p.venta_id = v.id WHERE v.order_id = o.id) as total_paid,
+                         (SELECT COALESCE(SUM(p.monto_total), 0) FROM pagos p JOIN pos_ventas_cabecera v ON p.venta_id = v.id WHERE v.order_id = o.id AND v.estado = 1) as total_paid,
                          (SELECT COUNT(*) FROM pos_ventas_cabecera WHERE order_id = o.id) as has_invoice
                   FROM " . $this->table . " o
                   JOIN clients c ON o.client_id = c.id
@@ -299,6 +299,32 @@ class Order {
                 $queryShip = "UPDATE order_shipments SET shipped_at = CURRENT_TIMESTAMP WHERE order_id = :id AND shipped_at IS NULL";
                 $stmtShip = $this->conn->prepare($queryShip);
                 $stmtShip->execute([':id' => $this->id]);
+            } elseif ($this->status === 'rejected' || $this->status === 'cancelled') {
+                // --- LÓGICA DE COMPENSACIÓN FINANCIERA ---
+                
+                // 1. Anular Factura/Ticket si existe
+                $qAnular = "UPDATE pos_ventas_cabecera SET estado = 0 WHERE order_id = :id";
+                $stAnular = $this->conn->prepare($qAnular);
+                $stAnular->execute([':id' => $this->id]);
+
+                // 2. Registrar Egreso en Caja para devolver el dinero (si hubo pago previo)
+                $orderData = $this->readOne();
+                if ($orderData['total_paid'] > 0) {
+                    $cashModel = new CashRegister();
+                    $activeSession = $cashModel->getActiveSession($this->user_id);
+                    if ($activeSession) {
+                        $qRev = "INSERT INTO cash_movements 
+                                 (cash_register_id, amount, type, description, source, reference_id, created_at) 
+                                 VALUES (:rid, :amt, 'egress', :desc, 'order', :ref, CURRENT_TIMESTAMP)";
+                        $stRev = $this->conn->prepare($qRev);
+                        $stRev->execute([
+                            ':rid'  => $activeSession['id'],
+                            ':amt'  => $orderData['total_paid'],
+                            ':desc' => "REEMBOLSO: Pedido #{$this->id} " . ($this->status === 'rejected' ? 'Rechazado' : 'Cancelado'),
+                            ':ref'  => $this->id
+                        ]);
+                    }
+                }
             } elseif ($this->status === 'completed') {
                 // Marcamos la entrega efectiva al cliente
                 $queryShip = "UPDATE order_shipments SET delivered_at = CURRENT_TIMESTAMP WHERE order_id = :id AND delivered_at IS NULL";
@@ -495,14 +521,14 @@ class Order {
         $stmt1->execute([':target_date' => $target_date]);
         $pending = $stmt1->fetchColumn();
 
-        // Ingresos de hoy (excluyendo cancelados)
-        $q2 = "SELECT SUM(total) FROM " . $this->table . " WHERE DATE(created_at) = :target_date AND status != 'cancelled'";
+        // Ingresos de hoy (excluyendo cancelados y rechazados)
+        $q2 = "SELECT SUM(total) FROM " . $this->table . " WHERE DATE(created_at) = :target_date AND status NOT IN ('cancelled', 'rejected')";
         $stmt2 = $this->conn->prepare($q2);
         $stmt2->execute([':target_date' => $target_date]);
         $income = $stmt2->fetchColumn() ?: 0;
 
-        // Platos/Items vendidos hoy
-        $q3 = "SELECT SUM(quantity) FROM orders_items oi JOIN orders o ON oi.order_id = o.id WHERE DATE(o.created_at) = :target_date AND o.status != 'cancelled'";
+        // Platos/Items vendidos hoy (excluyendo anulados)
+        $q3 = "SELECT SUM(quantity) FROM orders_items oi JOIN orders o ON oi.order_id = o.id WHERE DATE(o.created_at) = :target_date AND o.status NOT IN ('cancelled', 'rejected')";
         $stmt3 = $this->conn->prepare($q3);
         $stmt3->execute([':target_date' => $target_date]);
         $sold = $stmt3->fetchColumn() ?: 0;
@@ -523,9 +549,9 @@ class Order {
                 COUNT(id) as total_orders,
                 SUM(total) as total_income,
                 (SELECT SUM(quantity) FROM orders_items oi JOIN orders o2 ON oi.order_id = o2.id 
-                 WHERE o2.status != 'cancelled' AND YEAR(o2.created_at) = :y AND MONTH(o2.created_at) = :m) as dishes_sold
+                 WHERE o2.status NOT IN ('cancelled', 'rejected') AND YEAR(o2.created_at) = :y AND MONTH(o2.created_at) = :m) as dishes_sold
               FROM " . $this->table . " 
-              WHERE status != 'cancelled' AND YEAR(created_at) = :y AND MONTH(created_at) = :m";
+              WHERE status NOT IN ('cancelled', 'rejected') AND YEAR(created_at) = :y AND MONTH(created_at) = :m";
         
         $stmt = $this->conn->prepare($q);
         $stmt->execute([':y' => $year, ':m' => $month]);
@@ -534,7 +560,7 @@ class Order {
         // Desglose diario para el gráfico de barras
         $qChart = "SELECT DAY(created_at) as day, SUM(total) as income 
                    FROM " . $this->table . " 
-                   WHERE status != 'cancelled' AND YEAR(created_at) = :y AND MONTH(created_at) = :m
+                   WHERE status NOT IN ('cancelled', 'rejected') AND YEAR(created_at) = :y AND MONTH(created_at) = :m
                    GROUP BY DAY(created_at)
                    ORDER BY DAY(created_at) ASC";
         $stmtChart = $this->conn->prepare($qChart);

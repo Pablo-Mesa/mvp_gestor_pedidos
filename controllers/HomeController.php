@@ -67,6 +67,7 @@ class HomeController {
         // Obtener Promos activas para el Hero
         $heroModel = new HeroPromo();
         $promos = $heroModel->readActive();
+        $weeklySchedule = [];
         
         $finalPromos = [];
         $db = null;
@@ -113,6 +114,7 @@ class HomeController {
                     foreach ($groups as $g) {
                         $label = ($g['start'] === $g['end']) ? $g['start'] : $g['start'] . " a " . $g['end'];
                         $formattedSchedule[] = "<strong>$label:</strong> " . $g['time'];
+                        $weeklySchedule[$label] = $g['time'];
                     }
 
                     $promo['content'] = implode("<br>", $formattedSchedule);
@@ -121,6 +123,7 @@ class HomeController {
                     // Si los datos son basura, NO MOSTRAR EL JSON. Mostrar un fallback digno.
                     $promo['title'] = "🕒 Horarios de Atención";
                     $promo['content'] = "Atención de Lunes a Sábados.<br>Consultas al WhatsApp.";
+                    $weeklySchedule = ["Lunes a Sábados" => "Consultar al local"];
                     $promo['is_formatted'] = true;
                 }
                 $finalPromos[] = $promo;
@@ -165,6 +168,23 @@ class HomeController {
             }
         }
         $promos = $finalPromos;
+
+        // Obtener Reseñas Recientes (Top 6) para el área de testimonios en el Home
+        if (!$db) $db = (new Database())->getConnection();
+        $recentReviews = $db->query("SELECT r.comment, p.name as product_name, c.name as client_name, p.image as product_image, r.created_at
+                                     FROM product_reviews r 
+                                     JOIN products p ON r.product_id = p.id 
+                                     JOIN clients c ON r.client_id = c.id
+                                     ORDER BY r.created_at DESC LIMIT 6")->fetchAll(PDO::FETCH_ASSOC);
+
+        // Obtener Top de Reacciones (Los 4 más queridos)
+        $popularProducts = $db->query("SELECT p.name, p.image, p.price, 
+                                              COUNT(CASE WHEN pr.type = 'like' THEN 1 END) as total_likes,
+                                              COUNT(CASE WHEN pr.type = 'fav' THEN 1 END) as total_favs
+                                       FROM products p
+                                       JOIN product_reactions pr ON p.id = pr.product_id
+                                       GROUP BY p.id
+                                       ORDER BY total_likes DESC, total_favs DESC LIMIT 4")->fetchAll(PDO::FETCH_ASSOC);
 
         // Cargar vistas
         $content_view = '../views/home/index.php';

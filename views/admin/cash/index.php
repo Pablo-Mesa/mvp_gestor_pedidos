@@ -4,6 +4,7 @@
             <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-cash-register me-2"></i>Gestión de Caja</h1>
             <p class="text-muted">Operando como: <strong><?php echo htmlspecialchars($_SESSION['user_name']); ?></strong></p>
         </div>
+        <!-- botones accion -->
         <div class="d-flex gap-2">
             <!-- El administrador siempre puede ver el botón de apertura para asignar a otros -->
             <?php if (!$activeSession || $_SESSION['user_role'] === 'admin'): ?>
@@ -24,6 +25,7 @@
 
     <?php if ($activeSession): ?>
         <div class="row mb-4">
+            <!-- apertura -->
             <div class="col-md-3">
                 <div class="card border-left-primary shadow h-100 py-2">
                     <div class="card-body">
@@ -31,7 +33,8 @@
                         <div class="h5 mb-0 font-weight-bold text-gray-800">Gs. <?php echo number_format($activeSession['opening_amount'], 0, ',', '.'); ?></div>
                     </div>
                 </div>
-            </div>
+            </div>            
+            <!-- ingresos -->
             <div class="col-md-3">
                 <div class="card border-left-success shadow h-100 py-2">
                     <div class="card-body">
@@ -40,6 +43,7 @@
                     </div>
                 </div>
             </div>
+            <!-- egresos -->
             <div class="col-md-3">
                 <div class="card border-left-danger shadow h-100 py-2">
                     <div class="card-body">
@@ -48,6 +52,7 @@
                     </div>
                 </div>
             </div>
+            <!-- saldo -->
             <div class="col-md-3">
                 <div class="card border-left-info shadow h-100 py-2">
                     <div class="card-body">
@@ -57,7 +62,7 @@
                 </div>
             </div>
         </div>
-
+        <!-- tabla movimientos de la sesion actual -->
         <div class="card shadow mb-4">
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">Movimientos de la Sesión Actual</h6>
@@ -76,8 +81,11 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($movements as $m): ?>
-                                <tr>
+                            <?php foreach ($movements as $m): 
+                                // Identificar si es un ingreso de un pedido que luego fue cancelado/rechazado
+                                $isAnnulledOrder = ($m['source'] === 'order' && in_array($m['order_status'], ['cancelled', 'rejected']));
+                            ?>
+                                <tr <?php echo $isAnnulledOrder ? 'style="background-color: #fff5f5;"' : ''; ?>>
                                     <td><?php echo date('H:i', strtotime($m['created_at'])); ?></td>
                                     <td><small class="text-muted"><?php echo htmlspecialchars($m['user_name'] ?? $_SESSION['user_name']); ?></small></td>
                                     <td><?php echo htmlspecialchars($m['description']); ?></td>
@@ -85,6 +93,9 @@
                                     <td>
                                         <i class="fas <?php echo $m['type'] === 'ingress' ? 'fa-arrow-up text-success' : 'fa-arrow-down text-danger'; ?> me-1"></i>
                                         <?php echo $m['type'] === 'ingress' ? 'Ingreso' : 'Egreso'; ?>
+                                        <?php if ($isAnnulledOrder && $m['type'] === 'ingress'): ?>
+                                            <span class="badge bg-danger ms-1" style="font-size: 0.6rem;">PEDIDO ANULADO</span>
+                                        <?php endif; ?>
                                     </td>
                                     <td class="text-end font-weight-bold">Gs. <?php echo number_format($m['amount'], 0, ',', '.'); ?></td>
                                 </tr>
@@ -94,6 +105,7 @@
                 </div>
             </div>
         </div>
+        
     <?php else: ?>
         <div class="text-center py-5">
             <i class="fas fa-lock fa-4x text-gray-300 mb-3"></i>

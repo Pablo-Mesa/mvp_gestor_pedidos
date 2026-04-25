@@ -7,6 +7,7 @@ if (!class_exists('Order')) {
 $orderModel = new Order();
 $pendingInvoices = $orderModel->getOrdersAwaitingInvoice();
 ?>
+
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-file-invoice-dollar me-2"></i>Facturación / Tickets</h1>
@@ -149,6 +150,7 @@ $pendingInvoices = $orderModel->getOrdersAwaitingInvoice();
     </div>
 </div>
 
+<!-- logica javascript -->
 <script>
 function viewSaleDetail(id) {
     // Por ahora, redirigimos al pedido vinculado ya que el detalle es el mismo.
@@ -160,7 +162,6 @@ function viewSaleDetail(id) {
         Toast.fire("El detalle ampliado se habilitará en el módulo de facturación legal avanzada.", "info");
     }
 }
-
 document.addEventListener('DOMContentLoaded', function() {
     const modalPending = document.getElementById('modalPendingOrders');
     if (!modalPending) return;

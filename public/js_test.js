@@ -1,132 +1,3 @@
-<!doctype html>
-<html lang="es" class="h-full">
- <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vianda Express</title>
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,400&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
-  <script>
-tailwind.config = {
-  theme: {
-    extend: {
-      colors: {
-        cream: '#FDF6EC',
-        bark: '#2C1810',
-        spice: '#C45D2C',
-        sage: '#7A8B6F',
-        sand: '#E8DDD3',
-      },
-      fontFamily: {
-        display: ['Playfair Display', 'serif'],
-        body: ['DM Sans', 'sans-serif'],
-      }
-    }
-  }
-}
-</script>
-  <style>
-  html, body { height: 100%; margin: 0; }
-  * { box-sizing: border-box; }
-  .app-root { height: 100%; overflow-y: auto; overflow-x: hidden; }
-  .fade-in { animation: fadeIn .4s ease both; }
-  .slide-up { animation: slideUp .5s ease both; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-  .stagger-1 { animation-delay: .1s; }
-  .stagger-2 { animation-delay: .2s; }
-  .stagger-3 { animation-delay: .3s; }
-  .stagger-4 { animation-delay: .4s; }
-  .menu-card:hover { transform: translateY(-4px); }
-  .menu-card { transition: transform .25s ease, box-shadow .25s ease; }
-  .nav-link { position: relative; }
-  .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: #C45D2C; transition: width .25s ease; }
-  .nav-link:hover::after, .nav-link.active::after { width: 100%; }
-  .toast-enter { animation: toastIn .3s ease both; }
-  @keyframes toastIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-  input:focus, select:focus, textarea:focus { outline: none; box-shadow: 0 0 0 2px #C45D2C40; border-color: #C45D2C; }
-  .overlay { background: rgba(0,0,0,.4); backdrop-filter: blur(4px); }
-  .badge { min-width: 18px; height: 18px; font-size: 11px; }
-</style>
-  <style>body { box-sizing: border-box; }</style>
-  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
- </head>
- <body class="h-full bg-cream font-body text-bark">
-  <div class="app-root" id="app">
-    
-    <!-- Toast -->
-   <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] hidden">
-    <div class="bg-bark text-cream px-5 py-3 rounded-xl shadow-lg text-sm font-medium flex items-center gap-2 toast-enter"><i data-lucide="check-circle" class="w-4 h-4 text-sage"></i> <span id="toast-msg"></span>
-    </div>
-   </div>
-   
-   <!-- Auth Modal -->
-   <div id="auth-modal" class="fixed inset-0 z-50 hidden overlay flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 relative fade-in"><button onclick="closeAuth()" class="absolute top-4 right-4 text-bark/40 hover:text-bark"><i data-lucide="x" class="w-5 h-5"></i></button>
-     <div id="auth-content"></div>
-    </div>
-   </div>
-   
-   <!-- Cart Drawer -->
-   <div id="cart-overlay" class="fixed inset-0 z-40 hidden overlay" onclick="toggleCart()"></div>
-   <div id="cart-drawer" class="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 translate-x-full transition-transform duration-300 flex flex-col">
-    <div class="p-6 border-b border-sand flex items-center justify-between">
-     <h2 class="font-display text-xl">Tu carrito</h2><button onclick="toggleCart()" class="text-bark/40 hover:text-bark"><i data-lucide="x" class="w-5 h-5"></i></button>
-    </div>
-    <div id="cart-items" class="flex-1 overflow-y-auto p-6"></div>
-    <div id="cart-footer" class="p-6 border-t border-sand hidden">
-     <div class="flex justify-between mb-4 font-medium text-lg"><span>Total</span><span id="cart-total"></span>
-     </div><button onclick="navigateTo('checkout')" class="w-full bg-spice text-white py-3 rounded-xl font-medium hover:bg-spice/90 transition">Confirmar pedido</button>
-    </div>
-   </div>
-   
-   <!-- Mobile Nav Drawer -->
-   <div id="mobile-nav-overlay" class="fixed inset-0 z-30 hidden overlay" onclick="toggleMobileNav()"></div>
-   <div id="mobile-nav" class="fixed top-0 left-0 h-full w-72 bg-white shadow-2xl z-30 -translate-x-full transition-transform duration-300 flex flex-col p-6"><button onclick="toggleMobileNav()" class="self-end mb-6 text-bark/40 hover:text-bark"><i data-lucide="x" class="w-5 h-5"></i></button>
-    <nav class="flex flex-col gap-4" id="mobile-nav-links"></nav>
-   </div>
-   
-   <!-- Header -->
-   <header class="sticky top-0 z-20 bg-cream/90 backdrop-blur-md border-b border-sand/60">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between"><button class="md:hidden text-bark" onclick="toggleMobileNav()"><i data-lucide="menu" class="w-6 h-6"></i></button> <a href="#" onclick="navigateTo('home');return false" class="font-display text-xl sm:text-2xl text-spice" id="brand-name">Vianda Express</a>
-      <nav class="hidden md:flex items-center gap-6 text-sm" id="desktop-nav">
-        <a href="#" class="nav-link active" onclick="navigateTo('home');return false">Inicio</a>
-        <a href="#" class="nav-link" onclick="navigateTo('menu');return false">Menú</a>
-        <a href="#" class="nav-link" onclick="navigateTo('history');return false">Pedidos</a>
-        <a href="#" class="nav-link" onclick="navigateTo('addresses');return false">Direcciones</a>
-        <a href="#" class="nav-link" onclick="navigateTo('billing');return false">Facturación</a>
-      </nav>
-     <div class="flex items-center gap-3"><button onclick="toggleCart()" class="relative p-2 hover:bg-sand/50 rounded-xl transition"> <i data-lucide="shopping-bag" class="w-5 h-5"></i> <span id="cart-badge" class="absolute -top-0.5 -right-0.5 bg-spice text-white rounded-full badge items-center justify-center font-bold hidden"></span> </button> <button onclick="openAuth('login')" class="hidden sm:flex items-center gap-1.5 text-sm font-medium hover:text-spice transition" id="auth-btn"> <i data-lucide="user" class="w-4 h-4"></i><span>Ingresar</span> </button>
-     </div>
-    </div>
-   </header>
-   
-   <!-- Main Content -->
-   <main id="main-content" class="flex-1"></main><!-- Footer -->
-   <footer class="bg-bark text-cream/70 text-sm mt-auto">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10 grid grid-cols-1 sm:grid-cols-3 gap-8">
-     <div>
-      <p class="font-display text-lg text-cream mb-2" id="footer-brand">Vianda Express</p>
-      <p>Comida casera preparada con los mejores ingredientes, directo a tu mesa.</p>
-     </div>
-     <div>
-      <p class="font-medium text-cream mb-2">Contacto</p>
-      <p>hola@viandaexpress.com</p>
-      <p>+54 11 2345-6789</p>
-     </div>
-     <div>
-      <p class="font-medium text-cream mb-2">Horarios</p>
-      <p>Lun a Vie: 10:00 – 15:00</p>
-      <p>Sáb: 10:00 – 14:00</p>
-     </div>
-    </div>
-    <div class="border-t border-cream/10 text-center py-4 text-xs text-cream/40">
-     © 2025 Vianda Express. Todos los derechos reservados.
-    </div>
-   </footer>
-  </div>
-  <script>
 /* ── State ── */
 let cart = [];
 let currentView = 'home';
@@ -153,8 +24,8 @@ const sampleAddresses = [
   { id: 2, label: 'Oficina', address: 'Libertador 5678, piso 3, CABA', default: false },
 ];
 
-/* ── Config ── */
-const defaultConfig = {
+/* ── Config (independiente, sin SDK) ── */
+const config = {
   brand_name: 'Vianda Express',
   hero_title: 'Comida casera, a tu puerta',
   hero_subtitle: 'Viandas frescas preparadas con amor cada día. Elegí tu menú, nosotros nos encargamos del resto.',
@@ -166,57 +37,23 @@ const defaultConfig = {
   secondary_action_color: '#7A8B6F',
 };
 
-function applyConfig(config) {
+function applyConfig(cfg) {
   const el = (id) => document.getElementById(id);
-  const brand = config.brand_name || defaultConfig.brand_name;
+  const brand = cfg.brand_name || config.brand_name;
   if (el('brand-name')) el('brand-name').textContent = brand;
   if (el('footer-brand')) el('footer-brand').textContent = brand;
 
-  document.documentElement.style.setProperty('--bg', config.background_color || defaultConfig.background_color);
-  document.documentElement.style.setProperty('--surface', config.surface_color || defaultConfig.surface_color);
-  document.documentElement.style.setProperty('--text', config.text_color || defaultConfig.text_color);
-  document.documentElement.style.setProperty('--primary', config.primary_action_color || defaultConfig.primary_action_color);
-  document.documentElement.style.setProperty('--secondary', config.secondary_action_color || defaultConfig.secondary_action_color);
+  document.documentElement.style.setProperty('--bg', cfg.background_color || config.background_color);
+  document.documentElement.style.setProperty('--surface', cfg.surface_color || config.surface_color);
+  document.documentElement.style.setProperty('--text', cfg.text_color || config.text_color);
+  document.documentElement.style.setProperty('--primary', cfg.primary_action_color || config.primary_action_color);
+  document.documentElement.style.setProperty('--secondary', cfg.secondary_action_color || config.secondary_action_color);
 
-  document.body.style.backgroundColor = config.background_color || defaultConfig.background_color;
-  document.body.style.color = config.text_color || defaultConfig.text_color;
+  document.body.style.backgroundColor = cfg.background_color || config.background_color;
+  document.body.style.color = cfg.text_color || config.text_color;
 
-  document.body.style.fontFamily = config.font_family || defaultConfig.font_family || 'DM Sans';
-  document.body.style.fontSize = (config.font_size || defaultConfig.font_size || 16) + 'px';
-
-  if (currentView === 'home') renderHome(config);
+  if (currentView === 'home') renderHome(cfg);
 }
-
-window.elementSdk.init({
-  defaultConfig,
-  onConfigChange: async (config) => applyConfig(config),
-  mapToCapabilities: (config) => ({
-    recolorables: [
-      { label: 'Fondo', get: () => config.background_color || defaultConfig.background_color, set: (v) => window.elementSdk.setConfig({ background_color: v }) },
-      { label: 'Superficie', get: () => config.surface_color || defaultConfig.surface_color, set: (v) => window.elementSdk.setConfig({ surface_color: v }) },
-      { label: 'Texto', get: () => config.text_color || defaultConfig.text_color, set: (v) => window.elementSdk.setConfig({ text_color: v }) },
-      { label: 'Primario', get: () => config.primary_action_color || defaultConfig.primary_action_color, set: (v) => window.elementSdk.setConfig({ primary_action_color: v }) },
-      { label: 'Secundario', get: () => config.secondary_action_color || defaultConfig.secondary_action_color, set: (v) => window.elementSdk.setConfig({ secondary_action_color: v }) },
-    ],
-    borderables: [],
-    typography: {
-      font: {
-        get: () => config.font_family || defaultConfig.font_family || 'DM Sans',
-        set: (v) => window.elementSdk.setConfig({ font_family: v })
-      },
-      size: {
-        get: () => config.font_size || defaultConfig.font_size || 16,
-        set: (v) => window.elementSdk.setConfig({ font_size: v })
-      }
-    }
-  }),
-  mapToEditPanelValues: (config) => new Map([
-    ['brand_name', config.brand_name || defaultConfig.brand_name],
-    ['hero_title', config.hero_title || defaultConfig.hero_title],
-    ['hero_subtitle', config.hero_subtitle || defaultConfig.hero_subtitle],
-    ['cta_text', config.cta_text || defaultConfig.cta_text],
-  ]),
-});
 
 /* ── Navigation ── */
 function navigateTo(view) {
@@ -230,9 +67,15 @@ function navigateTo(view) {
   const links = document.querySelectorAll('#desktop-nav .nav-link');
   if (links[navMap[view]]) links[navMap[view]].classList.add('active');
 
-  const cfg = window.elementSdk.config || defaultConfig;
-  const views = { home: renderHome, menu: renderMenu, history: renderHistory, addresses: renderAddresses, billing: renderBilling, checkout: renderCheckout };
-  (views[view] || renderHome)(cfg);
+  const views = {
+    home: renderHome,
+    menu: renderMenu,
+    history: renderHistory,
+    addresses: renderAddresses,
+    billing: renderBilling,
+    checkout: renderCheckout
+  };
+  (views[view] || renderHome)(config);
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (view !== 'home') toggleCart(true);
   lucide.createIcons();
@@ -241,9 +84,9 @@ function navigateTo(view) {
 /* ── Views ── */
 function renderHome(cfg) {
   const main = document.getElementById('main-content');
-  const title = cfg.hero_title || defaultConfig.hero_title;
-  const subtitle = cfg.hero_subtitle || defaultConfig.hero_subtitle;
-  const cta = cfg.cta_text || defaultConfig.cta_text;
+  const title = cfg.hero_title || config.hero_title;
+  const subtitle = cfg.hero_subtitle || config.hero_subtitle;
+  const cta = cfg.cta_text || config.cta_text;
 
   main.innerHTML = `
     <section class="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
@@ -547,8 +390,11 @@ function toggleCart(forceClose) {
 /* ── Mobile Nav ── */
 function buildMobileNav() {
   const links = [
-    ['home', 'Inicio', 'home'], ['menu', 'Menú', 'utensils'], ['history', 'Pedidos', 'clipboard-list'],
-    ['addresses', 'Direcciones', 'map-pin'], ['billing', 'Facturación', 'receipt'],
+    ['home', 'Inicio', 'home'],
+    ['menu', 'Menú', 'utensils'],
+    ['history', 'Pedidos', 'clipboard-list'],
+    ['addresses', 'Direcciones', 'map-pin'],
+    ['billing', 'Facturación', 'receipt'],
   ];
   document.getElementById('mobile-nav-links').innerHTML = links.map(l =>
     `<a href="#" onclick="navigateTo('${l[0]}');return false" class="flex items-center gap-3 py-3 text-sm font-medium hover:text-spice transition">
@@ -564,6 +410,7 @@ function toggleMobileNav() {
   nav.classList.toggle('-translate-x-full');
   overlay.classList.toggle('hidden');
 }
+
 function closeMobileNav() {
   document.getElementById('mobile-nav').classList.add('-translate-x-full');
   document.getElementById('mobile-nav-overlay').classList.add('hidden');
@@ -605,8 +452,23 @@ function closeAuth() {
   modal.classList.remove('flex');
 }
 
-window.handleLogin = (e) => { e.preventDefault(); loggedIn = true; userName = 'Juan'; closeAuth(); showToast('¡Bienvenido, Juan!'); updateAuthUI(); };
-window.handleRegister = (e) => { e.preventDefault(); loggedIn = true; userName = e.target.querySelector('input').value || 'Usuario'; closeAuth(); showToast(`¡Cuenta creada! Bienvenido, ${userName}`); updateAuthUI(); };
+window.handleLogin = (e) => {
+  e.preventDefault();
+  loggedIn = true;
+  userName = 'Juan';
+  closeAuth();
+  showToast('¡Bienvenido, Juan!');
+  updateAuthUI();
+};
+
+window.handleRegister = (e) => {
+  e.preventDefault();
+  loggedIn = true;
+  userName = e.target.querySelector('input').value || 'Usuario';
+  closeAuth();
+  showToast(`¡Cuenta creada! Bienvenido, ${userName}`);
+  updateAuthUI();
+};
 
 function updateAuthUI() {
   const btn = document.getElementById('auth-btn');
@@ -625,9 +487,9 @@ function showToast(msg) {
 }
 
 /* ── Init ── */
-buildMobileNav();
-navigateTo('home');
-lucide.createIcons();
-</script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9f04454de394d94e',t:'MTc3Njg1NzE1Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
-</html>
+document.addEventListener('DOMContentLoaded', function() {
+  applyConfig(config);
+  buildMobileNav();
+  navigateTo('home');
+  lucide.createIcons();
+});

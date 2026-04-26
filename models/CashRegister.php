@@ -51,11 +51,12 @@ class CashRegister {
     }
 
     public function getSessionTotals($registerId) {
+        // Simplificamos: Sumamos ingresos y egresos puros. 
+        // La lógica de anulación ahora recae en crear un movimiento de 'egress' de compensación.
         $sql = "SELECT 
-                    SUM(CASE WHEN m.type = 'ingress' AND (m.source != 'order' OR o.status NOT IN ('cancelled', 'rejected')) THEN m.amount ELSE 0 END) as ingress,
-                    SUM(CASE WHEN m.type = 'egress' AND (m.source != 'order' OR o.status NOT IN ('cancelled', 'rejected')) THEN m.amount ELSE 0 END) as egress
+                    SUM(CASE WHEN type = 'ingress' THEN amount ELSE 0 END) as ingress,
+                    SUM(CASE WHEN type = 'egress' THEN amount ELSE 0 END) as egress
                 FROM cash_movements m
-                LEFT JOIN orders o ON m.reference_id = o.id AND m.source = 'order'
                 WHERE m.cash_register_id = :id";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':id' => $registerId]);
@@ -94,13 +95,11 @@ class CashRegister {
     public function getRecentSessions($limit = 10) {
         $sql = "SELECT r.*, u.name as user_name,
                 (r.opening_amount + 
-                    COALESCE((SELECT SUM(CASE WHEN m1.type = 'ingress' AND (m1.source != 'order' OR o1.status NOT IN ('cancelled', 'rejected')) THEN m1.amount ELSE 0 END) 
-                              FROM cash_movements m1 
-                              LEFT JOIN orders o1 ON o1.id = m1.reference_id AND m1.source = 'order'
+                    COALESCE((SELECT SUM(CASE WHEN m1.type = 'ingress' THEN m1.amount ELSE 0 END) 
+                              FROM cash_movements m1
                               WHERE m1.cash_register_id = r.id), 0) - 
-                    COALESCE((SELECT SUM(CASE WHEN m2.type = 'egress' AND (m2.source != 'order' OR o2.status NOT IN ('cancelled', 'rejected')) THEN m2.amount ELSE 0 END) 
+                    COALESCE((SELECT SUM(CASE WHEN m2.type = 'egress' THEN m2.amount ELSE 0 END) 
                               FROM cash_movements m2 
-                              LEFT JOIN orders o2 ON o2.id = m2.reference_id AND m2.source = 'order'
                               WHERE m2.cash_register_id = r.id), 0)) as current_expected
                 FROM cash_registers r 
                 JOIN users u ON r.user_id = u.id

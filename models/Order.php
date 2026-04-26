@@ -307,20 +307,27 @@ class Order {
                 $stAnular = $this->conn->prepare($qAnular);
                 $stAnular->execute([':id' => $this->id]);
 
-                // 2. Registrar Egreso en Caja para devolver el dinero (si hubo pago previo)
+                // 2. Registrar Egreso en Caja de compensación
                 $orderData = $this->readOne();
-                if ($orderData['total_paid'] > 0) {
-                    $cashModel = new CashRegister();
-                    $activeSession = $cashModel->getActiveSession($this->user_id);
-                    if ($activeSession) {
+                $cashModel = new CashRegister();
+                $activeSession = $cashModel->getActiveSession($this->user_id);
+                
+                if ($activeSession) {
+                    // Verificamos si realmente hubo un ingreso previo en cash_movements para este pedido
+                    $qCheckMov = "SELECT SUM(amount) FROM cash_movements WHERE reference_id = :oid AND source = 'order' AND type = 'ingress' AND cash_register_id = :rid";
+                    $stCheckMov = $this->conn->prepare($qCheckMov);
+                    $stCheckMov->execute([':oid' => $this->id, ':rid' => $activeSession['id']]);
+                    $montoIngresado = $stCheckMov->fetchColumn() ?: 0;
+
+                    if ($montoIngresado > 0) {
                         $qRev = "INSERT INTO cash_movements 
                                  (cash_register_id, amount, type, description, source, reference_id, created_at) 
                                  VALUES (:rid, :amt, 'egress', :desc, 'order', :ref, CURRENT_TIMESTAMP)";
                         $stRev = $this->conn->prepare($qRev);
                         $stRev->execute([
                             ':rid'  => $activeSession['id'],
-                            ':amt'  => $orderData['total_paid'],
-                            ':desc' => "REEMBOLSO: Pedido #{$this->id} " . ($this->status === 'rejected' ? 'Rechazado' : 'Cancelado'),
+                            ':amt'  => $montoIngresado,
+                            ':desc' => "ANULACIÓN AUTOMÁTICA: Pedido #{$this->id} " . ($this->status === 'rejected' ? 'Rechazado' : 'Cancelado'),
                             ':ref'  => $this->id
                         ]);
                     }
@@ -401,8 +408,21 @@ class Order {
 
             if ($existingVenta) {
                 $ventaId = $existingVenta['id'];
-                $order = $this->readOne(); // Necesitamos el total para el pago
+                
+                // Validar si ya existe un pago para esta venta para evitar duplicidad
+                $qCheckPago = "SELECT id FROM pagos WHERE venta_id = :vid LIMIT 1";
+                $stCheckPago = $this->conn->prepare($qCheckPago);
+                $stCheckPago->execute([':vid' => $ventaId]);
+                if ($stCheckPago->fetch()) {
+                    throw new Exception("Integridad: Esta venta ya tiene un pago registrado. No se puede duplicar.");
+                }
+                $order = $this->readOne();
             } else {
+                // Validar que no se intente crear una factura sin intención de pago
+                if ($payments === null) {
+                    throw new Exception("Integridad: No se permite crear facturas sin un registro de pago asociado.");
+                }
+
                 $order = $this->readOne();
                 $details = $this->readDetails();
 
@@ -443,7 +463,7 @@ class Order {
             }
 
             // --- PROCESAMIENTO DE PAGO (OPCIONAL) ---
-            if ($payments !== null) {
+            if ($payments !== null) { // Ahora este bloque es prácticamente obligatorio para nuevas facturas
                 // Si se pasan vacíos [], usamos el método del pedido
                 if (empty($payments)) {
                     $payments[] = [

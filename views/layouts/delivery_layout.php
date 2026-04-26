@@ -293,6 +293,7 @@
             <a href="?route=delivery" class="menu-item"><i class="fas fa-clipboard-list"></i> Pedidos Activos</a>
             <a href="?route=delivery_production" class="menu-item"><i class="fas fa-coins"></i> Mi Producción</a>
             <a href="?route=delivery_history" class="menu-item"><i class="fas fa-history"></i> Historial y Cuentas</a>
+            <a href="?route=delivery_support" class="menu-item"><i class="fas fa-headset"></i> Soporte y Local</a>
             <!-- Grupo de Asistencias -->
             <div class="menu-group">
                 <a href="javascript:void(0)" class="menu-item" onclick="toggleSubmenu('submenu-asistencias', this)">

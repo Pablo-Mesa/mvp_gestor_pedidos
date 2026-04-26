@@ -576,6 +576,8 @@
                     'k': '?route=menus',
                     'n': '?route=products_create',
                     'c': '?route=cash',
+                    'f': '?route=sales_history',
+                    'r': '?route=payments_report',
                     'h': '?route=shortcuts'
                 };
                 if (routes[key]) {

@@ -101,8 +101,7 @@
 
     // Detectar si estamos en la Home para mostrar categorías
     $currentRoute = $_GET['route'] ?? 'home';
-    // Solo mostramos categorías si es la home, está logueado Y EL LOCAL ESTÁ ABIERTO
-    $showCategories = ($currentRoute === 'home' && isset($_SESSION['client_id']) && $isStoreOpen);
+    $showCategories = ($currentRoute === 'home' && isset($_SESSION['client_id']));
 
     // Cargar Ajustes de Identidad (Siempre disponible)
     $settingModel = new Setting();
@@ -164,7 +163,7 @@
                 </div>
 
                 <!-- Lado Derecho: Carrito -->
-                <div class="cart-menu" style="<?php echo ($isStoreOpen && isset($_SESSION['client_id'])) ? 'visibility: hidden;' : 'display: none;'; ?>">
+                <div class="cart-menu" style="visibility: hidden;">
                     <button class="btn-std" onclick="toggleCart()">
                         <i class="fas fa-shopping-cart"></i>
                         <span class="badge-count" id="cart-count" style="display: none;">0</span>
@@ -253,6 +252,41 @@
         </div>
     </header>
 
+    <!-- Header -->
+   <header class="fixed-header" style="display: none;">
+    <!-- Este header se oculta en móviles para dar paso a una versión más compacta -->
+    <?php if (!$isStoreOpen && !empty($nextOpeningMsg)): ?>
+        <div class="status-banner">
+            <i class="fas fa-clock"></i> Local Cerrado. <?php echo $nextOpeningMsg; ?>
+        </div>
+    <?php endif;?>
+
+    <div class="header-content">
+        <button class="md:hidden text-bark" onclick="toggleMobileNav()">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+        <a href="#" onclick="navigateTo('home');return false" class="font-display text-xl sm:text-2xl text-spice" id="brand-name">Vianda Express</a>
+        <nav class="hidden md:flex items-center gap-6 text-sm" id="desktop-nav">
+            <a href="#" class="nav-link active" onclick="navigateTo('home');return false">Inicio</a>
+            <a href="#" class="nav-link" onclick="navigateTo('menu');return false">Menú</a>
+            <a href="#" class="nav-link" onclick="navigateTo('history');return false">Pedidos</a>
+            <a href="#" class="nav-link" onclick="navigateTo('addresses');return false">Direcciones</a>
+            <a href="#" class="nav-link" onclick="navigateTo('billing');return false">Facturación</a>
+        </nav>
+        <div class="flex items-center gap-3">
+            <button onclick="toggleCart()" class="relative p-2 hover:bg-sand/50 rounded-xl transition">
+                <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+                <span id="cart-badge" class="absolute -top-0.5 -right-0.5 bg-spice text-white rounded-full badge items-center justify-center font-bold hidden"></span>
+            </button>
+            <button onclick="openAuth('login')" class="hidden sm:flex items-center gap-1.5 text-sm font-medium hover:text-spice transition" id="auth-btn">
+                <i data-lucide="user" class="w-4 h-4">                
+                </i>
+                <span>Ingresar</span>
+            </button>
+        </div>
+    </div>
+   </header>
+    
     <!-- Overlay y Sidebar del Carrito -->
     <div class="cart-overlay" onclick="toggleCart()"></div>
     <div class="cart-sidebar" id="cart-sidebar">

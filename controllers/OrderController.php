@@ -261,7 +261,8 @@ class OrderController {
         // Si se solicita facturación rápida (sin desglose de pagos manual)
         if (isset($_GET['quick']) && $_GET['quick'] == 1) {
             $orderModel->user_id = $_SESSION['user_id'];
-            $ventaId = $orderModel->finalizeSale(null); // Pasamos null para no registrar pago
+            // Pasamos [] para que el modelo registre el pago automáticamente con los datos del pedido
+            $ventaId = $orderModel->finalizeSale([]); 
             if ($ventaId) {
                 // Redirigimos al mismo formulario de cobro pero ya con la factura generada para completar el flujo
                 header('Location: ?route=orders_finalize&id=' . $id . '&success=invoice_created&print_sale_id=' . $ventaId);

@@ -319,29 +319,29 @@
         <section class="quick-actions">
             <h2>Acciones Rápidas</h2>
             <div class="actions-grid">
-                <a href="?route=pos" class="action-btn">
-                    <i class="fas fa-cash-register"></i>
-                    <span>Punto de venta <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + P]</small></span>
+                <a href="?route=cash" class="action-btn">
+                    <i class="fas fa-key"></i>
+                    <span>Apertura de Caja <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + C]</small></span>
                 </a>
                 <a href="?route=orders" class="action-btn">
-                    <i class="fas fa-list-ul"></i>
-                    <span>Ver Pedidos <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + O]</small></span>
+                    <i class="fas fa-list"></i>
+                    <span>Pedidos <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + O]</small></span>
                 </a>
                 <a href="?route=sales_history" class="action-btn">
                     <i class="fas fa-file-invoice-dollar"></i>
-                    <span>Facturación / Tickets</span>
+                    <span>Facturacion/Ticket <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + F]</small></span>
                 </a>
                 <a href="?route=payments_report" class="action-btn">
                     <i class="fas fa-money-check-alt"></i>
-                    <span>Pagos Recibidos</span>
+                    <span>Pagos <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + R]</small></span>
                 </a>
-                <a href="?route=menus" class="action-btn">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>Planificar Menú <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + K]</small></span>
+                <a href="?route=cash" class="action-btn">
+                    <i class="fas fa-vault"></i>
+                    <span>Movimientos Caja <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + C]</small></span>
                 </a>
-                <a href="?route=products_create" class="action-btn">
-                    <i class="fas fa-plus-circle"></i>
-                    <span>Nuevo Producto <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + N]</small></span>
+                <a href="?route=pos" class="action-btn">
+                    <i class="fas fa-cash-register"></i>
+                    <span>Punto de Venta <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + P]</small></span>
                 </a>
             </div>
         </section>

@@ -185,7 +185,7 @@ class AdminController {
         try {
             $db = (new Database())->getConnection();
             
-            $query = "SELECT pd.*, p.fecha_pago, v.nro_factura, v.order_id as order_ref
+            $query = "SELECT pd.*, p.fecha_pago, v.nro_factura, v.order_id as order_ref, v.estado
                       FROM pagos_detalles pd
                       JOIN pagos p ON pd.pago_id = p.id
                       JOIN pos_ventas_cabecera v ON p.venta_id = v.id
@@ -198,8 +198,11 @@ class AdminController {
             $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             foreach ($payments as $pay) {
-                $summary[$pay['metodo_pago']] += $pay['monto'];
-                $summary['total'] += $pay['monto'];
+                // Solo sumamos al reporte de ingresos si la venta NO está anulada (estado != 0)
+                if ($pay['estado'] != 0) {
+                    $summary[$pay['metodo_pago']] += $pay['monto'];
+                    $summary['total'] += $pay['monto'];
+                }
             }
         } catch (Exception $e) {
             error_log("Error en paymentsReport: " . $e->getMessage());

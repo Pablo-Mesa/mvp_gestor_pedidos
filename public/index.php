@@ -406,6 +406,11 @@ switch ($route) {
         $controller = new DeliveryController();
         $controller->assists();
         break;
+    case 'delivery_support':
+        require_once '../controllers/DeliveryController.php';
+        $controller = new DeliveryController();
+        $controller->support();
+        break;
 
     case 'delivery_checkin':
         require_once '../controllers/DeliveryController.php';

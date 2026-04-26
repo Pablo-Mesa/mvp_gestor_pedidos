@@ -337,8 +337,15 @@
                             <?php foreach ($item['children'] as $child): 
                                 // Validar permisos también para elementos hijos
                                 if (isset($child['roles']) && !in_array($user_role, $child['roles'])) continue;
+
+                                // Lógica para ocultar "Solo Pendientes" si no estamos en esa ruta inicialmente
+                                $liAttr = '';
+                                if ($child['route'] === 'orders_pending') {
+                                    $liAttr = 'id="li-orders-pending"';
+                                    if ($current_route !== 'orders_pending') $liAttr .= ' style="display:none;"';
+                                }
                             ?>
-                                <li>
+                                <li <?php echo $liAttr; ?>>
                                     <a href="?route=<?php echo $child['route']; ?>" 
                                        class="<?php echo $current_route === $child['route'] ? 'active-link' : ''; ?>">
                                         <i class="<?php echo $child['icon']; ?> me-2"></i> <?php echo $child['label']; ?>
@@ -527,6 +534,8 @@
                 const data = await response.json();
                 
                 const badge = document.getElementById('badge-orders-count');
+                const liPending = document.getElementById('li-orders-pending');
+
                 if (badge) {
                     // Si el conteo aumentó respecto a la última consulta, sonar alerta
                     if (lastOrderCount !== null && data.count > lastOrderCount) {
@@ -537,8 +546,15 @@
                     if (data.count > 0) {
                         badge.innerText = data.count;
                         badge.style.display = 'block';
+                        // Mostrar el acceso en el menú si hay pedidos
+                        if (liPending) liPending.style.display = 'block';
                     } else {
                         badge.style.display = 'none';
+                        // Ocultar el acceso solo si NO estamos actualmente en esa página
+                        const urlParams = new URLSearchParams(window.location.search);
+                        if (liPending && urlParams.get('route') !== 'orders_pending') {
+                            liPending.style.display = 'none';
+                        }
                     }
                 }
             } catch (error) {
@@ -581,6 +597,13 @@
                     'h': '?route=shortcuts'
                 };
                 if (routes[key]) {
+                    // Evitar recargar la página si ya estamos en la ruta de destino
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const currentRoute = urlParams.get('route') || 'admin';
+                    const targetRoute = routes[key].split('route=')[1];
+
+                    if (currentRoute === targetRoute) return;
+
                     e.preventDefault();
                     window.location.href = routes[key];
                     return;

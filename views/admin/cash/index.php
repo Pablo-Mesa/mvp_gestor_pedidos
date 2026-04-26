@@ -1,3 +1,14 @@
+<?php
+// Identificar qué usuarios tienen sesiones abiertas actualmente para prevenir duplicados
+$activeUserIds = [];
+if (isset($recentSessions)) {
+    foreach ($recentSessions as $s) {
+        if ($s['status'] === 'open') {
+            $activeUserIds[] = $s['user_id'];
+        }
+    }
+}
+?>
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -178,9 +189,12 @@
                 <div class="mb-3">
                     <label class="form-label">Asignar Cajero Responsable</label>
                     <?php if ($_SESSION['user_role'] === 'admin' && isset($cashiers)): ?>
-                        <select name="user_id" class="form-select" required>
+                        <select name="user_id" id="select_cashier" class="form-select" required onchange="updateRoleField()">
                             <?php foreach ($cashiers as $u): ?>
-                                <option value="<?php echo $u['id']; ?>" <?php echo ($u['id'] == $_SESSION['user_id']) ? 'selected' : ''; ?>>
+                                <option value="<?php echo $u['id']; ?>" 
+                                        data-role="<?php echo ucfirst($u['role']); ?>"
+                                        data-active="<?php echo in_array($u['id'], $activeUserIds) ? 'true' : 'false'; ?>"
+                                        <?php echo ($u['id'] == $_SESSION['user_id']) ? 'selected' : ''; ?>>
                                     <?php echo htmlspecialchars($u['name']); ?> (<?php echo ucfirst($u['role']); ?>)
                                 </option>
                             <?php endforeach; ?>
@@ -192,13 +206,15 @@
                     <?php endif; ?>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Punto de Venta / Caja Física</label>
-                    <select name="cash_station" class="form-select" required>
-                        <option value="Caja Principal">Caja Principal</option>
-                        <option value="Barra / Bebidas">Barra / Bebidas</option>
-                        <option value="Caja Delivery">Caja Delivery</option>
-                    </select>
+                    <label class="form-label">Punto de Venta / Rol Asignado</label>
+                    <input type="text" name="cash_station" id="cash_station_input" class="form-control bg-light" 
+                           value="<?php echo ucfirst($_SESSION['user_role']); ?>" readonly required>
                 </div>
+
+                <div id="user_active_warning" class="alert alert-warning py-2 mb-3" style="display: none;">
+                    <i class="fas fa-exclamation-triangle me-2"></i> Este usuario ya tiene una sesión abierta.
+                </div>
+
                 <label class="form-label">Monto Inicial (Gs.)</label>
                 <input type="number" name="opening_amount" class="form-control" placeholder="0" required autofocus>
                 <small class="text-muted">Monto físico disponible en caja al iniciar el turno.</small>
@@ -243,4 +259,37 @@ function prepareCloseModal(id, station, expected) {
     document.getElementById('close_station_label').innerText = station;
     document.getElementById('close_expected_label').innerText = 'Gs. ' + new Intl.NumberFormat('es-PY').format(expected);
 }
+
+/**
+ * Actualiza el campo de Punto de Venta basado en el rol del usuario seleccionado
+ */
+function updateRoleField() {
+    const select = document.getElementById('select_cashier');
+    const input = document.getElementById('cash_station_input');
+    if(!select || !input) return;
+    
+    const selectedOption = select.options[select.selectedIndex];
+    input.value = selectedOption.getAttribute('data-role') || '';
+
+    // Nueva validación: Impedir apertura duplicada
+    const isActive = selectedOption.getAttribute('data-active') === 'true';
+    const submitBtn = document.querySelector('#modalOpenCash button[type="submit"]');
+    const warning = document.getElementById('user_active_warning');
+
+    if (isActive) {
+        submitBtn.disabled = true;
+        if (warning) warning.style.display = 'block';
+    } else {
+        submitBtn.disabled = false;
+        if (warning) warning.style.display = 'none';
+    }
+}
+
+// Ejecutar validación inicial al abrir el modal
+document.addEventListener('DOMContentLoaded', function() {
+    const modalOpen = document.getElementById('modalOpenCash');
+    if (modalOpen) {
+        modalOpen.addEventListener('shown.bs.modal', updateRoleField);
+    }
+});
 </script>

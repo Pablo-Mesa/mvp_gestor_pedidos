@@ -219,5 +219,16 @@ class DeliveryController {
         $content_view = '../views/delivery/production.php';
         require_once '../views/layouts/delivery_layout.php';
     }
+
+    public function support() {
+        require_once '../models/Empresa.php';
+        $empresaModel = new Empresa();
+        // Obtenemos los datos del local para extraer el teléfono oficial
+        $empresa = $empresaModel->readAll()->fetch(PDO::FETCH_ASSOC);
+
+        $view_title = "Soporte al Repartidor";
+        $content_view = '../views/delivery/support.php';
+        require_once '../views/layouts/delivery_layout.php';
+    }
 }
 ?>

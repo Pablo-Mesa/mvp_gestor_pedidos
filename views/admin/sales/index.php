@@ -195,6 +195,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('keydown', function(e) {
         if (e.altKey && e.key.toLowerCase() === 'f') {
             e.preventDefault();
+            e.stopImmediatePropagation(); // Evita que el layout global intercepte y recargue la página
             const btn = document.getElementById('btn-open-facturar');
             if (btn) btn.click();
         }

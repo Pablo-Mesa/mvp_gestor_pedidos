@@ -418,11 +418,6 @@ class Order {
                 }
                 $order = $this->readOne();
             } else {
-                // Validar que no se intente crear una factura sin intención de pago
-                if ($payments === null) {
-                    throw new Exception("Integridad: No se permite crear facturas sin un registro de pago asociado.");
-                }
-
                 $order = $this->readOne();
                 $details = $this->readDetails();
 

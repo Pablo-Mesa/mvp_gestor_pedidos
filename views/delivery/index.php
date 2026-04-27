@@ -7,10 +7,10 @@
     .order-card {
         background: var(--delivery-card);
         border-radius: 15px;
-        padding: 1.5rem;
-        margin-bottom: 1.2rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
         border: 1px solid rgba(0,0,0,0.05);
-        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     .order-card:active { transform: scale(0.98); }
@@ -85,8 +85,8 @@
     .status-badge-header.cancelled { background: #ffcdd2; color: #c62828; }
 
     .client-info h3 {
-        font-size: 1.4rem;
-        margin-bottom: 5px;
+        font-size: 1.2rem;
+        margin-bottom: 2px;
         color: var(--delivery-text);
     }
 
@@ -111,11 +111,17 @@
         background: #fcfcfc;
         border: 1px solid #f0f0f0;
         border-radius: 10px;
-        padding: 12px;
-        margin: 10px 0;
+        padding: 8px 12px;
+        margin: 8px 0;
     }
     
-    .amount-to-collect { font-size: 1.4rem; color: #2d3436; font-weight: 900; letter-spacing: -1px; }
+    .payment-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .amount-to-collect { font-size: 1.25rem; color: #2d3436; font-weight: 900; letter-spacing: -0.5px; }
     
     .badge-payment {
         padding: 5px 10px;
@@ -127,8 +133,8 @@
     .bg-paid { background: #ebfbee; color: #099268; border: 1px solid #b2f2bb; }
 
     .address-box {
-        padding: 10px 0;
-        font-size: 1.1rem;
+        padding: 5px 0;
+        font-size: 1rem;
         display: flex;
         align-items: flex-start;
         gap: 8px;
@@ -141,10 +147,10 @@
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 10px;
-        margin: 15px 0;
+        margin: 10px 0;
     }
     .btn-contact {
-        padding: 12px;
+        padding: 10px;
         border-radius: 10px;
         text-decoration: none;
         display: flex;
@@ -162,10 +168,10 @@
         position: relative;
         border-radius: 12px;
         overflow: hidden;
-        margin: 15px 0;
+        margin: 10px 0;
         border: 1px solid #eee;
     }
-    .map-preview { height: 160px; width: 100%; z-index: 1; }
+    .map-preview { height: 120px; width: 100%; z-index: 1; }
     .map-overlay-btn {
         position: absolute;
         bottom: 10px;
@@ -181,16 +187,16 @@
     }
 
     .delivery-actions {
-        margin-top: 10px;
-        padding-top: 15px;
+        margin-top: 8px;
+        padding-top: 10px;
         border-top: 1px solid #eee;
     }
     .btn-logistics {
         width: 100%;
-        padding: 20px;
+        padding: 15px;
         border-radius: 16px;
         font-weight: 900;
-        font-size: 1.1rem;
+        font-size: 1rem;
         border: none;
         display: flex;
         align-items: center;
@@ -283,23 +289,21 @@ function renderOrderCardHTML($order) {
 
                 <div class="payment-summary">
                     <div class="payment-row">
-                        <span class="payment-label">Método: <?php echo htmlspecialchars($order['payment_method'] ?? 'No especificado'); ?></span>
+                        <span style="font-size: 0.8rem; color: #636e72;">Método: <strong><?php echo ucfirst($order['payment_method']); ?></strong></span>
+                        <div>
                         <?php if($hasInvoice): ?>
-                            <span class="badge-payment" style="background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; margin-right: 5px;" title="Factura/Ticket emitido">
-                                <i class="fas fa-file-invoice"></i> Ticket Listo
+                                <span class="badge-payment" style="background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; margin-right: 4px; padding: 3px 8px;">
+                                    <i class="fas fa-file-invoice"></i>
                             </span>
                         <?php endif; ?>
                         <span class="badge-payment <?php echo $mustCollect ? 'bg-collect' : 'bg-paid'; ?>">
                             <?php echo $mustCollect ? 'A Cobrar' : 'Ya Pagado'; ?>
                         </span>
+                        </div>
                     </div>
-                    <div class="payment-row" style="margin-top: 5px;">
-                        <span class="payment-label">Monto Total:</span>
+                    <div class="payment-row" style="margin-top: 4px;">
                         <span class="amount-to-collect">Gs. <?php echo number_format($order['total'], 0, ',', '.'); ?></span>
-                    </div>
-                    <div class="payment-row" style="margin-top: 5px; border-top: 1px dashed #ddd; padding-top: 5px;">
-                        <span class="payment-label" style="color: #95a5a6; font-size: 0.8rem;">Costo de delivery:</span>
-                        <span style="font-weight: 600; color: #7f8c8d; font-size: 0.85rem;">Gs. <?php echo number_format($order['delivery_cost'] ?? 0, 0, ',', '.'); ?></span>
+                        <span style="font-size: 0.8rem; color: #a4b0be;">Envío: Gs. <?php echo number_format($order['delivery_cost'] ?? 0, 0, ',', '.'); ?></span>
                     </div>
                 </div>
             </div>
@@ -505,20 +509,18 @@ function renderOrderCardJS(order) {
                 </div>
                 <div class="payment-summary">
                     <div class="payment-row">
-                        <span class="payment-label">Método: ${order.payment_method}</span>
+                        <span style="font-size: 0.8rem; color: #636e72;">Método: <strong>${order.payment_method}</strong></span>
+                        <div>
                         ${hasInvoice ? `
-                            <span class="badge-payment" style="background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; margin-right: 5px;">
-                                <i class="fas fa-file-invoice"></i> Ticket Listo
+                            <span class="badge-payment" style="background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; margin-right: 4px; padding: 3px 8px;">
+                                <i class="fas fa-file-invoice"></i>
                             </span>` : ''}
                         <span class="badge-payment ${mustCollect ? 'bg-collect' : 'bg-paid'}">${mustCollect ? 'A Cobrar' : 'Ya Pagado'}</span>
+                        </div>
                     </div>
-                    <div class="payment-row" style="margin-top: 5px;">
-                        <span class="payment-label">Monto Total:</span>
+                    <div class="payment-row" style="margin-top: 4px;">
                         <span class="amount-to-collect">Gs. ${formattedTotal}</span>
-                    </div>
-                    <div class="payment-row" style="margin-top: 5px; border-top: 1px dashed #ddd; padding-top: 5px;">
-                        <span class="payment-label" style="color: #95a5a6; font-size: 0.8rem;">Costo de delivery:</span>
-                        <span style="font-weight: 600; color: #7f8c8d; font-size: 0.85rem;">Gs. ${formattedEarnings}</span>
+                        <span style="font-size: 0.8rem; color: #a4b0be;">Envío: Gs. ${formattedEarnings}</span>
                     </div>
                 </div>
             </div>

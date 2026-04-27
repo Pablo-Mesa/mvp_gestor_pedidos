@@ -152,7 +152,7 @@
         .content-wrapper {
             height: calc(100vh - 70px); /* Altura total menos la altura del topbar */
             padding: 1rem;            
-            overflow-y: auto;            
+            overflow-y: auto;  
         }
         
         /* Utilidades para Dashboard (Cards) */

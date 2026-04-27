@@ -312,6 +312,16 @@ class OrderController {
 
             // Si el pedido se completa, formalizar la Venta y el Pago (Segunda Propuesta)
             if ($success && $_POST['status'] === 'completed') {
+                $cashModel = new CashRegister();
+                
+                // Si es repartidor y no tiene caja abierta, la abrimos automáticamente
+                // para no bloquear el registro del movimiento de caja.
+                $activeSession = $cashModel->getActiveSession($_SESSION['user_id']);
+                if (!$activeSession && $_SESSION['user_role'] === 'delivery') {
+                    $cashModel->open($_SESSION['user_id'], 0, 'Reparto');
+                    $activeSession = $cashModel->getActiveSession($_SESSION['user_id']);
+                }
+
                 $payment_confirm = $_POST['payment_confirm'] ?? 'order_method';
                 $orderData = $order->readOne();
                 
@@ -332,10 +342,6 @@ class OrderController {
                     ]];
                 }
 
-                // Intentamos obtener sesión de caja para el cierre automático
-                $cashModel = new CashRegister();
-                $activeSession = $cashModel->getActiveSession($_SESSION['user_id']);
-                
                 // En el cierre automático, si no hay caja abierta, finalizeSale lanzará error o se puede manejar
                 $registerId = $activeSession ? $activeSession['id'] : null;
                 $order->finalizeSale($payData, $registerId);

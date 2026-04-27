@@ -185,31 +185,41 @@
                     </div>
                     <div class="order-body">
                         <div class="order-info">
-                            <p><strong>Total:</strong> Gs. <?php echo number_format($order['total'], 0, ',', '.'); ?></p>
-                            <p><strong>Entrega:</strong> <?php echo ucfirst($order['delivery_type']); ?></p>
-                            <p><strong>Pago:</strong> <?php echo ucfirst($order['payment_method']); ?></p>
+                            <p style="font-size: 1.1rem; margin-bottom: 8px;">
+                                <strong>Total:</strong> <span style="color: #28a745; font-weight: 800;">Gs. <?php echo number_format($order['total'], 0, ',', '.'); ?></span>
+                            </p>
+                            
+                            <?php if ($order['delivery_type'] === 'delivery'): ?>
+                                <p><i class="fas fa-motorcycle" style="width: 18px; color: #a4b0be;"></i> <strong>Envío:</strong> Gs. <?php echo number_format($order['delivery_cost'] ?? 0, 0, ',', '.'); ?></p>
+                            <?php endif; ?>
+
+                            <p><i class="fas fa-wallet" style="width: 18px; color: #a4b0be;"></i> <strong>Pago:</strong> <?php echo ucfirst($order['payment_method']); ?></p>
+                            <p><i class="fas fa-shopping-bag" style="width: 18px; color: #a4b0be;"></i> <strong>Tipo:</strong> <?php echo ($order['delivery_type'] === 'delivery') ? 'Delivery' : (($order['delivery_type'] === 'pickup') ? 'Retiro' : 'En Local'); ?></p>
                         </div>
-                        <div class="order-status-badge status-<?php echo $order['status']; ?>" id="status-badge-<?php echo $order['id']; ?>">
-                            <?php 
-                                $statusNames = [
-                                    'pending' => 'Pendiente',
-                                    'preparing' => 'En Cocina',
-                                    'shipped' => 'En Camino 🛵',
-                                    'rejected' => 'Rechazado',
-                                    'completed' => 'Entregado ✅',
-                                    'cancelled' => 'Cancelado'
-                                ];
-                                
-                                $label = $statusNames[$order['status']] ?? $order['status'];
-                                if ($order['status'] === 'confirmed' && $order['delivery_user_id']) {
-                                    $label = "CONFIRMADO + DELIVERY ASIGNADO";
-                                }
-                                echo strtoupper($label);
-                            ?>
+
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px; min-width: 150px;">
+                            <div class="order-status-badge status-<?php echo $order['status']; ?>" id="status-badge-<?php echo $order['id']; ?>" style="width: 100%; text-align: center;">
+                                <?php 
+                                    $statusNames = [
+                                        'pending' => 'Pendiente',
+                                        'preparing' => 'En Cocina',
+                                        'shipped' => 'En Camino 🛵',
+                                        'rejected' => 'Rechazado',
+                                        'completed' => 'Entregado ✅',
+                                        'cancelled' => 'Cancelado'
+                                    ];
+                                    
+                                    $label = $statusNames[$order['status']] ?? $order['status'];
+                                    if ($order['status'] === 'confirmed' && !empty($order['delivery_user_id'])) {
+                                        $label = "Asignado 🛵";
+                                    }
+                                    echo strtoupper($label);
+                                ?>
+                            </div>
+                            <button class="btn-detail" onclick="showDetails(<?php echo $order['id']; ?>, <?php echo $order['delivery_cost'] ?? 0; ?>)" style="width: 100%; justify-content: center;">
+                                <i class="fas fa-eye"></i> Detalle
+                            </button>
                         </div>
-                        <button class="btn-detail" onclick="showDetails(<?php echo $order['id']; ?>)">
-                            <i class="fas fa-eye"></i> Ver Detalle
-                        </button>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -224,18 +234,26 @@
         <div class="modal-content">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; background-color: #f0f2f5; padding: 1rem; border-radius: 8px; border: 1px solid #ddd;">
                 <i class="fas fa-receipt" style="font-size: 1.5rem; color: #007bff;"></i>
-                <h3>Detalles del Pedido #<span id="detailOrderId"></span></h3>
+                <h3 style="margin:0">Detalles del Pedido #<span id="detailOrderId"></span></h3>
             </div>
             <div id="orderDetailsList" style="margin-bottom: 1.5rem;">
                 <!-- Aquí se cargarán los platos -->
             </div>
 
-            <!-- NUEVO: Div para el Total -->
-            <div id="orderTotalContainer" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding: 1rem; background-color: #f9f9f9; border-radius: 8px; border: 1px solid #eee;">
-                <span style="font-weight: bold; color: #555; text-transform: uppercase; font-size: 0.9rem;">Total a Pagar</span>
-                <span id="totalDetalleMonto" style="font-size: 1.25rem; font-weight: 800; color: #333;">
-                    Gs. 0
-                </span>
+            <!-- Desglose de Totales estilo Ticket -->
+            <div id="orderTotalContainer" style="padding: 1.2rem; background-color: #fcfcfc; border-radius: 12px; border: 1px dashed #ced4da; margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #636e72; font-size: 0.9rem;">
+                    <span>Subtotal Productos:</span>
+                    <span id="totalItemsMonto">Gs. 0</span>
+                </div>
+                <div id="deliveryDetailRow" style="display: flex; justify-content: space-between; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #eee; color: #636e72; font-size: 0.9rem;">
+                    <span>Costo de Envío:</span>
+                    <span id="deliveryMonto">Gs. 0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 800; color: #2d3436;">
+                    <span style="text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px;">Total Final</span>
+                    <span id="totalDetalleMonto" style="font-size: 1.4rem; color: #28a745;">Gs. 0</span>
+                </div>
             </div>
 
             <button class="btn-main" onclick="closeDetailsModal()" style="width: 100%;">Cerrar</button>
@@ -305,7 +323,7 @@ if (document.querySelectorAll('.order-card').length > 0) {
     setInterval(checkStatusUpdates, 10000);
 }
 
-async function showDetails(orderId) {
+async function showDetails(orderId, deliveryCost = 0) {
     const modal = document.getElementById('detailsModal');
     const listContainer = document.getElementById('orderDetailsList');
     const idSpan = document.getElementById('detailOrderId');
@@ -319,24 +337,39 @@ async function showDetails(orderId) {
         const result = await response.json();
 
         if (result.success) {
-            let html = '<table style="width:100%; border-collapse: collapse;">';
-            html += '<tr style="border-bottom: 2px solid #eee; text-align:left;"><th style="padding:8px;">Plato</th><th style="padding:8px;">Cant.</th><th style="padding:8px;">Subtotal</th></tr>';
+            let html = '<table style="width:100%; border-collapse: collapse; font-size: 0.95rem;">';
+            html += '<tr style="border-bottom: 2px solid #f1f2f6; text-align:left; color: #a4b0be; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px;"><th style="padding:8px;">Plato</th><th style="padding:8px; text-align:center;">Cant.</th><th style="padding:8px; text-align:right;">Subtotal</th></tr>';
             let total_detalles = 0;
 
             result.data.forEach(item => {
                 const subtotal = item.quantity * item.price;
-                html += `<tr style="border-bottom: 1px solid #f9f9f9;">
-                    <td style="padding:8px;">${item.product_name}</td>
-                    <td style="padding:8px;">${item.quantity}</td>
-                    <td style="padding:8px;">Gs. ${new Intl.NumberFormat('es-PY').format(subtotal)}</td>
+                html += `<tr style="border-bottom: 1px solid #f1f2f6;">
+                    <td style="padding:12px 8px; font-weight: 600; color: #2d3436;">${item.product_name}</td>
+                    <td style="padding:12px 8px; text-align:center; color: #636e72;">${item.quantity}</td>
+                    <td style="padding:12px 8px; text-align:right; font-weight: 700; color: #2d3436;">Gs. ${new Intl.NumberFormat('es-PY').format(subtotal)}</td>
                 </tr>`;
                 total_detalles = total_detalles + subtotal; 
             });
-            console.log("total detalles: " + total_detalles);
             html += '</table>';
             listContainer.innerHTML = html;
-            // ... después de cerrar el forEach:
-            document.getElementById('totalDetalleMonto').innerText = `Gs. ${new Intl.NumberFormat('es-PY').format(total_detalles)}`;
+            
+            // Actualizar Totales en el Modal
+            const formatter = new Intl.NumberFormat('es-PY');
+            document.getElementById('totalItemsMonto').innerText = `Gs. ${formatter.format(total_detalles)}`;
+            
+            // Lógica de visibilidad del Delivery
+            const deliveryRow = document.getElementById('deliveryDetailRow');
+            const deliveryVal = parseInt(deliveryCost) || 0;
+            
+            if (deliveryVal > 0) {
+                deliveryRow.style.display = 'flex';
+                document.getElementById('deliveryMonto').innerText = `Gs. ${formatter.format(deliveryVal)}`;
+            } else {
+                deliveryRow.style.display = 'none';
+            }
+            
+            const finalTotal = total_detalles + deliveryVal;
+            document.getElementById('totalDetalleMonto').innerText = `Gs. ${formatter.format(finalTotal)}`;
         } else {
             listContainer.innerHTML = `<p style="color:red;">${result.message}</p>`;
         }

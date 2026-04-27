@@ -515,6 +515,11 @@ body.is-closed.is-compact {
     .logout-text {
         display: none;
     }
+
+    .container { 
+        margin: 0rem auto; 
+        padding: 0 0.5rem;
+    }
 }
 
 

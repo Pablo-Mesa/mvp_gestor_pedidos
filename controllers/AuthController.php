@@ -25,7 +25,9 @@ class AuthController {
             $email = $_POST['email'] ?? '';
             $password = $_POST['password'] ?? '';
             
-            if ($user->login($email, $password)) {
+            $authResult = $user->login($email, $password);
+
+            if ($authResult === true) {
                 // Guardar datos en sesión
                 $_SESSION['user_id'] = $user->id;
                 $_SESSION['user_name'] = $user->name; // Admin name
@@ -40,6 +42,13 @@ class AuthController {
                     header('Location: ?route=home');
                 }
                 exit;
+            } elseif ($authResult === 'inactive') {
+                if ($user->role === 'delivery') {
+                    $error = "Hola. Por el momento no estás convocado para el servicio de hoy. Ante cualquier duda, por favor comunícate con tu administrador en el local.";
+                } else {
+                    $error = "Tu cuenta de acceso se encuentra suspendida temporalmente. Contacta con la administración.";
+                }
+                require_once '../views/auth/login.php';
             } else {
                 $error = "Credenciales incorrectas";
                 // Aquí cargaremos la vista de nuevo con el error

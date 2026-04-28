@@ -87,7 +87,7 @@ class User {
      * Valida las credenciales de un administrador o usuario del sistema.
      */
     public function login($email, $password) {
-        $query = "SELECT id, name, password, role FROM " . $this->table . " WHERE email = :email AND is_active = 1 LIMIT 1";
+        $query = "SELECT id, name, password, role, is_active FROM " . $this->table . " WHERE email = :email LIMIT 1";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':email', $email);
         $stmt->execute();
@@ -95,6 +95,10 @@ class User {
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($row && password_verify($password, $row['password'])) {
+            if ($row['is_active'] == 0) {
+                $this->role = $row['role'];
+                return 'inactive';
+            }
             $this->id = $row['id'];
             $this->name = $row['name'];
             $this->role = $row['role'];

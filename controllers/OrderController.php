@@ -22,8 +22,8 @@ class OrderController {
     private function checkAdminAccess() {
         if (isset($_SESSION['client_id'])) { header('Location: ?route=home'); exit; }
         if (!isset($_SESSION['user_role'])) { header('Location: ?route=login'); exit; }
-        
-        if ($_SESSION['user_role'] !== 'admin') {
+
+        if (!in_array($_SESSION['user_role'], ['admin', 'cajero'])) {
             if ($_SESSION['user_role'] === 'delivery') {
                 header('Location: ?route=delivery');
             } else {
@@ -235,10 +235,6 @@ class OrderController {
         // --- VALIDACIÓN DE CAJA ---
         $cashModel = new CashRegister();
         $activeSession = $cashModel->getActiveSession($_SESSION['user_id']);
-        if (!$activeSession) {
-            header('Location: ?route=cash&error=require_open_session');
-            exit;
-        }
 
         $orderModel = new Order();
         $orderModel->id = $id;
@@ -261,8 +257,11 @@ class OrderController {
         // Si se solicita facturación rápida (sin desglose de pagos manual)
         if (isset($_GET['quick']) && $_GET['quick'] == 1) {
             $orderModel->user_id = $_SESSION['user_id'];
-            // Pasamos [] para que el modelo registre el pago automáticamente con los datos del pedido
-            $ventaId = $orderModel->finalizeSale([]); 
+            // Por defecto en facturación rápida, si el cliente tiene RUC intentamos Factura, sino Ticket
+            $docType = (!empty($order['billing_ruc'])) ? 'factura' : 'ticket';
+            $paymentsParam = $activeSession ? [] : null;
+            $sessionId = $activeSession ? $activeSession['id'] : null;
+            $ventaId = $orderModel->finalizeSale($paymentsParam, $sessionId, $docType); 
             if ($ventaId) {
                 // Redirigimos al mismo formulario de cobro pero ya con la factura generada para completar el flujo
                 header('Location: ?route=orders_finalize&id=' . $id . '&success=invoice_created&print_sale_id=' . $ventaId);
@@ -282,16 +281,33 @@ class OrderController {
             // --- VALIDACIÓN DE CAJA ---
             $cashModel = new CashRegister();
             $activeSession = $cashModel->getActiveSession($_SESSION['user_id']);
-            if (!$activeSession) {
-                header('Location: ?route=cash&error=require_open_session');
-                exit;
-            }
 
             $order = new Order();
             $order->id = $_POST['order_id'];
             $order->user_id = $_SESSION['user_id'];
+            $docType = $_POST['document_type'] ?? 'ticket';
             
-            if ($order->finalizeSale($_POST['payments'], $activeSession['id'])) {
+            $payments = $_POST['payments'] ?? [];
+            $hasPayments = false;
+            if (is_array($payments)) {
+                foreach ($payments as $p) {
+                    if (isset($p['monto']) && (float)$p['monto'] > 0) {
+                        $hasPayments = true;
+                        break;
+                    }
+                }
+            }
+
+            if ($hasPayments && !$activeSession) {
+                header('Location: ?route=orders_finalize&id=' . $order->id . '&error=' . urlencode("No puedes registrar pagos sin una caja abierta."));
+                exit;
+            }
+
+            // Determinar qué enviar al modelo: pagos manuales, automáticos (si hay caja) o nulo (solo factura)
+            $finalPayments = $hasPayments ? $payments : ($activeSession ? [] : null);
+            $sessionId = $activeSession ? $activeSession['id'] : null;
+
+            if ($order->finalizeSale($finalPayments, $sessionId, $docType)) {
                 header('Location: ?route=sales_history&success=paid');
             } else {
                 header('Location: ?route=orders_finalize&id=' . $order->id . '&error=' . urlencode($order->error));
@@ -314,14 +330,6 @@ class OrderController {
             if ($success && $_POST['status'] === 'completed') {
                 $cashModel = new CashRegister();
                 
-                // Si es repartidor y no tiene caja abierta, la abrimos automáticamente
-                // para no bloquear el registro del movimiento de caja.
-                $activeSession = $cashModel->getActiveSession($_SESSION['user_id']);
-                if (!$activeSession && $_SESSION['user_role'] === 'delivery') {
-                    $cashModel->open($_SESSION['user_id'], 0, 'Reparto');
-                    $activeSession = $cashModel->getActiveSession($_SESSION['user_id']);
-                }
-
                 $payment_confirm = $_POST['payment_confirm'] ?? 'order_method';
                 $orderData = $order->readOne();
                 

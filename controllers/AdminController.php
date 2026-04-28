@@ -19,7 +19,7 @@ class AdminController {
 
         // 3. Bloqueo estricto: Solo el rol 'admin' puede permanecer en este controlador.
         // Si es repartidor, lo enviamos a su panel. Si es cualquier otro rol futuro no admin, al login.
-        if ($_SESSION['user_role'] !== 'admin') {
+        if (!in_array($_SESSION['user_role'], ['admin', 'cajero'])) {
             if ($_SESSION['user_role'] === 'delivery') {
                 header('Location: ?route=delivery');
             } else {

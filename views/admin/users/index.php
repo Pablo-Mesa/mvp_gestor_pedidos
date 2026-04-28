@@ -82,6 +82,7 @@
     }
     .role-admin { background-color: #e3f2fd; color: #0984e3; }
     .role-delivery { background-color: #e8f5e9; color: #28a745; }
+    .role-cajero { background-color: #fff3cd; color: #856404; }
 
     /* Status Badges */
     .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
@@ -166,8 +167,14 @@
                         <?php endif; ?>
                     </td>
                     <td>
-                        <span class="role-badge <?php echo $user['role'] === 'admin' ? 'role-admin' : 'role-delivery'; ?>">
-                            <i class="fas <?php echo $user['role'] === 'admin' ? 'fa-user-shield' : 'fa-motorcycle'; ?>"></i>
+                        <?php 
+                            $roleClass = 'role-delivery';
+                            $roleIcon = 'fa-motorcycle';
+                            if ($user['role'] === 'admin') { $roleClass = 'role-admin'; $roleIcon = 'fa-user-shield'; }
+                            elseif ($user['role'] === 'cajero') { $roleClass = 'role-cajero'; $roleIcon = 'fa-cash-register'; }
+                        ?>
+                        <span class="role-badge <?php echo $roleClass; ?>">
+                            <i class="fas <?php echo $roleIcon; ?>"></i>
                             <?php echo ucfirst($user['role']); ?>
                         </span>
                     </td>

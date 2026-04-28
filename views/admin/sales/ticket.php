@@ -29,9 +29,16 @@ $fontSize = (isset($format) && $format === '58mm') ? '11px' : '13px';
             <div>Tel: <?php echo htmlspecialchars($empresa['telefono'] ?? ''); ?></div>
         </div>
 
+        <?php 
+            $isFactura = strpos($sale['nro_factura'], 'FAC-') === 0;
+        ?>
         <div class="center bold" style="margin: 10px 0;">
-            COMPROBANTE DE VENTA<br>
-            (CONTROL INTERNO)
+            <?php if($isFactura): ?>
+                FACTURA COMERCIAL
+            <?php else: ?>
+                COMPROBANTE DE VENTA<br>
+                (CONTROL INTERNO)
+            <?php endif; ?>
         </div>
 
         <div class="divider"></div>

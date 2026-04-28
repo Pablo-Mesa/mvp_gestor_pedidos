@@ -41,14 +41,6 @@
             <button type="submit">Ingresar</button>
             <div style="margin-top: 10px; text-align: right;"><a href="?route=forgot_password" style="font-size: 0.8rem; color: #666; text-decoration: none;">¿Olvidaste tu contraseña?</a></div>
         </form>
-        
-        <!-- 
-             Nota: La ruta de registro aún no existe en el enrutador, 
-             pero la dejamos lista para cuando creemos el RegisterController.
-        -->
-        <div class="links">
-            <a href="?route=register">¿No tienes cuenta? Regístrate aquí</a>
-        </div>
     </div>
 </body>
 </html>

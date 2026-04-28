@@ -5,7 +5,7 @@ require_once '../models/User.php';
 class CashController {
 
     public function __construct() {
-        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+        if (!isset($_SESSION['user_role']) || !in_array($_SESSION['user_role'], ['admin', 'cajero'])) {
             header('Location: ?route=login');
             exit;
         }
@@ -18,7 +18,9 @@ class CashController {
         $activeSession = $model->getActiveSession($_SESSION['user_id']);
         $movements = [];
         $recentSessions = $model->getRecentSessions();
-        $cashiers = $userModel->readAll()->fetchAll(PDO::FETCH_ASSOC);
+        $cashiers = array_filter($userModel->readAll()->fetchAll(PDO::FETCH_ASSOC), function($u) {
+            return in_array($u['role'], ['admin', 'cajero']);
+        });
         $totals = ['ingress' => 0, 'egress' => 0];
 
         if ($activeSession) {

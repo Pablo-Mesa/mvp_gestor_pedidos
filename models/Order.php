@@ -393,8 +393,9 @@ class Order {
      * Soporta pagos mixtos (Efectivo, Tarjeta, etc.)
      * @param array|null $payments Detalles de los pagos recibidos. Si es null, no registra pago.
      * @param int|null $cash_register_id ID de la sesión de caja activa
+     * @param string $docType Tipo de documento: 'ticket' o 'factura'
      */
-    public function finalizeSale($payments = [], $cash_register_id = null) {
+    public function finalizeSale($payments = [], $cash_register_id = null, $docType = 'ticket') {
         try {
             // Solo iniciamos transacción si no hay una activa
             $isNested = $this->conn->inTransaction();
@@ -426,6 +427,9 @@ class Order {
                 $iva10 = round($total / 11, 2);
                 $grav10 = $total - $iva10;
 
+                // Definir prefijo según el tipo de documento
+                $prefix = ($docType === 'factura') ? 'FAC-' : 'TK-';
+
                 // 2. Insertar Cabecera de Venta
                 $qVenta = "INSERT INTO pos_ventas_cabecera 
                            (order_id, cliente_id, user_id, nro_factura, fecha_hora, gravada_10, iva_10, total_venta, estado) 
@@ -435,7 +439,7 @@ class Order {
                     ':oid'   => $order['id'],
                     ':cid'   => $order['client_id'],
                     ':uid'   => $this->user_id,
-                    ':nro'   => 'PROV-' . str_pad($order['id'], 7, '0', STR_PAD_LEFT),
+                    ':nro'   => $prefix . str_pad($order['id'], 7, '0', STR_PAD_LEFT),
                     ':g10'   => $grav10,
                     ':i10'   => $iva10,
                     ':total' => $total
@@ -499,7 +503,7 @@ class Order {
                     $stMov->execute([
                         ':rid'  => $cash_register_id,
                         ':amt'  => $total,
-                        ':desc' => "Venta Pedido #" . $order['id'] . " (Factura " . 'PROV-' . str_pad($order['id'], 7, '0', STR_PAD_LEFT) . ")",
+                        ':desc' => ($docType === 'factura' ? 'Factura ' : 'Ticket ') . "Pedido #" . $order['id'],
                         ':ref'  => $order['id']
                     ]);
                 }

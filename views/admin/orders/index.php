@@ -277,6 +277,16 @@
     .limit-reached-down { animation: bounce-limit-down 0.25s ease; border-bottom: 2px solid #ffc107 !important; }
     .limit-reached-up { animation: bounce-limit-up 0.25s ease; border-top: 2px solid #ffc107 !important; }
 
+    /* Indicadores de Progreso en Modal */
+    .qa-progress { display: flex; justify-content: space-between; margin-bottom: 1rem; padding: 0 10px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+    .step-dot { width: 10px; height: 10px; border-radius: 50%; background: #dee2e6; position: relative; }
+    .step-dot.active { background: #28a745; box-shadow: 0 0 5px #28a745; }
+    .step-dot::after { 
+        content: attr(data-label); position: absolute; top: 12px; left: 50%; transform: translateX(-50%); 
+        font-size: 0.6rem; white-space: nowrap; color: #999; font-weight: bold; text-transform: uppercase;
+    }
+    .step-dot.active::after { color: #28a745; }
+
 </style>
 
 <!-- titulo -->
@@ -463,35 +473,49 @@
     <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header py-2">
-                <h6 class="modal-title" id="qa-title">Pedido #000</h6>
+                <div class="w-100">
+                    <h6 class="modal-title mb-2" id="qa-title">Pedido #000</h6>
+                    <div class="qa-progress" id="qa-progress-steps">
+                        <div class="step-dot" data-label="Comanda" id="step-comanda"></div>
+                        <div class="step-dot" data-label="Venta" id="step-factura"></div>
+                        <div class="step-dot" data-label="Reparto" id="step-envio"></div>
+                        <div class="step-dot" data-label="Pago" id="step-pago"></div>
+                    </div>
+                </div>
                 <button type="button" class="btn-close" id="qa-btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-3">
                 <div class="d-grid gap-2 mb-3">
-                    <a href="#" class="btn btn-success btn-lg" id="qa-btn-pay">
-                        <i class="fas fa-cash-register"></i> COBRAR PEDIDO
-                    </a>
-                    <button type="button" class="btn btn-primary" id="qa-btn-80">
-                        <i class="fas fa-print"></i> Imprimir 80mm
-                    </button>
                     <button type="button" class="btn btn-secondary" id="qa-btn-58">
-                        <i class="fas fa-print"></i> Imprimir 58mm
+                        <i class="fas fa-print"></i> Comanda Cocina 58mm
                     </button>
-                    <a href="#" class="btn btn-outline-info" id="qa-btn-view">
-                        <i class="fas fa-eye"></i> Ver Detalle Completo
+                    <button type="button" class="btn btn-primary" id="qa-btn-80">
+                        <i class="fas fa-print"></i> Comanda Cocina 80mm
+                    </button>
+                    <a href="#" class="btn btn-info" id="qa-btn-quick-invoice">
+                        <i class="fas fa-file-invoice-dollar"></i> GENERAR TICKET (RÁPIDO)
                     </a>
                 </div>
                 
-                <div id="qa-delivery-section" style="display: none;">
-                    <hr>
-                    <label class="form-label small fw-bold">Asignar Repartidor:</label>
+                <div id="qa-delivery-section" class="mb-3" style="display: none;">
+                    <hr class="my-2">
+                    <label class="form-label small fw-bold text-muted">Logística de Envío:</label>
                     <select id="qa-delivery-select" class="form-select form-select-sm mb-2">
-                        <option value="">-- Seleccionar --</option>
+                        <option value="">-- Seleccionar Repartidor --</option>
                         <?php foreach($deliveryUsers as $d): ?>
                             <option value="<?php echo $d['id']; ?>"><?php echo htmlspecialchars($d['name']); ?></option>
                         <?php endforeach; ?>
                     </select>
                     <button type="button" class="btn btn-success btn-sm w-100" id="qa-btn-assign">Asignar y Despachar</button>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <a href="#" class="btn btn-success btn-lg" id="qa-btn-pay">
+                        <i class="fas fa-cash-register"></i> COBRAR PEDIDO
+                    </a>
+                    <a href="#" class="btn btn-outline-info" id="qa-btn-view">
+                        <i class="fas fa-eye"></i> Ver Detalle Completo
+                    </a>
                 </div>
             </div>
         </div>
@@ -570,7 +594,7 @@ if (empty($orders) && $hasFilter):
                 // Actualizamos el mapa local para evitar que el polling detecte esto como un cambio externo
                 orderStatusMap[orderId] = newStatus;
                 Toast.fire("Estado actualizado", "success");
-                refreshOrders(); 
+                refreshOrders(true); 
             }
         })
         .catch(err => {
@@ -609,32 +633,44 @@ if (empty($orders) && $hasFilter):
             const modalEl = document.getElementById('quickActionsModal');
             qaModal = new bootstrap.Modal(modalEl);
             
-            // Requerimiento: Al abrir, el foco debe estar en el botón de 80mm
             modalEl.addEventListener('shown.bs.modal', () => {
-                const payBtn = document.getElementById('qa-btn-pay');
+                const print58Btn = document.getElementById('qa-btn-58');
                 const print80Btn = document.getElementById('qa-btn-80');
+                const quickInvBtn = document.getElementById('qa-btn-quick-invoice');
+                const deliverySelect = document.getElementById('qa-delivery-select');
+                const payBtn = document.getElementById('qa-btn-pay');
 
-                // Priorizar el botón "Cobrar Pedido" si está visible
-                if (payBtn && payBtn.style.display !== 'none') {
-                    payBtn.focus();
-                } else if (print80Btn) {
-                    print80Btn.focus();
-                }
+                // Foco inicial sugerido: Comanda 58mm (Primera opción del flujo)
+                if (print58Btn) print58Btn.focus();
             });
         }
         
         document.getElementById('qa-title').innerText = `Pedido #${order.id} - ${order.user_name}`;
         document.getElementById('qa-btn-view').href = `?route=orders_show&id=${order.id}`;
 
+        // Actualizar Progreso Visual
+        document.getElementById('step-comanda').className = 'step-dot' + (order.status !== 'pending' ? ' active' : '');
+        document.getElementById('step-factura').className = 'step-dot' + (order.has_invoice ? ' active' : '');
+        
+        const isDelivery = order.delivery_type === 'delivery';
+        const stepEnvio = document.getElementById('step-envio');
+        stepEnvio.style.opacity = isDelivery ? '1' : '0.3';
+        stepEnvio.className = 'step-dot' + ((isDelivery && order.delivery_user_id) ? ' active' : '');
+
+        // Integridad de pago: Verificamos el flag is_paid (desde API) o calculamos sobre total_paid (desde SQL/PHP inicial)
+        const isPaid = (order.is_paid == 1) || (parseFloat(order.total_paid || 0) >= parseFloat(order.total));
+        document.getElementById('step-pago').className = 'step-dot' + (isPaid ? ' active' : '');
+
         // Configurar botón de cobro
         const payBtn = document.getElementById('qa-btn-pay');
-        if (order.status === 'completed' || order.status === 'cancelled' || order.status === 'rejected') {
-            payBtn.style.display = 'none';
-        } else {
-            payBtn.style.display = 'block';
-            payBtn.href = `?route=orders_finalize&id=${order.id}`;
-        }
+        payBtn.href = `?route=orders_finalize&id=${order.id}`;
         
+        // El botón "Generar Ticket" ahora lleva al módulo de "Facturación / Tickets" (sales_history)
+        // Pasamos la fecha del pedido para que la lista cargue filtrada correctamente
+        const quickInvBtn = document.getElementById('qa-btn-quick-invoice');
+        const orderDate = order.created_at.split(' ')[0];
+        quickInvBtn.href = `?route=sales_history&date=${orderDate}`;
+
         document.getElementById('qa-btn-80').onclick = () => { printOrderDirectly(order.id, '80mm'); confirmOrderOnPrint(order.id); qaModal.hide(); };
         document.getElementById('qa-btn-58').onclick = () => { printOrderDirectly(order.id, '58mm'); confirmOrderOnPrint(order.id); qaModal.hide(); };
 
@@ -657,7 +693,7 @@ if (empty($orders) && $hasFilter):
                 if (res.success) {
                     Toast.fire("Asignado correctamente", "success");
                     qaModal.hide();
-                    refreshOrders();
+                    refreshOrders(true);
                 }
             };
         } else {
@@ -723,8 +759,8 @@ if (empty($orders) && $hasFilter):
         // Lógica de navegación dentro del Modal
         if (isModalOpen) {
             const selectors = [
-                '#qa-btn-pay', '#qa-btn-80', '#qa-btn-58', '#qa-btn-view', 
-                '#qa-delivery-select', '#qa-btn-assign', '#qa-btn-close'
+                '#qa-btn-58', '#qa-btn-80', '#qa-btn-quick-invoice', '#qa-delivery-select', '#qa-btn-assign', '#qa-btn-pay', '#qa-btn-view', 
+                '#qa-btn-close'
             ];
             const modalNavElements = selectors
                 .map(s => modalEl.querySelector(s))
@@ -840,7 +876,7 @@ if (empty($orders) && $hasFilter):
     /**
      * Función para actualizar la tabla de pedidos vía AJAX
      */
-    function refreshOrders() {
+    function refreshOrders(force = false) {
         const isFirstLoad = (lastMaxId === 0);
         const urlParams = new URLSearchParams(window.location.search);
         // Lógica para ocultar/mostrar dinámicamente el acceso a "Solo Pendientes" en el menú lateral
@@ -882,9 +918,9 @@ if (empty($orders) && $hasFilter):
 
             // Crear huella combinando ID y Estado de todos los pedidos
             currentOrdersData = data;
-            const newFingerprint = data.map(o => `${o.id}-${o.status}`).join('|');
-            // Si la huella es idéntica a la anterior, no hacemos nada (evita el parpadeo)
-            if (newFingerprint === lastOrdersFingerprint) return;
+            const newFingerprint = data.map(o => `${o.id}-${o.status}-${o.delivery_user_id || 0}`).join('|');
+            // Si la huella es idéntica a la anterior y no es una actualización forzada, no hacemos nada
+            if (!force && newFingerprint === lastOrdersFingerprint) return;
             lastOrdersFingerprint = newFingerprint;
 
             if (data.length === 0) {

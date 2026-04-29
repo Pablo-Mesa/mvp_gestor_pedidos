@@ -365,7 +365,7 @@ class Order {
      * Se consideran pedidos confirmados, en cocina o enviados.
      */
     public function getOrdersAwaitingInvoice() {
-        $query = "SELECT o.id, o.created_at, o.total, o.delivery_type, IFNULL(c.name, 'Cliente Ocasional') as client_name 
+        $query = "SELECT o.id, o.created_at, o.total, o.delivery_type, o.status, IFNULL(c.name, 'Cliente Ocasional') as client_name 
                   FROM " . $this->table . " o
                   LEFT JOIN clients c ON o.client_id = c.id
                   LEFT JOIN pos_ventas_cabecera v ON o.id = v.order_id
@@ -419,7 +419,15 @@ class Order {
                 }
                 $order = $this->readOne();
             } else {
+                // Cargamos el pedido PRIMERO para poder validar su estado actual
                 $order = $this->readOne();
+                
+                // Si el pedido está pendiente, lo marcamos como 'confirmed' automáticamente
+                if ($order && $order['status'] === 'pending') {
+                    $qStatus = "UPDATE " . $this->table . " SET status = 'confirmed' WHERE id = :id";
+                    $this->conn->prepare($qStatus)->execute([':id' => $this->id]);
+                }
+
                 $details = $this->readDetails();
 
                 // 1. Calcular Impuestos (IVA 10% para Gastronomía en Py)
@@ -462,16 +470,8 @@ class Order {
             }
 
             // --- PROCESAMIENTO DE PAGO (OPCIONAL) ---
-            if ($payments !== null) { // Ahora este bloque es prácticamente obligatorio para nuevas facturas
-                // Si se pasan vacíos [], usamos el método del pedido
-                if (empty($payments)) {
-                    $payments[] = [
-                        'metodo' => $order['payment_method'],
-                        'monto' => $order['total'],
-                        'referencia' => 'Pago automático'
-                    ];
-                }
-
+            // Solo se registra pago si $payments tiene datos explícitos (no null y no vacío)
+            if ($payments !== null && !empty($payments)) {
                 $total = $order['total'];
                 
                 // 4. Registrar Pago
@@ -507,17 +507,18 @@ class Order {
                         ':ref'  => $order['id']
                     ]);
                 }
-            }
 
-            // 7. Actualizar el estado: Si es delivery y no se ha entregado aún, queda como "paid"
-            // para que logística sepa que debe despacharlo. Si es local/retiro, se completa.
-            $orderData = $this->readOne();
-            if ($orderData['delivery_type'] === 'delivery' && !in_array($orderData['status'], ['completed', 'shipped'])) {
-                $this->status = 'paid';
-            } else {
-                $this->status = 'completed';
+                // 7. Actualizar el estado del pedido SOLO SI hubo un pago procesado.
+                // Si es delivery y no se ha entregado aún, queda como "paid" para despacho.
+                // Si es local/retiro, se marca como "completed" (cerrado).
+                $orderData = $this->readOne();
+                if ($orderData['delivery_type'] === 'delivery' && !in_array($orderData['status'], ['completed', 'shipped'])) {
+                    $this->status = 'paid';
+                } else {
+                    $this->status = 'completed';
+                }
+                $this->updateStatus();
             }
-            $this->updateStatus();
 
             if (!$isNested) $this->conn->commit();
             return $ventaId;

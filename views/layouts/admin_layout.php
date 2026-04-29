@@ -434,16 +434,19 @@
             printFrame.src = `?route=orders_ticket&id=${orderId}&format=${format}`;
         }
 
-        function printSaleTicket(saleId, format = '80mm') {
+        function printSaleTicket(saleId, format = '80mm', overrideDocType = null) {
             const printFrame = document.getElementById('printFrame');
             
             printFrame.onload = function() {
                 printFrame.contentWindow.focus();
                 printFrame.contentWindow.print();
             };
-
-            // Nueva ruta para comprobante de venta
-            printFrame.src = `?route=sales_ticket&id=${saleId}&format=${format}`;
+            
+            let url = `?route=sales_ticket&id=${saleId}&format=${format}`;
+            if (overrideDocType) {
+                url += `&override_doc_type=${overrideDocType}`;
+            }
+            printFrame.src = url;
         }
 
         // Manejador Global de Impresión Automática (Detecta parámetro en URL)

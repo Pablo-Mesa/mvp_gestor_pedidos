@@ -77,19 +77,13 @@ $pendingInvoices = $orderModel->getOrdersAwaitingInvoice();
                                         <?php endif; ?>
                                     </td>
                                     <td class="px-4 align-middle text-center">
-                                        <div class="btn-group">
-                                            <?php if ($sale['is_paid'] == 0 && $sale['estado'] == 1): ?>
-                                                <a href="?route=orders_finalize&id=<?php echo $sale['order_id_display']; ?>" class="btn btn-sm btn-success" title="Registrar Pago">
-                                                    <i class="fas fa-cash-register"></i> Cobrar
-                                                </a>
-                                            <?php endif; ?>
-                                            <button type="button" class="btn btn-sm btn-outline-secondary" title="Re-imprimir Ticket de Venta" onclick="printSaleTicket(<?php echo $sale['id']; ?>, '80mm')">
-                                                <i class="fas fa-print"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-outline-primary" title="Ver Detalle" onclick="viewSaleDetail(<?php echo $sale['id']; ?>)">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        </div>
+                                        <button type="button"
+                                                class="btn btn-sm btn-dark main-table-actions"
+                                                title="Acciones Rápidas"
+                                                onclick='openSaleQuickActions(<?php echo json_encode($sale); ?>)'
+                                                onfocus="tableBtnIndex = Array.from(document.querySelectorAll('.main-table-actions')).indexOf(this)">
+                                            <i class="fas fa-ellipsis-v"></i> Acciones
+                                        </button>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -132,12 +126,16 @@ $pendingInvoices = $orderModel->getOrdersAwaitingInvoice();
                                 <td><small class="badge bg-info"><?php echo $p['delivery_type']; ?></small></td>
                                 <td>Gs. <?php echo number_format($p['total'], 0, ',', '.'); ?></td>
                                 <td class="text-center">
-                                    <form action="index.php" method="GET" class="d-inline">
-                                        <input type="hidden" name="route" value="orders_finalize">
-                                        <input type="hidden" name="id" value="<?php echo $p['id']; ?>">
-                                        <input type="hidden" name="quick" value="1">
-                                        <button type="submit" class="btn btn-sm btn-primary btn-generate-ticket">Generar Factura/Ticket</button>
-                                    </form>
+                                    <div class="btn-group">
+                                        <button type="button" onclick="generateInvoiceWithComandaCheck(<?php echo $p['id']; ?>, '<?php echo $p['status']; ?>', 'ticket')"
+                                           class="btn btn-sm btn-outline-secondary btn-generate-ticket" title="Emitir Ticket Interno">
+                                            <i class="fas fa-receipt"></i> Ticket
+                                        </button>
+                                        <button type="button" onclick="generateInvoiceWithComandaCheck(<?php echo $p['id']; ?>, '<?php echo $p['status']; ?>', 'factura')"
+                                           class="btn btn-sm btn-primary btn-generate-ticket" title="Emitir Factura Legal">
+                                            <i class="fas fa-file-invoice"></i> Factura
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -150,12 +148,85 @@ $pendingInvoices = $orderModel->getOrdersAwaitingInvoice();
     </div>
 </div>
 
+<!-- Modal de Acciones Rápidas para Ventas -->
+<div class="modal fade" id="salesQuickActionsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title mb-0" id="sales-qa-title">Venta #000</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-3">
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-primary" id="sales-qa-btn-factura">
+                        <i class="fas fa-file-invoice me-2"></i> Imprimir Factura
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="sales-qa-btn-ticket">
+                        <i class="fas fa-receipt me-2"></i> Imprimir Ticket
+                    </button>
+                    <button type="button" class="btn btn-success" id="sales-qa-btn-cobrar" style="display: none;">
+                        <i class="fas fa-cash-register me-2"></i> Cobrar Venta
+                    </button>
+                    <button type="button" class="btn btn-outline-dark" id="sales-qa-btn-view">
+                        <i class="fas fa-eye me-2"></i> Ver Detalle
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- logica javascript -->
 <script>
+// Variable global para almacenar los datos de las ventas, necesaria para viewSaleDetail
+const salesData = <?php echo json_encode($sales ?? []); ?>;
+
+const isCashOpen = <?php echo ($isCashOpen ?? false) ? 'true' : 'false'; ?>;
+// Índice para navegación por teclado en la tabla principal
+let tableBtnIndex = -1;
+
+/**
+ * Valida si el pedido tiene comanda impresa antes de facturar.
+ * Si no la tiene, fuerza la impresión y luego procede.
+ */
+async function generateInvoiceWithComandaCheck(orderId, status, docType) {
+    const finalizeUrl = `?route=orders_finalize&id=${orderId}&quick=1&doc_type=${docType}`;
+    
+    if (status === 'pending') {
+        const result = await Swal.fire({
+            title: 'Paso Previo Requerido',
+            text: "El pedido aún no tiene comanda impresa para cocina. Se imprimirá la comanda automáticamente antes de generar el comprobante.",
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'Imprimir y Continuar',
+            cancelButtonText: 'Cancelar',
+            allowEscapeKey: true,
+            allowOutsideClick: true,
+            keydownListenerCapture: true
+        });
+
+        if (result.isConfirmed) {
+            // 1. Disparar impresión de comanda (esto actualiza el estado a confirmed en el server)
+            printOrderDirectly(orderId, '80mm');
+            // 2. Pequeña pausa para asegurar que el trigger de impresión se procese y redirigir
+            setTimeout(() => { window.location.href = finalizeUrl; }, 1200);
+        }
+    } else {
+        window.location.href = finalizeUrl;
+    }
+}
+
+// Foco inicial al cargar la página para agilizar flujo con [Alt + F] o navegación directa
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        const mainBtn = document.getElementById('btn-open-facturar');
+        if (mainBtn) mainBtn.focus();
+    }, 600);
+});
+
 function viewSaleDetail(id) {
     // Por ahora, redirigimos al pedido vinculado ya que el detalle es el mismo.
-    const sales = <?php echo json_encode($sales ?? []); ?>;
-    const sale = sales.find(s => s.id == id);
+    const sale = salesData.find(s => s.id == id);
     if (sale && sale.order_id_display) {
         window.location.href = `?route=orders_show&id=${sale.order_id_display}`;
     } else {
@@ -171,34 +242,188 @@ document.addEventListener('DOMContentLoaded', function() {
         const firstBtn = modalPending.querySelector('.btn-generate-ticket');
         if (firstBtn) firstBtn.focus();
     });
+});
 
-    // Navegación por teclado dentro del modal (Flechas Arriba/Abajo)
-    modalPending.addEventListener('keydown', function(e) {
-        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-            const btns = Array.from(modalPending.querySelectorAll('.btn-generate-ticket'));
-            if (btns.length === 0) return;
+let salesQaModal = null;
 
-            e.preventDefault();
-            const currentIndex = btns.indexOf(document.activeElement);
-            let nextIndex;
+function openSaleQuickActions(sale) {
+    if (!salesQaModal) {
+        const modalEl = document.getElementById('salesQuickActionsModal');
+        salesQaModal = new bootstrap.Modal(modalEl);
 
-            if (e.key === 'ArrowDown') {
-                nextIndex = (currentIndex + 1) % btns.length;
-            } else {
-                nextIndex = (currentIndex - 1 + btns.length) % btns.length;
+        modalEl.addEventListener('shown.bs.modal', () => {
+            // Enfocar el primer botón visible al abrir el modal
+            const firstBtn = modalEl.querySelector('.modal-body .btn:not([style*="display: none"])');
+            if (firstBtn) firstBtn.focus();
+        });
+    }
+
+    document.getElementById('sales-qa-title').innerText = `Venta #${sale.nro_factura}`;
+
+    // Lógica del botón "Cobrar Venta"
+    const cobrarBtn = document.getElementById('sales-qa-btn-cobrar');
+    if (sale.is_paid == 0 && sale.estado == 1) {
+        cobrarBtn.style.display = 'block';
+        if (!isCashOpen) {
+            cobrarBtn.onclick = (e) => {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Sesión de Caja Cerrada',
+                    text: 'No puedes procesar cobros sin una sesión de caja abierta. Por favor, realiza la apertura de caja primero.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'Ir a Tesorería',
+                    cancelButtonText: 'Cerrar',
+                    allowEscapeKey: true,
+                    allowOutsideClick: true,
+                    keydownListenerCapture: true
+                }).then((result) => {
+                    if (result.isConfirmed) window.location.href = '?route=cash';
+                });
+            };
+            cobrarBtn.classList.add('btn-warning'); // Opcional: cambiar color para indicar advertencia
+            cobrarBtn.innerHTML = '<i class="fas fa-lock me-2"></i> Caja Cerrada';
+        } else {
+            cobrarBtn.classList.remove('btn-warning');
+            cobrarBtn.innerHTML = '<i class="fas fa-cash-register me-2"></i> Cobrar Venta';
+            cobrarBtn.onclick = () => { window.location.href = `?route=orders_finalize&id=${sale.order_id_display}`; };
+        }
+    } else {
+        cobrarBtn.style.display = 'none';
+    }
+
+    // Lógica del botón "Imprimir Factura" con validación de duplicados
+    const facturaBtn = document.getElementById('sales-qa-btn-factura');
+    const isAlreadyFactura = sale.nro_factura.startsWith('FAC-');
+    
+    if (isAlreadyFactura) {
+        // Bloqueo total para evitar la emisión de duplicados contables
+        facturaBtn.innerHTML = '<i class="fas fa-check-double me-2"></i> FACTURA YA EMITIDA';
+        facturaBtn.classList.remove('btn-primary');
+        facturaBtn.classList.add('btn-secondary', 'disabled');
+        facturaBtn.onclick = (e) => { 
+            e.preventDefault(); 
+            Toast.fire("Este documento ya cuenta con validez legal y no puede emitirse nuevamente.", "info"); 
+        };
+    } else {
+        // Habilitar la emisión de factura legal si el registro actual es solo un Ticket (TK-)
+        facturaBtn.innerHTML = '<i class="fas fa-file-invoice me-2"></i> Emitir Factura Legal';
+        facturaBtn.classList.remove('btn-secondary', 'disabled');
+        facturaBtn.classList.add('btn-primary');
+        facturaBtn.onclick = async () => {
+            const result = await Swal.fire({
+                title: 'Confirmar Emisión Legal',
+                text: "Está a punto de generar un documento con validez contable por primera vez. ¿Desea continuar?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#0d6efd',
+                confirmButtonText: 'Sí, generar factura',
+                cancelButtonText: 'Cancelar',
+                allowEscapeKey: true,
+                keydownListenerCapture: true
+            });
+
+            if (result.isConfirmed) {
+                printSaleTicket(sale.id, '80mm', 'factura');
+                salesQaModal.hide();
             }
-            btns[nextIndex].focus();
-        }
-    });
+        };
+    }
 
-    // Atajo global Alt + F para abrir el modal de Facturar Pedido
-    document.addEventListener('keydown', function(e) {
-        if (e.altKey && e.key.toLowerCase() === 'f') {
-            e.preventDefault();
-            e.stopImmediatePropagation(); // Evita que el layout global intercepte y recargue la página
-            const btn = document.getElementById('btn-open-facturar');
-            if (btn) btn.click();
+    // Botón "Imprimir Ticket"
+    document.getElementById('sales-qa-btn-ticket').onclick = () => {
+        printSaleTicket(sale.id, '80mm', 'ticket');
+        salesQaModal.hide();
+    };
+
+    // Botón "Ver Detalle"
+    document.getElementById('sales-qa-btn-view').onclick = () => {
+        viewSaleDetail(sale.id);
+        salesQaModal.hide();
+    };
+
+    salesQaModal.show();
+}
+
+// Manejador de teclado unificado para la vista de Facturación
+document.addEventListener('keydown', function(e) {
+    // Si hay un SweetAlert abierto, pausamos nuestra navegación por teclado
+    if (window.Swal && Swal.isVisible()) return;
+
+    const modalPending = document.getElementById('modalPendingOrders');
+    const modalActions = document.getElementById('salesQuickActionsModal');
+    
+    const isPendingOpen = modalPending && modalPending.classList.contains('show');
+    const isActionsOpen = modalActions && modalActions.classList.contains('show');
+
+    // 1. Navegación en Modal de Pedidos Pendientes de Facturar
+    if (isPendingOpen && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+        e.preventDefault();
+        const btns = Array.from(modalPending.querySelectorAll('.btn-generate-ticket'));
+        if (btns.length === 0) return;
+        const currentIndex = btns.indexOf(document.activeElement);
+        let nextIndex = (e.key === 'ArrowDown') ? (currentIndex + 1) % btns.length : (currentIndex - 1 + btns.length) % btns.length;
+        btns[nextIndex].focus();
+        return;
+    }
+
+    // 2. Navegación en Modal de Acciones Rápidas (Ventas Registradas)
+    if (isActionsOpen && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+        e.preventDefault();
+        const buttons = Array.from(modalActions.querySelectorAll('.modal-body .btn:not([style*="display: none"])'));
+        if (buttons.length === 0) return;
+        const currentIndex = buttons.indexOf(document.activeElement);
+        let nextIndex = (e.key === 'ArrowDown') ? (currentIndex + 1) % buttons.length : (currentIndex - 1 + buttons.length) % buttons.length;
+        buttons[nextIndex].focus();
+        return;
+    }
+
+    // 3. Atajo global Alt + F para abrir Facturar Pedido
+    if (e.altKey && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const btn = document.getElementById('btn-open-facturar');
+        if (btn) btn.click();
+        return;
+    }
+
+    // 4. Navegación en la Tabla Principal (Flechas Arriba/Abajo)
+    if (!isPendingOpen && !isActionsOpen && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+        const tableBtns = Array.from(document.querySelectorAll('.main-table-actions'));
+        const mainBtn = document.getElementById('btn-open-facturar');
+        
+        e.preventDefault();
+
+        if (e.key === 'ArrowDown') {
+            if (document.activeElement === mainBtn) {
+                tableBtnIndex = 0;
+            } else {
+                tableBtnIndex++;
+            }
+
+            if (tableBtnIndex >= tableBtns.length) {
+                if (mainBtn) mainBtn.focus();
+                tableBtnIndex = -1;
+            } else if (tableBtns[tableBtnIndex]) {
+                tableBtns[tableBtnIndex].focus();
+                tableBtns[tableBtnIndex].closest('tr').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        } else {
+            if (document.activeElement === mainBtn) {
+                tableBtnIndex = tableBtns.length - 1;
+            } else {
+                tableBtnIndex--;
+            }
+
+            if (tableBtnIndex < 0) {
+                if (mainBtn) mainBtn.focus();
+                tableBtnIndex = -1;
+            } else if (tableBtns[tableBtnIndex]) {
+                tableBtns[tableBtnIndex].focus();
+                tableBtns[tableBtnIndex].closest('tr').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
         }
-    });
+    }
 });
 </script>

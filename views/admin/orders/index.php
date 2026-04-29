@@ -539,6 +539,7 @@ if (empty($orders) && $hasFilter):
 <script>
     // Almacenamos el ID más alto actual para saber cuáles son nuevos
     let currentOrdersData = <?php echo json_encode($orders); ?>;
+    const isCashOpen = <?php echo ($isCashOpen ?? false) ? 'true' : 'false'; ?>;
     let lastMaxId = <?php echo !empty($orders) ? max(array_column($orders, 'id')) : 0; ?>;
     // Mapa para rastrear cambios de estado de pedidos visibles
     let orderStatusMap = {};
@@ -566,7 +567,10 @@ if (empty($orders) && $hasFilter):
                 confirmButtonColor: '#dc3545',
                 cancelButtonColor: '#6c757d',
                 confirmButtonText: 'Sí, confirmar',
-                cancelButtonText: 'No, volver'
+                cancelButtonText: 'No, volver',
+                allowEscapeKey: true,
+                allowOutsideClick: true,
+                keydownListenerCapture: true
             });
 
             if (!result.isConfirmed) {
@@ -649,27 +653,98 @@ if (empty($orders) && $hasFilter):
         document.getElementById('qa-btn-view').href = `?route=orders_show&id=${order.id}`;
 
         // Actualizar Progreso Visual
-        document.getElementById('step-comanda').className = 'step-dot' + (order.status !== 'pending' ? ' active' : '');
-        document.getElementById('step-factura').className = 'step-dot' + (order.has_invoice ? ' active' : '');
-        
+        const isConfirmed = order.status !== 'pending';
+        const hasInvoice = order.has_invoice == 1;
         const isDelivery = order.delivery_type === 'delivery';
+        const isAssigned = order.delivery_user_id ? true : false;
+        const isPaid = (order.is_paid == 1) || (parseFloat(order.total_paid || 0) >= parseFloat(order.total));
+
+        document.getElementById('step-comanda').className = 'step-dot' + (isConfirmed ? ' active' : '');
+        document.getElementById('step-factura').className = 'step-dot' + (hasInvoice ? ' active' : '');
+        
         const stepEnvio = document.getElementById('step-envio');
         stepEnvio.style.opacity = isDelivery ? '1' : '0.3';
-        stepEnvio.className = 'step-dot' + ((isDelivery && order.delivery_user_id) ? ' active' : '');
-
-        // Integridad de pago: Verificamos el flag is_paid (desde API) o calculamos sobre total_paid (desde SQL/PHP inicial)
-        const isPaid = (order.is_paid == 1) || (parseFloat(order.total_paid || 0) >= parseFloat(order.total));
+        stepEnvio.className = 'step-dot' + ((!isDelivery || isAssigned) ? ' active' : '');
         document.getElementById('step-pago').className = 'step-dot' + (isPaid ? ' active' : '');
 
-        // Configurar botón de cobro
         const payBtn = document.getElementById('qa-btn-pay');
-        payBtn.href = `?route=orders_finalize&id=${order.id}`;
-        
-        // El botón "Generar Ticket" ahora lleva al módulo de "Facturación / Tickets" (sales_history)
-        // Pasamos la fecha del pedido para que la lista cargue filtrada correctamente
+        payBtn.onclick = null; // Limpiar manejadores previos
         const quickInvBtn = document.getElementById('qa-btn-quick-invoice');
-        const orderDate = order.created_at.split(' ')[0];
-        quickInvBtn.href = `?route=sales_history&date=${orderDate}`;
+        const assignBtn = document.getElementById('qa-btn-assign');
+        const deliverySelect = document.getElementById('qa-delivery-select');
+
+        // --- VALIDACIÓN PASO 1 y 2: COMANDA Y VENTA ---
+        quickInvBtn.classList.remove('disabled', 'btn-secondary', 'btn-info');
+        
+        if (!isConfirmed) {
+            quickInvBtn.classList.add('disabled');
+            quickInvBtn.innerHTML = '<i class="fas fa-lock"></i> IMPRIMA COMANDA PRIMERO';
+            quickInvBtn.href = 'javascript:void(0)';
+        } else if (hasInvoice) {
+            quickInvBtn.classList.add('btn-secondary');
+            quickInvBtn.innerHTML = '<i class="fas fa-print"></i> RE-IMPRIMIR TICKET VENTA';
+            const orderDate = order.created_at.split(' ')[0];
+            quickInvBtn.href = `?route=sales_history&date=${orderDate}`;
+        } else {
+            quickInvBtn.classList.add('btn-info');
+            quickInvBtn.innerHTML = '<i class="fas fa-file-invoice-dollar"></i> GENERAR TICKET (RÁPIDO)';
+            const orderDate = order.created_at.split(' ')[0];
+            quickInvBtn.href = `?route=sales_history&date=${orderDate}`;
+        }
+
+        // --- VALIDACIÓN PASO 3: REPARTO (LOGÍSTICA) ---
+        if (!hasInvoice) {
+            assignBtn.classList.add('disabled');
+            deliverySelect.disabled = true;
+        } else {
+            assignBtn.classList.remove('disabled');
+            deliverySelect.disabled = false;
+        }
+
+        // --- VALIDACIÓN PASO 4: PAGO (EVITAR DUPLICADOS Y SALTOS) ---
+        if (!hasInvoice) {
+            payBtn.innerHTML = '<i class="fas fa-lock"></i> DEBE GENERAR TICKET';
+            payBtn.classList.add('disabled', 'btn-warning');
+            payBtn.classList.remove('btn-success');
+            payBtn.href = 'javascript:void(0)';
+        } else if (isPaid) {
+            payBtn.innerHTML = '<i class="fas fa-check-double"></i> VENTA YA COBRADA';
+            payBtn.classList.add('disabled', 'btn-secondary');
+            payBtn.classList.remove('btn-success', 'btn-warning');
+            payBtn.href = 'javascript:void(0)';
+        } else if (isDelivery && !isAssigned) {
+            payBtn.innerHTML = '<i class="fas fa-truck"></i> ASIGNE REPARTIDOR';
+            payBtn.classList.add('disabled', 'btn-warning');
+            payBtn.classList.remove('btn-success');
+            payBtn.href = 'javascript:void(0)';
+        } else {
+            payBtn.innerHTML = '<i class="fas fa-cash-register"></i> COBRAR PEDIDO';
+            payBtn.classList.remove('disabled', 'btn-secondary', 'btn-warning');
+            payBtn.classList.add('btn-success');
+
+            if (!isCashOpen) {
+                payBtn.href = 'javascript:void(0)';
+                payBtn.onclick = (e) => {
+                    e.preventDefault();
+                    Swal.fire({
+                        title: 'Sesión de Caja Cerrada',
+                        text: 'No puedes procesar cobros sin una sesión de caja abierta. Por favor, realiza la apertura de caja primero.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        confirmButtonText: 'Ir a Tesorería',
+                        cancelButtonText: 'Cerrar',
+                        allowEscapeKey: true,
+                        allowOutsideClick: true,
+                        keydownListenerCapture: true
+                    }).then((result) => {
+                        if (result.isConfirmed) window.location.href = '?route=cash';
+                    });
+                };
+            } else {
+                payBtn.href = `?route=orders_finalize&id=${order.id}`;
+            }
+        }
 
         document.getElementById('qa-btn-80').onclick = () => { printOrderDirectly(order.id, '80mm'); confirmOrderOnPrint(order.id); qaModal.hide(); };
         document.getElementById('qa-btn-58').onclick = () => { printOrderDirectly(order.id, '58mm'); confirmOrderOnPrint(order.id); qaModal.hide(); };
@@ -683,11 +758,9 @@ if (empty($orders) && $hasFilter):
             document.getElementById('qa-btn-assign').onclick = async () => {
                 const deliveryId = select.value;
                 if (!deliveryId) return Toast.fire("Selecciona un repartidor", "warning");
-                
                 const formData = new FormData();
                 formData.append('order_id', order.id);
                 formData.append('delivery_id', deliveryId);
-                
                 const resp = await fetch('?route=orders_assign_delivery', { method: 'POST', body: formData });
                 const res = await resp.json();
                 if (res.success) {
@@ -706,68 +779,39 @@ if (empty($orders) && $hasFilter):
      * Navegación por Teclado
      */
     function handleKeyboardNav(e) {
+        // Si hay un SweetAlert abierto, dejamos que él maneje el teclado (Enter/Esc)
+        if (window.Swal && Swal.isVisible()) return;
+
         const modalEl = document.getElementById('quickActionsModal');
         const isModalOpen = modalEl && modalEl.classList.contains('show');
 
-        // Atajos rápidos de filtrado (Alt + 1 = Todas, Alt + 2 = Delivery, Alt + 3 = Retiro, Alt + 4 = Mesa Local)
-        // Estos funcionan siempre, incluso si la tabla está vacía.
         if (e.altKey && ['1', '2', '3', '4'].includes(e.key)) {
             e.preventDefault();
             const filterForm = document.querySelector('.filter-form');
             const deliverySelect = filterForm.querySelector('select[name="delivery_type"]');
-            const values = { 
-                '1': '',         // Todas las entregas
-                '2': 'delivery', // Delivery
-                '3': 'pickup',   // Retiro
-                '4': 'local'     // Mesa Local
-            };
+            const values = { '1': '', '2': 'delivery', '3': 'pickup', '4': 'local' };
             deliverySelect.value = values[e.key];
-            if (typeof Toast !== 'undefined') {
-                Toast.fire(`Filtrando por: ${deliverySelect.options[deliverySelect.selectedIndex].text}`, "info");
-            }
+            if (typeof Toast !== 'undefined') Toast.fire(`Filtrando por: ${deliverySelect.options[deliverySelect.selectedIndex].text}`, "info");
             setTimeout(() => filterForm.submit(), 600);
             return;
         }
 
-        // Atajos rápidos para Estados (Alt + Letra)
-        const statusKeys = {
-            'q': '',          // Todos
-            'p': 'pending',   // Pendientes
-            'k': 'confirmed', // Confirmados (Cocina)
-            'e': 'completed', // Entregados
-            'r': 'rejected',  // Rechazados
-            'x': 'cancelled'  // Cancelados
-        };
-
+        const statusKeys = { 'q': '', 'p': 'pending', 'k': 'confirmed', 'e': 'completed', 'r': 'rejected', 'x': 'cancelled' };
         const keyLower = e.key.toLowerCase();
         if (e.altKey && statusKeys.hasOwnProperty(keyLower)) {
             e.preventDefault();
             const filterForm = document.querySelector('.filter-form');
             const statusSelect = filterForm.querySelector('select[name="status"]');
-            
             statusSelect.value = statusKeys[keyLower];
-            
-            if (typeof Toast !== 'undefined') {
-                const selectedText = statusSelect.options[statusSelect.selectedIndex].text;
-                Toast.fire(`Filtrando estado: ${selectedText}`, "info");
-            }
-            
+            if (typeof Toast !== 'undefined') Toast.fire(`Filtrando estado: ${statusSelect.options[statusSelect.selectedIndex].text}`, "info");
             setTimeout(() => filterForm.submit(), 600);
             return;
         }
 
-        // Lógica de navegación dentro del Modal
         if (isModalOpen) {
-            const selectors = [
-                '#qa-btn-58', '#qa-btn-80', '#qa-btn-quick-invoice', '#qa-delivery-select', '#qa-btn-assign', '#qa-btn-pay', '#qa-btn-view', 
-                '#qa-btn-close'
-            ];
-            const modalNavElements = selectors
-                .map(s => modalEl.querySelector(s))
-                .filter(el => el && el.offsetParent !== null); // Solo los visibles actualmente
-
+            const selectors = ['#qa-btn-58', '#qa-btn-80', '#qa-btn-quick-invoice', '#qa-delivery-select', '#qa-btn-assign', '#qa-btn-pay', '#qa-btn-view', '#qa-btn-close'];
+            const modalNavElements = selectors.map(s => modalEl.querySelector(s)).filter(el => el && el.offsetParent !== null);
             let currentIdx = modalNavElements.indexOf(document.activeElement);
-
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 currentIdx = (currentIdx + 1) % modalNavElements.length;
@@ -777,28 +821,21 @@ if (empty($orders) && $hasFilter):
                 currentIdx = (currentIdx - 1 + modalNavElements.length) % modalNavElements.length;
                 modalNavElements[currentIdx].focus();
             } else if (e.key === 'Enter' && document.activeElement.id === 'qa-delivery-select') {
-                // Sensibilidad al enter: saltar al botón de acción tras seleccionar
                 const assignBtn = document.getElementById('qa-btn-assign');
-                if (assignBtn && assignBtn.offsetParent !== null) {
-                    setTimeout(() => assignBtn.focus(), 50);
-                }
+                if (assignBtn && assignBtn.offsetParent !== null) setTimeout(() => assignBtn.focus(), 50);
             }
             return;
         }
 
-        // Lógica de navegación en la Tabla principal
         const btns = document.querySelectorAll('.btn-actions-trigger');
         if (btns.length === 0) return;
-
         if (e.key === 'ArrowDown') {
             e.preventDefault();
             if (focusedBtnIndex < btns.length - 1) {
                 focusedBtnIndex++;
-                const target = btns[focusedBtnIndex];
-                target.focus();
-                target.closest('tr').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            } else if (focusedBtnIndex === btns.length - 1) {
-                // Animación de aviso al llegar al final
+                btns[focusedBtnIndex].focus();
+                btns[focusedBtnIndex].closest('tr').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
                 const tr = btns[focusedBtnIndex].closest('tr');
                 tr.classList.add('limit-reached-down');
                 setTimeout(() => tr.classList.remove('limit-reached-down'), 250);
@@ -807,119 +844,56 @@ if (empty($orders) && $hasFilter):
             e.preventDefault();
             if (focusedBtnIndex > 0) {
                 focusedBtnIndex--;
-                const target = btns[focusedBtnIndex];
-                target.focus();
-                target.closest('tr').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            } else if (focusedBtnIndex === 0) {
-                // Animación de aviso al llegar al principio
+                btns[focusedBtnIndex].focus();
+                btns[focusedBtnIndex].closest('tr').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
                 const tr = btns[focusedBtnIndex].closest('tr');
                 tr.classList.add('limit-reached-up');
                 setTimeout(() => tr.classList.remove('limit-reached-up'), 250);
             }
-        } else if (e.key === 'Home') {
-            e.preventDefault();
-            focusedBtnIndex = 0;
-            const target = btns[focusedBtnIndex];
-            target.focus();
-            target.closest('tr').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        } else if (e.key === 'End') {
-            e.preventDefault();
-            focusedBtnIndex = btns.length - 1;
-            const target = btns[focusedBtnIndex];
-            target.focus();
-            target.closest('tr').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
     }
 
     document.addEventListener('keydown', handleKeyboardNav);
 
-    // Foco inicial al cargar
     window.addEventListener('load', () => {
         setTimeout(() => {
             const firstBtn = document.querySelector('.btn-actions-trigger');
-            if (firstBtn) {
-                firstBtn.focus();
-                focusedBtnIndex = 0;
-            }
+            if (firstBtn) { firstBtn.focus(); focusedBtnIndex = 0; }
         }, 600);
     });
 
-    /**
-     * Mantiene el foco después de refrescar la tabla vía AJAX
-     */
     function restoreFocusAfterRefresh() {
-        // Si hay un modal abierto, no tocamos el foco de la tabla para no interrumpir el uso del modal
         if (document.querySelector('.modal.show')) return;
-
-        // Detectamos si el foco estaba en un select de estado antes del refresco
         const activeEl = document.activeElement;
         const wasInSelect = activeEl && activeEl.classList.contains('status-select');
-        // Extraemos el ID del pedido del atributo onchange si es posible
         const orderIdMatch = wasInSelect ? activeEl.getAttribute('onchange').match(/\d+/) : null;
         const orderId = orderIdMatch ? orderIdMatch[0] : null;
-
         const btns = document.querySelectorAll('.btn-actions-trigger');
-        
         if (wasInSelect && orderId) {
-            // Restauramos el foco al select del mismo pedido (evita saltos bruscos)
             const newSelect = document.querySelector(`.status-select[onchange*="${orderId}"]`);
             if (newSelect) newSelect.focus();
-        } else {
-            // Restauramos el foco al botón de acciones donde estaba el usuario
-            if (btns.length > 0 && focusedBtnIndex !== -1) {
-                if (focusedBtnIndex >= btns.length) focusedBtnIndex = btns.length - 1;
-                btns[focusedBtnIndex].focus();
-            }
+        } else if (btns.length > 0 && focusedBtnIndex !== -1) {
+            if (focusedBtnIndex >= btns.length) focusedBtnIndex = btns.length - 1;
+            btns[focusedBtnIndex].focus();
         }
     }
 
-    /**
-     * Función para actualizar la tabla de pedidos vía AJAX
-     */
     function refreshOrders(force = false) {
-        const isFirstLoad = (lastMaxId === 0);
         const urlParams = new URLSearchParams(window.location.search);
-        // Lógica para ocultar/mostrar dinámicamente el acceso a "Solo Pendientes" en el menú lateral
-        const pendingBadge = document.getElementById('badge-orders-count');
-        const pendingMenuItem = document.querySelector('a[href="?route=orders_pending"]')?.closest('li');
-        
-        if (pendingBadge && pendingMenuItem) {
-            const count = parseInt(pendingBadge.innerText) || 0;
-            if (count > 0) {
-                pendingMenuItem.style.display = 'block';
-            } else {
-                pendingMenuItem.style.display = 'none';
-            }
-        }
-        
-        // CORRECCIÓN: Si estamos en la vista de "Solo Pendientes", debemos forzar
-        // estos parámetros en la petición AJAX para que el API mantenga el filtro histórico.
         if (urlParams.get('route') === 'orders_pending') {
             urlParams.set('status', 'pending');
-            urlParams.set('date', ''); // Enviamos vacío para que el controlador no fuerce "hoy"
+            urlParams.set('date', '');
         }
-
-        // Cambiamos el parámetro route para apuntar al endpoint JSON
         urlParams.set('route', 'orders_api');
         
-        //console.log("**Sincronizando pedidos...");
-
-        fetch('index.php?' + urlParams.toString(), {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('Error en la red: ' + response.status);
-            return response.json();
-        })
+        fetch('index.php?' + urlParams.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(response => response.json())
         .then(data => {
-            //console.log("**Datos recibidos:", data);
             const tbody = document.getElementById('orders-tbody');
             if (!tbody || data.error) return;
-
-            // Crear huella combinando ID y Estado de todos los pedidos
             currentOrdersData = data;
             const newFingerprint = data.map(o => `${o.id}-${o.status}-${o.delivery_user_id || 0}`).join('|');
-            // Si la huella es idéntica a la anterior y no es una actualización forzada, no hacemos nada
             if (!force && newFingerprint === lastOrdersFingerprint) return;
             lastOrdersFingerprint = newFingerprint;
 
@@ -931,8 +905,6 @@ if (empty($orders) && $hasFilter):
             let hasNewOrders = false;
             let deliveryUpdateInfo = null;
             let currentMaxIdInResponse = lastMaxId;
-
-            // Objeto para recalcular contadores localmente
             const newCounts = { all: data.length, pending: 0, confirmed: 0, shipped: 0, completed: 0, rejected: 0, cancelled: 0 };
 
             tbody.innerHTML = data.map(order => {
@@ -941,55 +913,43 @@ if (empty($orders) && $hasFilter):
                     hasNewOrders = true;
                     if (order.id > currentMaxIdInResponse) currentMaxIdInResponse = order.id;
                 }
-
-                // Detectar si un repartidor cambió el estado a 'completed' (Entregado)
                 if (orderStatusMap[order.id] && orderStatusMap[order.id] !== order.status) {
                     if (['completed', 'rejected', 'cancelled'].includes(order.status)) {
-                        deliveryUpdateInfo = {
-                            id: order.id,
-                            status: order.status,
-                            label: order.status === 'completed' ? 'ENTREGADO' : (order.status === 'rejected' ? 'RECHAZADO' : 'CANCELADO')
-                        };
+                        deliveryUpdateInfo = { id: order.id, status: order.status, label: order.status === 'completed' ? 'ENTREGADO' : 'ANULADO' };
                     }
                 }
                 orderStatusMap[order.id] = order.status;
-
-                // Sumar al contador correspondiente
-                if (!newCounts[order.status]) newCounts[order.status] = 0;
-                newCounts[order.status]++;
-
-                let deliveryHtml = order.delivery_type === 'delivery' 
-                    ? '<span style="color:#d63384;"><i class="fas fa-motorcycle"></i> Delivery</span>'
-                    : (order.delivery_type === 'pickup' 
-                        ? '<span style="color:#0d6efd;"><i class="fas fa-walking"></i> Retiro</span>'
-                        : '<span style="color:#fd7e14;"><i class="fas fa-utensils"></i> Local</span>');
-
-                // Variables de control de estado para JS
-                const isErrorState = (order.status === 'rejected' || order.status === 'cancelled');
+                newCounts[order.status] = (newCounts[order.status] || 0) + 1;
+                
+                let deliveryHtml = order.delivery_type === 'delivery' ? '<span style="color:#d63384;"><i class="fas fa-motorcycle"></i> Delivery</span>' : (order.delivery_type === 'pickup' ? '<span style="color:#0d6efd;"><i class="fas fa-walking"></i> Retiro</span>' : '<span style="color:#fd7e14;"><i class="fas fa-utensils"></i> Local</span>');
+                
+                // Sincronización de lógica con la vista PHP inicial
                 const isLocked = (order.status === 'completed');
-                const deliveryAssignedBadge = (order.delivery_user_id && !['completed', 'rejected', 'cancelled'].includes(order.status)) 
-                    ? `<div style="font-size: 0.7rem; color: #28a745; font-weight: bold; margin-top: 4px;"><i class="fas fa-user-check"></i> DELIVERY ASIGNADO</div>` 
-                    : '';
+                const isErrorState = ['rejected', 'cancelled'].includes(order.status);
+                const pendingDisabled = (!isErrorState && order.status !== 'pending') ? 'disabled' : '';
+                const pendingLabel = isErrorState ? '🔄 Reabrir (Pendiente)' : 'Pendiente';
+                
+                let extraBadges = '';
+                if (order.status === 'paid' && order.delivery_type === 'delivery') {
+                    const label = !order.delivery_user_id ? 'PENDIENTE ASIGNACIÓN' : 'PENDIENTE DE ENVÍO';
+                    extraBadges = `<div style="font-size: 0.7rem; color: #6f42c1; font-weight: bold; margin-top: 4px;"><i class="fas fa-hourglass-half"></i> ${label}</div>`;
+                }
+                if (order.delivery_user_id && !['completed', 'rejected', 'cancelled'].includes(order.status)) {
+                    extraBadges += `<div style="font-size: 0.7rem; color: #28a745; font-weight: bold; margin-top: 4px;"><i class="fas fa-user-check"></i> DELIVERY ASIGNADO</div>`;
+                }
 
-                let statusClass = 'status-pending';
-                if (order.status === 'confirmed') statusClass = 'status-confirmed';
-                else if (order.status === 'shipped') statusClass = 'status-shipped';
-                else if (order.status === 'completed') statusClass = 'status-completed';
-                else if (order.status === 'rejected') statusClass = 'status-rejected';
-                else if (order.status === 'paid') statusClass = 'status-paid';
-                else if (order.status === 'cancelled') statusClass = 'status-cancelled';
+                let statusClass = 'status-' + order.status;
 
-                return `
-                    <tr class="${isNew ? 'row-new' : ''}">
+                return `<tr class="${isNew ? 'row-new' : ''}">
                         <td>#${order.id}</td>
                         <td>${order.formatted_date}</td>
-                        <td title="${order.channel_name}"><i class="${order.channel_icon}"></i> <span style="font-size: 0.75rem; color: #666;">${order.channel_name}</span></td>
-                        <td><i class="fas fa-user"></i> ${order.user_name}</td>
+                        <td><i class="${order.channel_icon}"></i> <span style="font-size: 0.75rem;">${order.channel_name}</span></td>
+                        <td>${order.user_name}</td>
                         <td>${deliveryHtml}</td>
-                        <td style="font-weight: bold;">Gs. ${order.formatted_total}</td>
+                        <td>Gs. ${order.formatted_total}</td>
                         <td>
                             <select class="status-select ${statusClass}" onchange="updateOrderStatus(this, ${order.id})" data-current-status="${order.status}" ${isLocked ? 'disabled' : ''}>
-                                <option value="pending" ${order.status === 'pending' ? 'selected' : ''} ${(!isErrorState && order.status !== 'pending') ? 'disabled' : ''}>${isErrorState ? '🔄 Reabrir (Pendiente)' : 'Pendiente'}</option>
+                                <option value="pending" ${order.status === 'pending' ? 'selected' : ''} ${pendingDisabled}>${pendingLabel}</option>
                                 <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''} disabled>Confirmado (Imprimir)</option>
                                 <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''} disabled>En Camino</option>
                                 <option value="paid" ${order.status === 'paid' ? 'selected' : ''} disabled>Pagado</option>
@@ -997,70 +957,30 @@ if (empty($orders) && $hasFilter):
                                 <option value="rejected" ${order.status === 'rejected' ? 'selected' : ''}>Rechazado</option>
                                 <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancelado</option>
                             </select>
-                            ${order.status === 'paid' && order.delivery_type === 'delivery' ? `
-                                <div style="font-size: 0.7rem; color: #6f42c1; font-weight: bold; margin-top: 4px;">
-                                    <i class="fas fa-hourglass-half"></i> ${!order.delivery_user_id ? 'PENDIENTE ASIGNACIÓN' : 'PENDIENTE DE ENVÍO'}
-                                </div>
-                            ` : ''}
-                            ${deliveryAssignedBadge}
+                            ${extraBadges}
                         </td>
                         <td>
-                            <button type="button" 
-                                    class="btn-actions-trigger" 
-                                    title="Acciones" 
-                                    onfocus="focusedBtnIndex = Array.from(document.querySelectorAll('.btn-actions-trigger')).indexOf(this)"
-                                    onclick='openQuickActionsById(${order.id})'>
-                                <i class="fas fa-ellipsis-v"></i>
-                            </button>
+                            <button type="button" class="btn-actions-trigger" onclick='openQuickActionsById(${order.id})'><i class="fas fa-ellipsis-v"></i></button>
                         </td>
                     </tr>`;
             }).join('');
 
-            /*
-             * Función auxiliar para actualizar con animación
-             */
-            const updateCountWithAnimation = (id, newValue) => {
-                const el = document.getElementById(id);
-                if (el && el.innerText != newValue) {
-                    el.innerText = newValue;
-                    el.classList.remove('pulse-animation');
-                    void el.offsetWidth; // Trigger reflow para reiniciar animación
-                    el.classList.add('pulse-animation');
-                }
-            };
+            document.getElementById('count-all-orders').innerText = newCounts.all;
+            document.getElementById('count-pending').innerText = newCounts.pending || 0;
+            document.getElementById('count-confirmed').innerText = newCounts.confirmed || 0;
+            document.getElementById('count-shipped').innerText = newCounts.shipped || 0;
+            document.getElementById('count-completed').innerText = newCounts.completed || 0;
+            document.getElementById('count-cancelled').innerText = newCounts.cancelled || 0;
 
-            updateCountWithAnimation('count-all-orders', newCounts.all);
-            updateCountWithAnimation('count-pending', newCounts.pending);
-            updateCountWithAnimation('count-confirmed', newCounts.confirmed);
-            updateCountWithAnimation('count-shipped', newCounts.shipped || 0);
-            updateCountWithAnimation('count-completed', newCounts.completed);
-            updateCountWithAnimation('count-cancelled', newCounts.cancelled);
-
-            // Restaurar el foco para que el usuario no pierda su posición
             restoreFocusAfterRefresh();
-
-            // Si hay pedidos nuevos, disparamos alertas
             if (hasNewOrders) {
                 lastMaxId = currentMaxIdInResponse;
-                notificationSound.play().catch(e => console.log("Audio bloqueado por navegador hasta interacción"));
-                document.title = "(!ID) ¡Nuevo Pedido! - Comedor App".replace("!ID", lastMaxId);
-                
-                // Restaurar título después de 5 segundos
-                setTimeout(() => { document.title = "Admin - Comedor App"; }, 5000);
-            }
-
-            // Alerta si un repartidor actualizó un pedido desde la calle
-            if (deliveryUpdateInfo) {
                 notificationSound.play().catch(e => {});
-                const icon = deliveryUpdateInfo.status === 'completed' ? 'success' : 'warning';
-                Toast.fire(`Pedido #${deliveryUpdateInfo.id}: ${deliveryUpdateInfo.label}`, icon);
             }
+            if (deliveryUpdateInfo) Toast.fire(`Pedido #${deliveryUpdateInfo.id}: ${deliveryUpdateInfo.label}`, "info");
         })
-        .catch(err => console.error('Error en la auto-actualización:', err));
+        .catch(err => console.error('Error:', err));
     }
 
-    // Configurar intervalo de 10 segundos para pruebas más rápidas
-    setInterval(() => {
-        if (!document.hidden) refreshOrders();
-    }, 10000);
+    setInterval(() => { if (!document.hidden) refreshOrders(); }, 10000);
 </script>

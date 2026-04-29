@@ -141,6 +141,7 @@ class AdminController {
      * Recupera datos de las tablas pos_ventas_cabecera y sus relaciones
      */
     public function salesHistory() {
+        require_once '../models/CashRegister.php';
         $date = $_GET['date'] ?? date('Y-m-d');
         $sales = [];
 
@@ -160,6 +161,10 @@ class AdminController {
             $stmt->bindParam(':date', $date);
             $stmt->execute();
             $sales = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Verificar si el usuario tiene una caja abierta para habilitar cobros
+            $cashModel = new CashRegister();
+            $isCashOpen = $cashModel->getActiveSession($_SESSION['user_id']) ? true : false;
         } catch (Exception $e) {
             error_log("Error en salesHistory: " . $e->getMessage());
         }

@@ -58,6 +58,10 @@ class OrderController {
         $userModel = new User();
         $deliveryUsers = $userModel->getDeliveryUsers();
 
+        // Verificar si el usuario tiene una caja abierta para habilitar cobros
+        $cashModel = new CashRegister();
+        $isCashOpen = $cashModel->getActiveSession($_SESSION['user_id']) ? true : false;
+
         $content_view = '../views/admin/orders/index.php';
         require_once '../views/layouts/admin_layout.php';
     }
@@ -83,6 +87,10 @@ class OrderController {
 
         // Obtenemos los contadores de hoy para mantener la coherencia de la barra inferior
         $statusCounts = $orderModel->getStatusCountsByDate(date('Y-m-d'));
+
+        // Verificar si el usuario tiene una caja abierta
+        $cashModel = new CashRegister();
+        $isCashOpen = $cashModel->getActiveSession($_SESSION['user_id']) ? true : false;
 
         $content_view = '../views/admin/orders/index.php';
         require_once '../views/layouts/admin_layout.php';
@@ -195,6 +203,7 @@ class OrderController {
 
         $saleId = $_GET['id'] ?? null;
         $format = $_GET['format'] ?? '80mm';
+        $overrideDocType = $_GET['override_doc_type'] ?? null; // Nuevo parámetro para forzar tipo de documento
         if (!$saleId) { header('Location: ?route=sales_history'); exit; }
 
         $empresaModel = new Empresa();
@@ -210,6 +219,13 @@ class OrderController {
         $stmtSale->execute([':id' => $saleId]);
         $sale = $stmtSale->fetch(PDO::FETCH_ASSOC);
 
+        // Si se solicita un tipo de documento específico para la impresión, ajustamos el nro_factura
+        // para que la vista de ticket lo interprete correctamente.
+        if ($overrideDocType === 'ticket' && strpos($sale['nro_factura'], 'FAC-') === 0) {
+            $sale['nro_factura'] = 'TK-' . substr($sale['nro_factura'], 4); // Cambia "FAC-" a "TK-"
+        } elseif ($overrideDocType === 'factura' && strpos($sale['nro_factura'], 'TK-') === 0) {
+            $sale['nro_factura'] = 'FAC-' . substr($sale['nro_factura'], 3); // Cambia "TK-" a "FAC-"
+        }
         if (!$sale) { die("Venta no encontrada."); }
 
         // Traemos el detalle histórico de esa venta específica
@@ -257,14 +273,16 @@ class OrderController {
         // Si se solicita facturación rápida (sin desglose de pagos manual)
         if (isset($_GET['quick']) && $_GET['quick'] == 1) {
             $orderModel->user_id = $_SESSION['user_id'];
-            // Por defecto en facturación rápida, si el cliente tiene RUC intentamos Factura, sino Ticket
-            $docType = (!empty($order['billing_ruc'])) ? 'factura' : 'ticket';
-            $paymentsParam = $activeSession ? [] : null;
-            $sessionId = $activeSession ? $activeSession['id'] : null;
-            $ventaId = $orderModel->finalizeSale($paymentsParam, $sessionId, $docType); 
+            // Prioridad al tipo de documento solicitado, de lo contrario fallback por RUC
+            $docType = $_GET['doc_type'] ?? (!empty($order['billing_ruc']) ? 'factura' : 'ticket');
+            
+            // Al ser "Quick" desde facturación, pasamos null en pagos para que NO registre cobro automático.
+            // El cobro debe realizarse como un paso independiente desde la vista de cobro.
+            $ventaId = $orderModel->finalizeSale(null, null, $docType); 
+            
             if ($ventaId) {
-                // Redirigimos al mismo formulario de cobro pero ya con la factura generada para completar el flujo
-                header('Location: ?route=orders_finalize&id=' . $id . '&success=invoice_created&print_sale_id=' . $ventaId);
+                // AISLAMIENTO: Volvemos al historial de ventas con el flag de impresión, sin entrar a la vista de cobro
+                header('Location: ?route=sales_history&success=paid&print_sale_id=' . $ventaId);
             } else {
                 header('Location: ?route=sales_history&error=' . urlencode($orderModel->error));
             }

@@ -15,115 +15,119 @@
     }
 </style>
 
-<div class="container-fluid py-4">
+<div class="container py-4">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-lg-11">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Finalizar Venta y Cobro - Pedido #<?php echo $order['id']; ?></h5>
+                    <h5 class="mb-0"><i class="fas fa-cash-register me-2"></i>Finalizar Venta - Pedido #<?php echo $order['id']; ?></h5>
                     <a href="?route=orders_show&id=<?php echo $order['id']; ?>" class="btn btn-sm btn-outline-light">Volver</a>
                 </div>
-                <div class="card-body bg-light">
+                <div class="card-body p-4">
                     <?php if(!$isCashOpen): ?>
-                        <div class="alert alert-warning d-flex align-items-center mb-4">
-                            <i class="fas fa-exclamation-triangle me-3 fa-2x"></i>
-                            <div><strong>Caja cerrada:</strong> Puedes generar la factura o ticket, pero el registro de pagos requiere una sesión de caja activa.</div>
+                        <div class="alert alert-danger border-0 shadow-sm d-flex align-items-center mb-4">
+                            <i class="fas fa-lock me-3 fa-2x"></i>
+                            <div><strong>¡Atención! Caja cerrada:</strong> No puedes procesar pagos sin una sesión activa. Contacta al administrador para abrir caja.</div>
                         </div>
                     <?php endif; ?>
 
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <p class="mb-1 text-muted">Cliente</p>
-                            <h6><?php echo htmlspecialchars($order['user_name']); ?></h6>
-                        </div>
-                        <div class="col-md-3">
-                            <p class="mb-1 text-muted">Tipo Documento</p>
-                            <select name="document_type" form="form-finalize" class="form-select fw-bold">
-                                <option value="ticket" <?php echo empty($order['billing_ruc']) ? 'selected' : ''; ?>>📄 TICKET SIMPLE</option>
-                                <option value="factura" <?php echo !empty($order['billing_ruc']) ? 'selected' : ''; ?>>⚖️ FACTURA LEGAL</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3 text-end">
-                            <p class="mb-1 text-muted">Total a Pagar</p>
-                            <h2 class="text-success fw-bold" id="order-total" data-total="<?php echo $order['total']; ?>">
-                                Gs. <?php echo number_format($order['total'], 0, ',', '.'); ?>
-                            </h2>
-                        </div>
-                    </div>
-
                     <form action="?route=orders_process_finalize" method="POST" id="form-finalize">
                         <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
+                        <input type="hidden" name="document_type" value="ticket">
                         
-                        <div class="table-responsive">
-                            <table class="table table-bordered bg-white">
-                                <thead class="table-secondary">
-                                    <tr>
-                                        <th>Método de Pago</th>
-                                        <th style="width: 200px;">Monto (Gs.)</th>
-                                        <th>Referencia (Nro. Boleta/Trans.)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php 
-                                    $methods = [
-                                        'efectivo' => ['label' => '💵 Efectivo', 'class' => 'text-success'],
-                                        'pos' => ['label' => '💳 Tarjeta (POS)', 'class' => 'text-primary'],
-                                        'transferencia' => ['label' => '🏦 Transferencia', 'class' => 'text-info'],
-                                        'qr' => ['label' => '📱 QR / Billetera', 'class' => 'text-warning']
-                                    ];
-                                    $i = 0;
-                                    foreach($methods as $key => $m): 
-                                    ?>
-                                    <tr>
-                                        <td class="align-middle <?php echo $m['class']; ?>">
-                                            <div class="fw-bold mb-1"><?php echo $m['label']; ?></div>
-                                            <input type="hidden" name="payments[<?php echo $i; ?>][metodo]" value="<?php echo $key; ?>">
-                                        </td>
-                                        <td>
-                                            <div class="input-group">
-                                                <input type="number" name="payments[<?php echo $i; ?>][monto]" 
-                                                       class="form-control form-control-lg payment-input" 
-                                                       id="input-<?php echo $key; ?>"
-                                                       data-method="<?php echo $key; ?>" value="0" min="0" step="1"
+                        <div class="row g-4">
+                            <!-- Columna Izquierda: Registro de Pagos -->
+                            <div class="col-md-7">
+                                <h6 class="text-muted text-uppercase fw-bold mb-3"><i class="fas fa-hand-holding-usd me-2"></i>Entrada de Pagos</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-hover border align-middle bg-white">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Método</th>
+                                                <th style="width: 180px;">Monto</th>
+                                                <th>Referencia</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php 
+                                            $methods = [
+                                                'efectivo' => ['label' => '💵 Efectivo', 'class' => 'text-success'],
+                                                'pos' => ['label' => '💳 Tarjeta', 'class' => 'text-primary'],
+                                                'transferencia' => ['label' => '🏦 Transf.', 'class' => 'text-info'],
+                                                'qr' => ['label' => '📱 QR / Bill.', 'class' => 'text-warning']
+                                            ];
+                                            $i = 0;
+                                            foreach($methods as $key => $m): 
+                                            ?>
+                                            <tr>
+                                                <td class="<?php echo $m['class']; ?> fw-bold small"><?php echo $m['label']; ?></td>
+                                                <td>
+                                                    <input type="hidden" name="payments[<?php echo $i; ?>][metodo]" value="<?php echo $key; ?>">
+                                                    <div class="input-group input-group-sm">
+                                                        <input type="number" name="payments[<?php echo $i; ?>][monto]" 
+                                                               class="form-control fw-bold payment-input" 
+                                                               id="input-<?php echo $key; ?>"
+                                                               data-method="<?php echo $key; ?>" value="0" min="0"
+                                                               <?php echo !$isCashOpen ? 'disabled' : ''; ?>>
+                                                        <button class="btn btn-outline-secondary" type="button" 
+                                                                onclick="fillRemaining('input-<?php echo $key; ?>')"
+                                                                <?php echo !$isCashOpen ? 'disabled' : ''; ?>>
+                                                            <i class="fas fa-magic"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <input type="text" name="payments[<?php echo $i; ?>][referencia]" 
+                                                       class="form-control form-control-sm" placeholder="..."
                                                        <?php echo !$isCashOpen ? 'disabled' : ''; ?>>
-                                                <button class="btn btn-outline-secondary" type="button" 
-                                                        title="Cobrar saldo pendiente"
-                                                        onclick="fillRemaining('input-<?php echo $key; ?>')"
-                                                        <?php echo !$isCashOpen ? 'disabled' : ''; ?>>
-                                                    <i class="fas fa-magic"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <input type="text" name="payments[<?php echo $i; ?>][referencia]" 
-                                                   class="form-control" placeholder="Opcional..."
-                                                   <?php echo !$isCashOpen ? 'disabled' : ''; ?>>
-                                        </td>
-                                    </tr>
-                                    <?php $i++; endforeach; ?>
-                                </tbody>
-                            </table>
+                                                </td>
+                                            </tr>
+                                            <?php $i++; endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Columna Derecha: Panel de Control -->
+                            <div class="col-md-5">
+                                <div class="bg-light p-4 rounded border shadow-sm d-flex flex-column">
+                                    <h6 class="text-muted text-uppercase fw-bold mb-3">Resumen de Venta</h6>
+                                    
+                                    <div class="mb-3">
+                                        <p class="mb-0 text-muted small">Cliente:</p>
+                                        <h5 class="fw-bold text-dark"><?php echo htmlspecialchars($order['user_name']); ?></h5>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <p class="mb-0 text-muted small">Total a Pagar:</p>
+                                        <h2 class="text-dark fw-bold" id="order-total" data-total="<?php echo $order['total']; ?>">
+                                            Gs. <?php echo number_format($order['total'], 0, ',', '.'); ?>
+                                        </h2>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
+                        <!-- Fila Inferior: Balance y Acción Principal -->
                         <div class="row mt-4 align-items-center">
                             <div class="col-md-6">
-                                <div id="balance-card" class="p-3 border rounded <?php echo $isCashOpen ? 'bg-white' : 'bg-light'; ?> text-center shadow-sm" style="transition: all 0.3s ease; height: 105px; width: 100%; display: flex; flex-direction: column; justify-content: center; overflow: hidden;">
+                                <div id="balance-card" class="p-3 border rounded text-center shadow-sm" style="transition: all 0.3s ease; height: 100px; display: flex; flex-direction: column; justify-content: center;">
                                     <?php if($isCashOpen): ?>
-                                    <p id="balance-label" class="mb-0 small text-uppercase fw-bold text-muted">Resta cobrar</p>
-                                    <h3 id="balance-display" class="mb-0">Gs. 0</h3>
+                                        <p id="balance-label" class="mb-0 small text-uppercase fw-bold text-muted">Resta cobrar</p>
+                                        <h3 id="balance-display" class="mb-0">Gs. 0</h3>
                                     <?php else: ?>
                                         <p class="mb-0 small text-uppercase fw-bold text-muted">Módulo de Pagos</p>
-                                        <h5 class="mb-0 text-secondary">Inactivo (Caja Cerrada)</h5>
+                                        <h5 class="mb-0 text-secondary">Caja Cerrada</h5>
                                     <?php endif; ?>
                                 </div>
                             </div>
-                            <div class="col-md-6 text-end">
+                            <div class="col-md-6">
                                 <?php 
-                                    $btnDisabled = ($isCashOpen || $hasInvoice) ? 'disabled' : '';
-                                    $btnIcon = $hasInvoice ? 'fa-lock' : ($isCashOpen ? 'fa-check-double' : 'fa-file-invoice');
-                                    $btnText = $hasInvoice ? 'Venta ya registrada' : ($isCashOpen ? 'Confirmar y Generar Factura' : 'Generar Factura (Sin Pago)');
+                                    $btnDisabled = (!$isCashOpen || $hasInvoice) ? 'disabled' : '';
+                                    $btnIcon = $hasInvoice ? 'fa-lock' : ($isCashOpen ? 'fa-check-circle' : 'fa-file-invoice');
+                                    $btnText = $hasInvoice ? 'Venta ya registrada' : ($isCashOpen ? 'Finalizar y Cobrar' : 'Caja Requerida');
                                 ?>
-                                <button type="submit" id="btn-submit" class="btn btn-success btn-lg px-5 py-3 shadow" <?php echo $btnDisabled; ?>>
+                                <button type="submit" id="btn-submit" class="btn btn-success btn-lg w-100 py-4 fw-bold shadow" <?php echo $btnDisabled; ?>>
                                     <i class="fas <?php echo $btnIcon; ?> me-2"></i> <?php echo $btnText; ?>
                                 </button>
                             </div>

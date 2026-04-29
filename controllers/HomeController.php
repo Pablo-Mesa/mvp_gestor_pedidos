@@ -62,7 +62,7 @@ class HomeController {
         usort($allActive, function($a, $b) {
             return ($b['likes_count'] ?? 0) <=> ($a['likes_count'] ?? 0);
         });
-        $recommended_items = array_slice($allActive, 0, 8);
+        $recommended_items = $allActive; // Mostramos todos los recomendados
 
         // Obtener Promos activas para el Hero
         $heroModel = new HeroPromo();
@@ -175,7 +175,7 @@ class HomeController {
                                      FROM product_reviews r 
                                      JOIN products p ON r.product_id = p.id 
                                      JOIN clients c ON r.client_id = c.id
-                                     ORDER BY r.created_at DESC LIMIT 6")->fetchAll(PDO::FETCH_ASSOC);
+                        ORDER BY r.created_at DESC")->fetchAll(PDO::FETCH_ASSOC); // Sin límite de 6
 
         // Obtener Top de Reacciones (Los 4 más queridos)
         $popularProducts = $db->query("SELECT p.name, p.image, p.price, 
@@ -184,7 +184,7 @@ class HomeController {
                                        FROM products p
                                        JOIN product_reactions pr ON p.id = pr.product_id
                                        GROUP BY p.id
-                                       ORDER BY total_likes DESC, total_favs DESC LIMIT 4")->fetchAll(PDO::FETCH_ASSOC);
+                                       ORDER BY total_likes DESC, total_favs DESC")->fetchAll(PDO::FETCH_ASSOC); // Sin límite de 4
 
         // Cargar vistas
         $content_view = '../views/home/index.php';

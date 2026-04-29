@@ -336,6 +336,37 @@ $localPlaceholder = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22
         0% { transform: translateX(0); }
         100% { transform: translateX(-50%); }
     }
+
+    /* Carrusel de Reacciones (Ranking) */
+    .marquee-container-reactions {
+        width: 100%;
+        overflow: hidden;
+        padding: 10px 0;
+        position: relative;
+    }
+    .marquee-content-reactions {
+        display: flex;
+        width: max-content;
+        animation: marquee-scroll 35s linear infinite;
+    }
+    .reaction-item-card {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 12px 20px;
+        margin: 0 10px;
+        background: white;
+        border: 1px solid #f0f0f0;
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        width: 240px; /* Ancho fijo para consistencia */
+    }
+    /* Pausar carruseles al pasar el mouse para facilitar la lectura */
+    .marquee-container:hover .marquee-content,
+    .marquee-container-reactions:hover .marquee-content-reactions {
+        animation-play-state: paused;
+    }
 </style>    
 
 <?php if (!isset($_SESSION['client_id'])): ?>
@@ -453,25 +484,31 @@ $localPlaceholder = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22
             <?php if (!empty($popularProducts)): ?>
             <div class="products-reactions" style="margin: 2rem 0;">
                 <h4 style="font-size: 0.8rem; text-transform: uppercase; color: #aaa; margin-bottom: 20px; text-align: left; letter-spacing: 1.5px; font-weight: 700;">Los favoritos de la comunidad</h4>
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px;">
-                    <?php foreach ($popularProducts as $index => $pop): ?>
-                        <div style="background: white; border-radius: 16px; padding: 12px; border: 1px solid #f0f0f0; display: flex; align-items: center; gap: 10px;">
-                            <div style="position: relative;">
-                                <img src="<?php echo !empty($pop['image']) ? $baseUrl.'uploads/'.$pop['image'] : $localPlaceholder; ?>" 
-                                     style="width: 50px; height: 50px; border-radius: 12px; object-fit: cover;">
-                                <span style="position: absolute; -top: 8px; -left: 8px; background: #ffa502; color: white; width: 20px; height: 20px; border-radius: 50%; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white;">
-                                    <?php echo $index + 1; ?>
-                                </span>
-                            </div>
-                            <div style="overflow: hidden;">
-                                <span style="display: block; font-size: 0.85rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #2d3436;"><?php echo htmlspecialchars($pop['name']); ?></span>
-                                <div style="display: flex; gap: 8px; font-size: 0.75rem; color: #636e72;">
-                                    <span><i class="fas fa-thumbs-up" style="color: #1e90ff;"></i> <?php echo $pop['total_likes']; ?></span>
-                                    <span><i class="fas fa-heart" style="color: #ff4757;"></i> <?php echo $pop['total_favs']; ?></span>
+                <div class="marquee-container-reactions">
+                    <div class="marquee-content-reactions">
+                        <?php 
+                        // Duplicamos el contenido para asegurar un bucle infinito sin saltos
+                        for ($i = 0; $i < 2; $i++): 
+                            foreach ($popularProducts as $index => $pop): ?>
+                                <div class="reaction-item-card">
+                                    <div style="position: relative;">
+                                        <img src="<?php echo !empty($pop['image']) ? $baseUrl.'uploads/'.$pop['image'] : $localPlaceholder; ?>" 
+                                             style="width: 50px; height: 50px; border-radius: 12px; object-fit: cover;">
+                                        <span style="position: absolute; top: -8px; left: -8px; background: #ffa502; color: white; width: 20px; height: 20px; border-radius: 50%; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white;">
+                                            <?php echo $index + 1; ?>
+                                        </span>
+                                    </div>
+                                    <div style="overflow: hidden;">
+                                        <span style="display: block; font-size: 0.85rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #2d3436;"><?php echo htmlspecialchars($pop['name']); ?></span>
+                                        <div style="display: flex; gap: 8px; font-size: 0.75rem; color: #636e72;">
+                                            <span><i class="fas fa-thumbs-up" style="color: #1e90ff;"></i> <?php echo $pop['total_likes']; ?></span>
+                                            <span><i class="fas fa-heart" style="color: #ff4757;"></i> <?php echo $pop['total_favs']; ?></span>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
+                            <?php endforeach; 
+                        endfor; ?>
+                    </div>
                 </div>
             </div>
             <?php endif; ?>

@@ -29,9 +29,7 @@ try {
         'orders',
         'cash_movements',
         'cash_registers',
-        'delivery_checkins',
-        'product_reactions',
-        'product_reviews'
+        'delivery_checkins'
     ];
 
     foreach ($tables as $table) {

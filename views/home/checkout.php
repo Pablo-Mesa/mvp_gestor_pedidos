@@ -24,12 +24,6 @@
     .location-card i { font-size: 1.2rem; color: #aaa; margin-bottom: 5px; }
     .location-card.selected { border-color: #28a745; background: #f0fdf4; border-width: 2px; }
     .btn-add-location { background: #007bff; color: white; border: none; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
-    
-    .btn-delete-checkout {
-        position: absolute; top: 5px; right: 5px; background: transparent; border: none;
-        color: #ff4757; cursor: pointer; opacity: 0; transition: 0.3s; padding: 5px;
-    }
-    .location-card:hover .btn-delete-checkout { opacity: 1; }
 
     .btn-edit-inline { 
         position: absolute; top: 5px; right: 5px; background: #f8f9fa; border: 1px solid #ddd; 
@@ -163,12 +157,6 @@
                                     <i class="fas fa-home"></i>
                                     <strong><?= htmlspecialchars($loc['title']) ?></strong>
                                     <small><?= htmlspecialchars($loc['address']) ?></small>
-                                    <?php if (!$loc['has_orders']): ?>
-                                    <button type="button" class="btn-delete-checkout" 
-                                            onclick="event.stopPropagation(); confirmDeleteLocation(<?= $loc['id'] ?>, '<?= addslashes($loc['title']) ?>')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                    <?php endif; ?>
                                 </div>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -552,34 +540,6 @@
         }
     }
 
-    async function confirmDeleteLocation(id, title) {
-        const { isConfirmed } = await Swal.fire({
-            title: `¿Eliminar "${title}"?`,
-            text: "Se quitará de tus direcciones guardadas.",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            confirmButtonText: 'Sí, eliminar'
-        });
-
-        if (isConfirmed) {
-            try {
-                const response = await fetch('?route=delete_location', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: id })
-                });
-                const result = await response.json();
-                if (result.success) {
-                    Toast.fire("Dirección eliminada", "success");
-                    renderLocations(result.locations);
-                }
-            } catch (err) {
-                Toast.fire("Error al conectar con el servidor", "error");
-            }
-        }
-    }
-
     /**
      * Función para editar una ubicación existente
      */
@@ -666,13 +626,6 @@
         if (locations && locations.length > 0) {
             locations.forEach(loc => {
                 const safeAddr = loc.address.replace(/"/g, '&quot;');
-                const deleteBtn = !loc.has_orders ? `
-                    <button type="button" class="btn-delete-checkout" 
-                            onclick="event.stopPropagation(); confirmDeleteLocation(${loc.id}, '${loc.title}')">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                ` : '';
-
                 html += `
                     <div class="location-card" onclick="selectLocation(this)"
                          data-id="${loc.id}"
@@ -681,7 +634,6 @@
                         <i class="fas fa-home"></i>
                         <strong>${loc.title}</strong>
                         <small>${loc.address}</small>
-                        ${deleteBtn}
                     </div>
                 `;
             });

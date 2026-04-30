@@ -346,35 +346,32 @@ class OrderController {
 
             // Si el pedido se completa, formalizar la Venta y el Pago (Segunda Propuesta)
             if ($success && $_POST['status'] === 'completed') {
-                $cashModel = new CashRegister();
-                
-                $payment_confirm = $_POST['payment_confirm'] ?? 'order_method';
                 $orderData = $order->readOne();
                 
-                $payData = [];
-                if ($payment_confirm === 'none') {
-                    // Caso: Entregado sin cobrar (Autorizado). No registramos pago, queda como deuda.
-                    $payData = null; 
-                } elseif ($payment_confirm === 'cash') {
-                    $payData = [['metodo' => 'efectivo', 'monto' => $orderData['total'], 'referencia' => 'Cobrado por Delivery']];
-                } elseif ($payment_confirm === 'digital') {
-                    $payData = [['metodo' => 'transferencia', 'monto' => $orderData['total'], 'referencia' => 'Verificado por Delivery']];
-                } else {
-                    // Por defecto: Usar el método que ya tenía el pedido
-                    $payData = [[
-                        'metodo' => $orderData['payment_method'],
-                        'monto' => $orderData['total'],
-                        'referencia' => 'Pago automático en entrega'
-                    ]];
-                }
+                // Calculamos si está pagado basándonos en los datos reales devueltos por readOne
+                $totalPaid = (float)($orderData['total_paid'] ?? 0);
+                $isPaid = ($totalPaid >= (float)$orderData['total']) ? 1 : 0;
 
-                // En el cierre automático, si no hay caja abierta, finalizeSale lanzará error o se puede manejar
-                $registerId = $activeSession ? $activeSession['id'] : null;
-                $order->finalizeSale($payData, $registerId);
+                // Si el pedido es de tipo 'delivery' Y no ha sido pagado,
+                // NO se registra el pago automáticamente. La responsabilidad recae en el cajero/admin.
+                if ($orderData['delivery_type'] === 'delivery' && $isPaid === 0) {
+                    // El pedido simplemente se marca como 'completed'. El pago se gestionará manualmente.
+                } else {
+                    // Para pedidos que no son delivery, o delivery que ya están pagados (ej. online),
+                    // se formaliza la venta (generar factura/ticket) sin registrar un nuevo pago.
+                    $cashModel = new CashRegister();
+                    $activeSession = $cashModel->getActiveSession($_SESSION['user_id']);
+                    $registerId = $activeSession ? $activeSession['id'] : null;
+                    
+                    // Pasamos 'null' para los pagos, indicando que no se procesará un nuevo pago.
+                    // finalizeSale se encargará de generar el documento de venta si no existe.
+                    $order->finalizeSale(null, $registerId);
+                }
             }
 
             // Si es una petición AJAX (como al imprimir), respondemos JSON
             if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                if (ob_get_length()) ob_clean(); // Limpiar cualquier aviso de PHP para que el JSON sea puro
                 header('Content-Type: application/json');
                 echo json_encode(['success' => $success]);
                 exit;

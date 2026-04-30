@@ -673,81 +673,86 @@ function sendWA(phone, text) {
  * Actualiza el estado del pedido vía AJAX
  */
 async function updateOrderStatus(orderId, newStatus) {
-    const order = currentOrdersData.find(o => String(o.id) === String(orderId));
-    let paymentConfirm = 'order_method';
-
-    // Si el pedido se va a completar y no está pagado, preguntamos cómo se cobró
-    if (newStatus === 'completed' && parseInt(order.is_paid) === 0) {
-        const { value: selection } = await Swal.fire({
-            title: 'Confirmar Cobro',
-            text: `El pedido #${orderId} figura "A Cobrar". ¿Cómo recibiste el pago?`,
-            icon: 'dollar-sign',
-            showCancelButton: true,
-            confirmButtonColor: '#00c853',
-            cancelButtonText: 'Cancelar',
-            html: `
-                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
-                    <button onclick="Swal.clickConfirm()" data-val="cash" class="btn-logistics" style="background:#2d3436; color:white; padding:15px; font-size:0.9rem;">💵 COBRÉ EN EFECTIVO</button>
-                    <button onclick="Swal.clickConfirm()" data-val="digital" class="btn-logistics" style="background:#0984e3; color:white; padding:15px; font-size:0.9rem;">📱 PAGO DIGITAL (QR/TRANSF)</button>
-                    <button onclick="Swal.clickConfirm()" data-val="none" class="btn-logistics" style="background:#eee; color:#666; padding:15px; font-size:0.8rem; box-shadow:none; border:1px solid #ddd;">🤝 ENTREGAR SIN COBRAR (AUTORIZADO)</button>
-                </div>
-            `,
-            showConfirmButton: false,
-            didOpen: () => {
-                const btns = Swal.getHtmlContainer().querySelectorAll('button');
-                btns.forEach(b => b.addEventListener('click', () => {
-                    paymentConfirm = b.getAttribute('data-val');
-                }));
-            }
-        });
-
-        if (selection === undefined && !paymentConfirm) return; // El usuario canceló el modal
-    } else {
-        // Flujo estándar de confirmación para otros estados
+    // Flujo estándar de confirmación para todos los estados
     let confirmText = '¿Confirmas esta acción?';
     if (newStatus === 'completed') confirmText = '¿Confirmas que el pedido fue ENTREGADO con éxito?';
     if (newStatus === 'rejected') confirmText = '¿El cliente rechazó el pedido?';
     if (newStatus === 'cancelled') confirmText = '¿Deseas CANCELAR esta entrega por algún inconveniente?';
     
-        const result = await Swal.fire({
+    const result = await Swal.fire({
         title: 'Gestión de Pedido',
         text: confirmText,
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: newStatus === 'completed' ? '#00e676' : '#636e72',
         cancelButtonColor: '#d33',
-        confirmButtonText: 'Sí, proceder'
+        confirmButtonText: 'Sí, proceder',
+        cancelButtonText: 'No, volver'
+    });
+    if (!result.isConfirmed) return;
+
+    // Sugerencia: Mostrar un estado de carga inmediatamente para evitar doble click
+    // y dar feedback de que el sistema está trabajando.
+    Swal.fire({
+        title: 'Procesando...',
+        text: 'Registrando la entrega, por favor espera.',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    try {
+        const formData = new FormData();
+        formData.append('id', orderId);
+        formData.append('status', newStatus);
+
+        const response = await fetch('?route=orders_update_status', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
-        if (!result.isConfirmed) return;
-    }
 
-    // Proceder con el envío de datos
-            const formData = new FormData();
-            formData.append('id', orderId);
-            formData.append('status', newStatus);
-    formData.append('payment_confirm', paymentConfirm);
+        // Leemos la respuesta como texto primero para diagnosticar errores de PHP si los hay
+        const rawText = await response.text();
+        let data;
+        try {
+            data = JSON.parse(rawText);
+        } catch (e) {
+            console.error("Respuesta no válida del servidor:", rawText);
+            // Si el estado es 200, es probable que la DB se haya actualizado pero hubo un Notice de PHP
+            if (response.ok) {
+                data = { success: true }; 
+            } else {
+                throw new Error("Error en el formato de respuesta del servidor");
+            }
+        }
 
-            fetch('?route=orders_update_status', {
-                method: 'POST',
-                body: formData,
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.success) {
-                    // Haptic Feedback: Vibración doble corta al completar con éxito
-                    if (newStatus === 'completed' && "vibrate" in navigator) {
-                        navigator.vibrate([100, 50, 100]);
-                    }
+        if (data.success) {
+            // Haptic Feedback: Vibración doble corta al completar con éxito
+            if (newStatus === 'completed' && "vibrate" in navigator) {
+                navigator.vibrate([100, 50, 100]);
+            }
 
-                // Guardamos el ID para re-centrar la vista tras el renderizado
-                lastInteractedOrderId = orderId;
-                
-                // Solo refrescamos y centramos después de que el usuario cierre el SweetAlert
-                Swal.fire("¡Actualizado!", "El estado del pedido ha sido actualizado.", "success").then(() => {
-                    refreshDeliveryOrders(true);
-                });
-                }
+            // Guardamos el ID para re-centrar la vista tras el renderizado
+            lastInteractedOrderId = orderId;
+            
+            // Cerramos el cargador y mostramos el éxito
+            await Swal.fire({
+                title: "¡Logrado!",
+                text: "El estado ha sido registrado correctamente.",
+                icon: "success",
+                confirmButtonColor: '#2d3436'
             });
+            
+            refreshDeliveryOrders(true);
+        } else {
+            throw new Error(data.message || "Error al actualizar");
+        }
+    } catch (err) {
+        Swal.fire("Error", "No pudimos registrar la acción. Revisa tu conexión.", "error");
+    }
 }
 </script>

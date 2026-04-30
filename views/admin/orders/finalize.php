@@ -15,7 +15,7 @@
     }
 </style>
 
-<div class="container py-4">
+<div class="container">
     <div class="row justify-content-center">
         <div class="col-lg-11">
             <div class="card shadow-sm border-0">
@@ -223,9 +223,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     calculate();
-
-    // Enfocar automáticamente el campo de efectivo para agilizar la carga del cobro
-    document.querySelector('input[data-method="efectivo"]')?.focus();
+    
+    // Enfocar automáticamente el campo de pago según el método del pedido
+    const orderPaymentMethod = "<?php echo $order['payment_method']; ?>";
+    const targetInput = document.querySelector(`input[data-method="${orderPaymentMethod}"]`);
+    if (targetInput) targetInput.focus();
 
     const form = document.getElementById('form-finalize');
     form.addEventListener('submit', function(e) {

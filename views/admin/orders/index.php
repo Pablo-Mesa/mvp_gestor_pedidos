@@ -405,6 +405,12 @@
                                 </div>
                             <?php endif; ?>
 
+                            <?php if ($order['status'] === 'completed' && (float)($order['total_paid'] ?? 0) < (float)$order['total']): ?>
+                                <div style="font-size: 0.7rem; color: #dc3545; font-weight: bold; margin-top: 4px;">
+                                    <i class="fas fa-exclamation-circle"></i> RENDICIÓN PENDIENTE
+                                </div>
+                            <?php endif; ?>
+
                             <?php if (!empty($order['delivery_user_id']) && !in_array($order['status'], ['completed', 'rejected', 'cancelled'])): ?>
                                 <div style="font-size: 0.7rem; color: #28a745; font-weight: bold; margin-top: 4px;">
                                     <i class="fas fa-user-check"></i> DELIVERY ASIGNADO
@@ -936,6 +942,9 @@ if (empty($orders) && $hasFilter):
                 }
                 if (order.delivery_user_id && !['completed', 'rejected', 'cancelled'].includes(order.status)) {
                     extraBadges += `<div style="font-size: 0.7rem; color: #28a745; font-weight: bold; margin-top: 4px;"><i class="fas fa-user-check"></i> DELIVERY ASIGNADO</div>`;
+                }
+                if (order.status === 'completed' && parseInt(order.is_paid) === 0) {
+                    extraBadges += `<div style="font-size: 0.7rem; color: #dc3545; font-weight: bold; margin-top: 4px;"><i class="fas fa-exclamation-circle"></i> RENDICIÓN PENDIENTE</div>`;
                 }
 
                 let statusClass = 'status-' + order.status;

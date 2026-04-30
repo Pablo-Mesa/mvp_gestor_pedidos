@@ -369,197 +369,175 @@ $localPlaceholder = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22
     }
 </style>    
 
+<!-- vista local cerrado -->
 <?php if (!isset($_SESSION['client_id'])): ?>
-    <!-- VISTA PARA USUARIOS NO LOGUEADOS (GUESTS) -->
-    <?php $contactChannels = !empty($siteSettings['contact_channels']) ? json_decode($siteSettings['contact_channels'], true) : []; ?>
-    <div class="guest-container" style="padding: 1rem 0;">
+    <?php 
+        $contactChannels = !empty($siteSettings['contact_channels']) ? json_decode($siteSettings['contact_channels'], true) : [];
+        $mainPhone = !empty($siteSettings['store_phone']) ? $siteSettings['store_phone'] : '';
 
-        <!-- Información Operativa y Ubicación del Local -->
-        <div class="local-info-container">
-
-            <!-- tarjeta cerrado -->
-            <div style="background: white; padding: 2.5rem; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #eee; text-align: center; margin-bottom: 1rem;">
-                <div style="width: 80px; height: 80px; background: #e9ecef; color: #2d3436; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto; font-size: 2rem;">
-                    <i class="fas fa-store"></i>
-                </div>
-                <h2 style="font-weight: 800; color: #2d3436; margin-bottom: 0.5rem;"><?php echo htmlspecialchars($siteName); ?></h2>
-                
-                <?php if (!$isStoreOpen): ?>
-                    <p style="color: #856404; font-weight: 700; font-size: 1.1rem; margin-bottom: 1.5rem;">Local Cerrado - <?php echo $nextOpeningMsg; ?></p>
-                <?php else: ?>
-                    <p style="color: #28a745; font-weight: 700; font-size: 1.1rem; margin-bottom: 1.5rem;">¡Estamos Abiertos!</p>
-                <?php endif; ?>
-                <!-- contacto -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; text-align: left; margin-top: 1rem; border-top: 1px solid #eee; padding-top: 2rem;">
-                    <div>
-                        <h4 style="font-size: 0.8rem; text-transform: uppercase; color: #aaa; margin-bottom: 12px;">Contacto</h4>
-                        <?php if (empty($contactChannels)): ?>
-                            <p style="font-weight: 600; color: #2d3436;"><i class="fas fa-phone-alt" style="color: #0984e3;"></i> <?php echo htmlspecialchars($siteSettings['store_phone'] ?? 'Consultar al local'); ?></p>
-                        <?php else: ?>
-                            <?php foreach ($contactChannels as $channel): ?>
-                                <div style="margin-bottom: 12px;">
-                                    <span style="display: block; font-size: 0.7rem; color: #888; text-transform: uppercase; margin-bottom: 2px;"><?php echo htmlspecialchars($channel['label']); ?></span>
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span style="font-weight: 700; color: #2d3436; font-size: 1rem;"><?php echo htmlspecialchars($channel['phone']); ?></span>
-                                        <div style="display: flex; gap: 6px; font-size: 0.85rem;">
-                                            <?php if(!empty($channel['calls'])): ?><i class="fas fa-phone-alt" style="color: #0984e3;" title="Soporta llamadas"></i><?php endif; ?>
-                                            <?php if(!empty($channel['sms'])): ?><i class="fas fa-comment-alt" style="color: #636e72;" title="Soporta mensajes"></i><?php endif; ?>
-                                            <?php if(!empty($channel['whatsapp'])): ?><i class="fab fa-whatsapp" style="color: #25D366;" title="WhatsApp habilitado"></i><?php endif; ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </div>
-                    <div>
-                        <h4 style="font-size: 0.8rem; text-transform: uppercase; color: #aaa; margin-bottom: 10px;">Dirección</h4>
-                        <p style="font-weight: 600; color: #2d3436;"><i class="fas fa-map-marker-alt" style="color: #ff4757;"></i> <?php echo htmlspecialchars($siteSettings['store_address'] ?? 'Asunción, Paraguay'); ?></p>
-                    </div>
-                </div>
+        // Fallback: Si el teléfono principal está vacío, buscamos el primero disponible en los canales configurados
+        if (empty($mainPhone) && !empty($contactChannels)) {
+            foreach ($contactChannels as $channel) {
+                if (!empty($channel['phone'])) {
+                    $mainPhone = $channel['phone'];
+                    break;
+                }
+            }
+        }
+        $displayPhone = !empty($mainPhone) ? $mainPhone : 'Consultar al local';
+    ?>
+    <!-- Contenedor de Vista de Invitado / Local Cerrado -->
+    <div id="closed-view-container" class="guest-container" style="padding: 1rem 0;">
+        
+        <header class="closed-hero" style="text-align: center; margin-bottom: 2rem;">
+            <h1 id="display-site-name" style="font-weight: 800; color: #2d3436; margin-bottom: 0.5rem;"><?php echo htmlspecialchars($siteName); ?></h1>
+            <div id="display-next-opening" style="color: #856404; font-weight: 700; font-size: 1.1rem; background: #fff3cd; padding: 8px 15px; border-radius: 10px; display: inline-block;">
+                <?php echo $isStoreOpen ? '¡Estamos Abiertos!' : 'Local Cerrado - ' . $nextOpeningMsg; ?>
             </div>
+        </header>
 
-            <!-- Contenedor de Mapa y Horarios en 2 columnas -->
-            <div class="footer-info-grid">
-                        
-                <!-- Columna Horarios -->
-                <?php if (!empty($weeklySchedule) && (is_array($weeklySchedule) || is_object($weeklySchedule))): ?>
-                <div class="footer-info-col">
-                    <h4 style="font-size: 0.8rem; text-transform: uppercase; color: #aaa; margin-bottom: 15px; text-align: left; letter-spacing: 1.5px; font-weight: 700;">Horario de Atención</h4>
-                    <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px;">
-                        <?php foreach ($weeklySchedule as $day => $hours): ?>
-                            <li style="background: #f8f9fa; padding: 12px 18px; border-radius: 15px; border: 1px solid #eee; font-size: 0.9rem; color: #2d3436; display: flex; justify-content: space-between;">
-                                <strong style="color: #0984e3;"><?php echo htmlspecialchars((string)$day); ?></strong> 
-                                <span><?php echo htmlspecialchars((string)$hours); ?></span>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>    
-                </div>
-                <?php endif; ?>
-
-                <!-- Columna Mapa -->
-                <?php if (!empty($siteSettings['store_lat']) && !empty($siteSettings['store_lng'])): ?>
-                <div class="footer-info-col">
-                    <h4 style="font-size: 0.8rem; text-transform: uppercase; color: #aaa; margin-bottom: 15px; text-align: left; letter-spacing: 1.5px; font-weight: 700;">Ven a visitarnos en:</h4>    
-                    <div class="location-map" style="height: 300px; border-radius: 24px; overflow: hidden; border: 1px solid #eee; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
-                        <iframe 
-                            width="100%" height="100%" frameborder="0" style="border:0; filter: grayscale(0.1);" 
-                            src="https://maps.google.com/maps?q=<?php echo $siteSettings['store_lat']; ?>,<?php echo $siteSettings['store_lng']; ?>&z=15&output=embed" 
-                            allowfullscreen>
-                        </iframe>
-                    </div>
-                </div>
-                <?php endif; ?>
-                
-            </div>
+        <div class="info-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 2rem;">
             
-            <!-- Área de Reseñas / Testimonios (Social Proof) -->
-            <?php if (!empty($recentReviews)): ?>
-            <div class="products-reviews" style="margin: 2rem 0;">
-                <h4 style="font-size: 0.8rem; text-transform: uppercase; color: #aaa; margin-bottom: 15px; text-align: left; letter-spacing: 1.5px; font-weight: 700;">Lo que dicen nuestros comensales</h4>
-                <div class="horizontal-slider" style="padding-bottom: 15px; gap: 15px;">
-                    <?php foreach ($recentReviews as $rev): ?>
-                        <div class="review-card" style="flex: 0 0 280px; background: white; padding: 1.5rem; border-radius: 20px; border: 1px solid #f0f0f0; box-shadow: 0 4px 15px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 12px; text-align: left;">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <div style="width: 40px; height: 40px; background: #f8f9fa; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #0984e3; font-size: 0.9rem; border: 1px solid #eee;">
-                                    <?php echo strtoupper(substr($rev['client_name'], 0, 1)); ?>
-                                </div>
-                                <div style="overflow: hidden;">
-                                    <span style="display: block; font-size: 0.9rem; font-weight: 700; color: #2d3436; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo htmlspecialchars($rev['client_name']); ?></span>
-                                    <small style="color: #0984e3; font-size: 0.75rem; font-weight: 600;">Sobre: <?php echo htmlspecialchars($rev['product_name']); ?></small>
-                                </div>
-                            </div>
-                            <p style="font-size: 0.85rem; color: #636e72; line-height: 1.5; font-style: italic; position: relative; padding-left: 10px; border-left: 3px solid #00b894;">
-                                "<?php echo htmlspecialchars($rev['comment']); ?>"
-                            </p>
-                            <div style="margin-top: auto; display: flex; gap: 3px; color: #ffa502; font-size: 0.8rem;">
-                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                            </div>
+            <!-- Contacto -->
+            <div class="contact-card" style="background: white; padding: 1.5rem; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eee;">
+                <h4 style="font-size: 0.75rem; text-transform: uppercase; color: #aaa; margin-bottom: 1rem; letter-spacing: 1px;">Contacto</h4>
+                <div style="margin-bottom: 1.2rem; border-bottom: 1px solid #f8f9fa; padding-bottom: 0.8rem;">
+                    <span style="display: block; font-size: 0.7rem; color: #888; text-transform: uppercase; margin-bottom: 4px;">Teléfono Oficial</span>
+                    <span style="font-weight: 800; color: #2d3436; font-size: 1.4rem; letter-spacing: 1px;"><?php echo htmlspecialchars($displayPhone); ?></span>
+                </div>
+                <div style="display: flex; gap: 10px; margin-bottom: 1rem;">
+                    <a href="https://wa.me/<?php echo preg_replace('/[^0-9]/', '', $mainPhone); ?>" id="btn-contact-whatsapp" class="btn" style="background: #25D366; color: white; flex: 1; text-align: center; text-decoration: none; border-radius: 12px; padding: 12px; font-weight: 700; font-size: 0.9rem;">
+                        <i class="fab fa-whatsapp"></i> WhatsApp
+                    </a>
+                    <a href="tel:<?php echo $mainPhone; ?>" id="btn-contact-phone" class="btn" style="background: #0984e3; color: white; flex: 1; text-align: center; text-decoration: none; border-radius: 12px; padding: 12px; font-weight: 700; font-size: 0.9rem;">
+                        <i class="fas fa-phone-alt"></i> Llamar
+                    </a>
+                </div>
+                <p style="font-weight: 600; color: #2d3436; font-size: 0.9rem; margin-top: 0.5rem;">
+                    <i class="fas fa-map-marker-alt" style="color: #ff4757;"></i> <?php echo htmlspecialchars($siteSettings['store_address'] ?? 'Asunción, Paraguay'); ?>
+                </p>
+            </div>
+
+            <!-- Horarios -->
+            <?php if (!empty($weeklySchedule)): ?>
+            <div class="schedule-card" style="background: white; padding: 1.5rem; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eee;">
+                <h4 style="font-size: 0.75rem; text-transform: uppercase; color: #aaa; margin-bottom: 1rem; letter-spacing: 1px;">Horario de Atención</h4>
+                <div class="schedule-list">
+                    <?php foreach ($weeklySchedule as $day => $hours): ?>
+                        <div class="schedule-list-item" style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 6px 0; border-bottom: 1px solid #f8f9fa;">
+                            <strong style="color: #2d3436;"><?php echo htmlspecialchars($day); ?></strong>
+                            <span style="color: #636e72;"><?php echo htmlspecialchars($hours); ?></span>
                         </div>
                     <?php endforeach; ?>
                 </div>
             </div>
             <?php endif; ?>
-
-            <!-- Área de Reacciones (Ranking de Popularidad) -->
-            <?php if (!empty($popularProducts)): ?>
-            <div class="products-reactions" style="margin: 2rem 0;">
-                <h4 style="font-size: 0.8rem; text-transform: uppercase; color: #aaa; margin-bottom: 20px; text-align: left; letter-spacing: 1.5px; font-weight: 700;">Los favoritos de la comunidad</h4>
-                <div class="marquee-container-reactions">
-                    <div class="marquee-content-reactions">
-                        <?php 
-                        // Duplicamos el contenido para asegurar un bucle infinito sin saltos
-                        for ($i = 0; $i < 2; $i++): 
-                            foreach ($popularProducts as $index => $pop): ?>
-                                <div class="reaction-item-card">
-                                    <div style="position: relative;">
-                                        <img src="<?php echo !empty($pop['image']) ? $baseUrl.'uploads/'.$pop['image'] : $localPlaceholder; ?>" 
-                                             style="width: 50px; height: 50px; border-radius: 12px; object-fit: cover;">
-                                        <span style="position: absolute; top: -8px; left: -8px; background: #ffa502; color: white; width: 20px; height: 20px; border-radius: 50%; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white;">
-                                            <?php echo $index + 1; ?>
-                                        </span>
-                                    </div>
-                                    <div style="overflow: hidden;">
-                                        <span style="display: block; font-size: 0.85rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #2d3436;"><?php echo htmlspecialchars($pop['name']); ?></span>
-                                        <div style="display: flex; gap: 8px; font-size: 0.75rem; color: #636e72;">
-                                            <span><i class="fas fa-thumbs-up" style="color: #1e90ff;"></i> <?php echo $pop['total_likes']; ?></span>
-                                            <span><i class="fas fa-heart" style="color: #ff4757;"></i> <?php echo $pop['total_favs']; ?></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            <?php endforeach; 
-                        endfor; ?>
-                    </div>
-                </div>
-            </div>
-            <?php endif; ?>
-
-            <!-- carrusel automatico categorias -->
-            <?php if (!empty($navCategories)): ?>
-            <div style="margin-top: 2rem;">
-                <h4 style="font-size: 0.8rem; text-transform: uppercase; color: #aaa; margin-bottom: 5px; text-align: center; letter-spacing: 1.5px; font-weight: 700;">Nuestra Especialidad</h4>
-                <div class="marquee-container">
-                    <div class="marquee-content">
-                        <?php 
-                        // Renderizamos dos veces el mismo contenido para crear el efecto de bucle infinito sin saltos
-                        for ($i = 0; $i < 2; $i++): 
-                            foreach ($navCategories as $cat): 
-                                $emoji = '🍽️';
-                                if (stripos($cat['name'], 'bebida') !== false) $emoji = '🥤';
-                                if (stripos($cat['name'], 'postre') !== false) $emoji = '🍦';
-                                if (stripos($cat['name'], 'desayuno') !== false) $emoji = '☕';
-                                if (stripos($cat['name'], 'minuta') !== false || stripos($cat['name'], 'hamburguesa') !== false) $emoji = '🍔';
-                                if (stripos($cat['name'], 'almuerzo') !== false) $emoji = '🍲';
-                        ?>
-                            <div class="marquee-item">
-                                <span class="marquee-icon"><?php echo $emoji; ?></span>
-                                <span class="marquee-text"><?php echo htmlspecialchars($cat['name']); ?></span>
-                            </div>
-                        <?php 
-                            endforeach; 
-                        endfor; 
-                        ?>
-                    </div>
-                </div>
-                <?php if (!$isStoreOpen): ?>
-                    <p style="text-align: center; color: #636e72; font-size: 0.85rem; margin-top: 15px; font-style: italic; padding: 0 20px;">
-                        Regresa en nuestro horario de atención para ver las fotos de cada plato y realizar tu pedido.
-                    </p>
-                <?php endif; ?>
-            </div>
-            <?php endif; ?>
-            
         </div>
 
-        <!-- Botón de acceso para invitados -->
-        <div style="margin-top: 3rem; text-align: center;">
-            <p style="color: #aaa; font-size: 0.9rem; margin-bottom: 1rem;">Inicia sesión para ver nuestra variedad de platos</p>
-            <button onclick="openAuthModal()" class="btn-primary" style="background: #2d3436; color: white; border: none; padding: 15px 40px; font-size: 1rem;">
+        <!-- Mapa -->
+        <?php if (!empty($siteSettings['store_lat']) && !empty($siteSettings['store_lng'])): ?>
+        <div id="map-iframe-container" style="height: 300px; border-radius: 24px; overflow: hidden; border: 1px solid #eee; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 2rem;">
+            <iframe width="100%" height="100%" frameborder="0" style="border:0;" 
+                src="https://maps.google.com/maps?q=<?php echo $siteSettings['store_lat']; ?>,<?php echo $siteSettings['store_lng']; ?>&z=15&output=embed" 
+                allowfullscreen>
+            </iframe>
+        </div>
+        <?php endif; ?>
+        
+        <!-- Área de Reseñas / Testimonios -->
+        <?php if (!empty($recentReviews)): ?>
+        <div class="products-reviews" style="margin: 2rem 0;">
+            <h4 style="font-size: 0.75rem; text-transform: uppercase; color: #aaa; margin-bottom: 15px; text-align: center; letter-spacing: 1.5px; font-weight: 700;">Lo que dicen nuestros comensales</h4>
+            <div class="horizontal-slider" style="padding-bottom: 15px; gap: 15px;">
+                <?php foreach ($recentReviews as $rev): ?>
+                    <div class="review-card" style="flex: 0 0 280px; background: white; padding: 1.5rem; border-radius: 20px; border: 1px solid #f0f0f0; box-shadow: 0 4px 15px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 12px; text-align: left;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 40px; height: 40px; background: #f8f9fa; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #0984e3; font-size: 0.9rem; border: 1px solid #eee;">
+                                <?php echo strtoupper(substr($rev['client_name'], 0, 1)); ?>
+                            </div>
+                            <div style="overflow: hidden;">
+                                <span style="display: block; font-size: 0.9rem; font-weight: 700; color: #2d3436; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo htmlspecialchars($rev['client_name']); ?></span>
+                                <small style="color: #0984e3; font-size: 0.75rem; font-weight: 600;">Sobre: <?php echo htmlspecialchars($rev['product_name']); ?></small>
+                            </div>
+                        </div>
+                        <p style="font-size: 0.85rem; color: #636e72; line-height: 1.5; font-style: italic; position: relative; padding-left: 10px; border-left: 3px solid #00b894;">
+                            "<?php echo htmlspecialchars($rev['comment']); ?>"
+                        </p>
+                        <div style="margin-top: auto; display: flex; gap: 3px; color: #ffa502; font-size: 0.8rem;">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- Social Proof: Reacciones Populares -->
+        <?php if (!empty($popularProducts)): ?>
+        <div class="social-proof-section" style="margin: 2rem 0;">
+            <h4 style="font-size: 0.75rem; text-transform: uppercase; color: #aaa; margin-bottom: 20px; text-align: center; letter-spacing: 1.5px; font-weight: 700;">Los favoritos de la comunidad</h4>
+            <div class="marquee-container-reactions">
+                <div class="marquee-content-reactions">
+                    <?php for ($i = 0; $i < 2; $i++): ?>
+                        <?php foreach ($popularProducts as $index => $pop): ?>
+                            <div class="reaction-item-card" style="flex: 0 0 240px; background: white; padding: 12px; margin: 0 10px; border-radius: 16px; border: 1px solid #f0f0f0; display: flex; align-items: center; gap: 12px;">
+                                <img src="<?php echo !empty($pop['image']) ? $baseUrl.'uploads/'.$pop['image'] : $localPlaceholder; ?>" style="width: 45px; height: 45px; border-radius: 10px; object-fit: cover;">
+                                <div style="overflow: hidden;">
+                                    <span style="display: block; font-size: 0.85rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #2d3436;"><?php echo htmlspecialchars($pop['name']); ?></span>
+                                    <div style="display: flex; gap: 8px; font-size: 0.75rem; color: #636e72;">
+                                        <span><i class="fas fa-thumbs-up" style="color: #1e90ff;"></i> <?php echo $pop['total_likes']; ?></span>
+                                        <span><i class="fas fa-heart" style="color: #ff4757;"></i> <?php echo $pop['total_favs']; ?></span>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endfor; ?>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- Carrusel Automático de Categorías -->
+        <?php if (!empty($navCategories)): ?>
+        <div style="margin: 3rem 0;">
+            <h4 style="font-size: 0.75rem; text-transform: uppercase; color: #aaa; margin-bottom: 20px; text-align: center; letter-spacing: 1.5px; font-weight: 700;">Nuestra Especialidad</h4>
+            <div class="marquee-container">
+                <div class="marquee-content">
+                    <?php 
+                    // Duplicamos el contenido para el efecto de bucle infinito
+                    for ($i = 0; $i < 2; $i++): 
+                        foreach ($navCategories as $cat): 
+                            $emoji = '🍽️';
+                            if (stripos($cat['name'], 'bebida') !== false) $emoji = '🥤';
+                            if (stripos($cat['name'], 'postre') !== false) $emoji = '🍦';
+                            if (stripos($cat['name'], 'desayuno') !== false) $emoji = '☕';
+                            if (stripos($cat['name'], 'minuta') !== false || stripos($cat['name'], 'hamburguesa') !== false) $emoji = '🍔';
+                            if (stripos($cat['name'], 'almuerzo') !== false) $emoji = '🍲';
+                    ?>
+                        <div class="marquee-item">
+                            <span class="marquee-icon"><?php echo $emoji; ?></span>
+                            <span class="marquee-text"><?php echo htmlspecialchars($cat['name']); ?></span>
+                        </div>
+                    <?php 
+                        endforeach; 
+                    endfor; 
+                    ?>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- Acceso Principal -->
+        <div class="auth-trigger-section" style="text-align: center; margin-top: 3rem; background: #f8f9fa; padding: 2.5rem; border-radius: 24px; border: 1px dashed #ddd;">
+            <p style="color: #636e72; font-size: 0.95rem; margin-bottom: 1.5rem; font-weight: 500;">Inicia sesión para descubrir nuestro menú completo y realizar tu pedido.</p>
+            <button onclick="openAuthModal()" class="btn-main" style="background: #2d3436; color: white; border: none; padding: 16px 45px; font-size: 1.1rem; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
                 Ingresar Ahora <i class="fas fa-sign-in-alt" style="margin-left: 10px;"></i>
             </button>
         </div>
     </div>
 
 <?php else: ?>
+
     <!-- Grid de Productos -->
     <div class="product-grid">
         <?php if(empty($menu_items)): ?>

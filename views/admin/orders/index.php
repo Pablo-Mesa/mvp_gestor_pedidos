@@ -355,6 +355,9 @@
                         </td>
                         <td>
                             <i class="fas fa-user"></i> <?php echo htmlspecialchars($order['user_name']); ?>
+                            <?php if(!empty($order['billing_ruc']) && (int)($order['has_legal_invoice'] ?? 0) === 0): ?>
+                                <i class="fas fa-file-invoice text-primary ms-1" title="Solicitó Factura: <?php echo htmlspecialchars($order['billing_name']); ?>"></i>
+                            <?php endif; ?>
                         </td>
                         <td>
                             <?php if($order['delivery_type'] == 'delivery'): ?>
@@ -478,9 +481,11 @@
 <div class="modal fade" id="quickActionsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content">
+            <!-- header -->
             <div class="modal-header py-2">
                 <div class="w-100">
                     <h6 class="modal-title mb-2" id="qa-title">Pedido #000</h6>
+                    <!-- progreso en el proceso -->
                     <div class="qa-progress" id="qa-progress-steps">
                         <div class="step-dot" data-label="Comanda" id="step-comanda"></div>
                         <div class="step-dot" data-label="Venta" id="step-factura"></div>
@@ -490,7 +495,15 @@
                 </div>
                 <button type="button" class="btn-close" id="qa-btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+
+            <!-- Aviso de Factura Legal en Modal -->
+            <div id="qa-billing-alert" class="alert alert-primary py-1 px-3 mb-0 rounded-0 d-none" style="font-size: 0.75rem;">
+                <i class="fas fa-info-circle"></i> <strong>Solicitó Factura:</strong> 
+                <span id="qa-billing-info"></span>
+            </div>
+
             <div class="modal-body p-3">
+                <!-- imprimri comanda, factura/ticket -->
                 <div class="d-grid gap-2 mb-3">
                     <button type="button" class="btn btn-secondary" id="qa-btn-58">
                         <i class="fas fa-print"></i> Comanda Cocina 58mm
@@ -503,6 +516,7 @@
                     </a>
                 </div>
                 
+                <!-- Logistica -->
                 <div id="qa-delivery-section" class="mb-3" style="display: none;">
                     <hr class="my-2">
                     <label class="form-label small fw-bold text-muted">Logística de Envío:</label>
@@ -514,7 +528,8 @@
                     </select>
                     <button type="button" class="btn btn-success btn-sm w-100" id="qa-btn-assign">Asignar y Despachar</button>
                 </div>
-
+                
+                <!-- Cobrar Pedido y Ver Detalles del Pedido -->
                 <div class="d-grid gap-2">
                     <a href="#" class="btn btn-success btn-lg" id="qa-btn-pay">
                         <i class="fas fa-cash-register"></i> COBRAR PEDIDO
@@ -657,6 +672,15 @@ if (empty($orders) && $hasFilter):
         
         document.getElementById('qa-title').innerText = `Pedido #${order.id} - ${order.user_name}`;
         document.getElementById('qa-btn-view').href = `?route=orders_show&id=${order.id}`;
+
+        // Aviso de Facturación
+        const billingAlert = document.getElementById('qa-billing-alert');
+        if (order.billing_ruc && parseInt(order.has_legal_invoice) === 0) {
+            billingAlert.classList.remove('d-none');
+            document.getElementById('qa-billing-info').innerText = `${order.billing_name} (${order.billing_ruc})`;
+        } else {
+            billingAlert.classList.add('d-none');
+        }
 
         // Actualizar Progreso Visual
         const isConfirmed = order.status !== 'pending';
@@ -953,7 +977,10 @@ if (empty($orders) && $hasFilter):
                         <td>#${order.id}</td>
                         <td>${order.formatted_date}</td>
                         <td><i class="${order.channel_icon}"></i> <span style="font-size: 0.75rem;">${order.channel_name}</span></td>
-                        <td>${order.user_name}</td>
+                        <td>
+                            ${order.user_name}
+                            ${(order.billing_ruc && parseInt(order.has_legal_invoice) === 0) ? ' <i class="fas fa-file-invoice text-primary ms-1" title="Solicitó Factura"></i>' : ''}
+                        </td>
                         <td>${deliveryHtml}</td>
                         <td>Gs. ${order.formatted_total}</td>
                         <td>

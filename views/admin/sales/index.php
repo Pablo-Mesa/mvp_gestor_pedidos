@@ -325,8 +325,29 @@ function openSaleQuickActions(sale) {
             });
 
             if (result.isConfirmed) {
-                printSaleTicket(sale.id, '80mm', 'factura');
-                salesQaModal.hide();
+                try {
+                    // 1. Persistir el cambio de TK a FAC en la base de datos vía API
+                    const resp = await fetch('?route=update_sale_doc_type_api', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: sale.id, doc_type: 'factura' })
+                    });
+                    const res = await resp.json();
+                    
+                    if (res.success) {
+                        // 2. Disparar la impresión (usará el nro actualizado)
+                        printSaleTicket(sale.id, '80mm', 'factura');
+                        salesQaModal.hide();
+                        
+                        // 3. Notificar y recargar la página para actualizar los badges FAC en la tabla
+                        Toast.fire("Documento legal emitido y registrado", "success");
+                        setTimeout(() => { window.location.reload(); }, 1500);
+                    } else {
+                        Toast.fire(res.message || "Error al formalizar factura", "error");
+                    }
+                } catch (e) {
+                    Toast.fire("Error de conexión al emitir factura", "error");
+                }
             }
         };
     }

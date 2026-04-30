@@ -24,6 +24,11 @@ switch ($route) {
         $controller = new HomeController();
         $controller->myOrders();
         break;
+    case 'my_favorites':
+        require_once '../controllers/HomeController.php';
+        $controller = new HomeController();
+        $controller->myFavorites();
+        break;
     case 'my_locations':
         require_once '../controllers/HomeController.php';
         $controller = new HomeController();
@@ -452,6 +457,12 @@ switch ($route) {
         require_once '../controllers/OrderController.php';
         $controller = new OrderController();
         $controller->ticket();
+        break;
+
+    case 'update_sale_doc_type_api':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->updateSaleDocTypeApi();
         break;
 
     case 'orders_update_status':

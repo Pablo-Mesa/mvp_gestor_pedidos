@@ -233,6 +233,9 @@
                     <a href="?route=my_orders" class="sidebar-link">
                         <i class="fas fa-receipt"></i> Mis Pedidos
                     </a>
+                    <a href="?route=my_favorites" class="sidebar-link">
+                        <i class="fas fa-heart"></i> Mis Favoritos
+                    </a>
                     <a href="?route=my_locations" class="sidebar-link">
                         <i class="fas fa-map-marker-alt"></i> Mis Direcciones
                     </a>

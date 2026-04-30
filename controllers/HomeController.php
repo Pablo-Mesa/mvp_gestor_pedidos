@@ -317,6 +317,53 @@ class HomeController {
     }
 
     /**
+     * Muestra los favoritos y productos más pedidos del cliente
+     */
+    public function myFavorites() {
+        if (!isset($_SESSION['client_id'])) {
+            header('Location: ?route=home');
+            exit;
+        }
+
+        $clientId = $_SESSION['client_id'];
+        $db = (new Database())->getConnection();
+
+        // 1. Obtener productos marcados como favoritos (Heart icon)
+        $favsQuery = "SELECT p.*, cat.name as category_name, 
+                      (SELECT COUNT(*) FROM product_reactions WHERE product_id = p.id AND type = 'fav') as fav_count,
+                      (SELECT COUNT(*) FROM product_reactions WHERE product_id = p.id AND type = 'like') as likes_count,
+                      (SELECT COUNT(*) FROM product_reviews WHERE product_id = p.id) as reviews_count,
+                      1 as is_favorite
+                      FROM products p
+                      JOIN product_reactions pr ON p.id = pr.product_id
+                      LEFT JOIN categories cat ON p.category_id = cat.id
+                      WHERE pr.client_id = :cid AND pr.type = 'fav' AND p.is_active = 1";
+        $stFavs = $db->prepare($favsQuery);
+        $stFavs->execute([':cid' => $clientId]);
+        $favorites = $stFavs->fetchAll(PDO::FETCH_ASSOC);
+
+        // 2. Obtener productos más pedidos (Frecuencia)
+        $freqQuery = "SELECT p.*, cat.name as category_name, SUM(oi.quantity) as times_ordered,
+                      (SELECT COUNT(*) FROM product_reactions WHERE product_id = p.id AND type = 'fav' AND client_id = :cid) as is_favorite,
+                      (SELECT COUNT(*) FROM product_reactions WHERE product_id = p.id AND type = 'like' AND client_id = :cid) as is_liked
+                      FROM products p
+                      JOIN orders_items oi ON p.id = oi.product_id
+                      JOIN orders o ON oi.order_id = o.id
+                      LEFT JOIN categories cat ON p.category_id = cat.id
+                      WHERE o.client_id = :cid AND o.status = 'completed' AND p.is_active = 1
+                      GROUP BY p.id
+                      ORDER BY times_ordered DESC
+                      LIMIT 8";
+        $stFreq = $db->prepare($freqQuery);
+        $stFreq->execute([':cid' => $clientId]);
+        $frequent = $stFreq->fetchAll(PDO::FETCH_ASSOC);
+
+        $view_title = "Mis Favoritos";
+        $content_view = '../views/home/misfavoritos.php';
+        require_once '../views/layouts/client_layout.php';
+    }
+
+    /**
      * Muestra la gestión de direcciones del cliente
      */
     public function myLocations() {

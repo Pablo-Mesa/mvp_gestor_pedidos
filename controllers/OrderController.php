@@ -152,6 +152,7 @@ class OrderController {
             $totalPaid = (float)($order['total_paid'] ?? 0);
             $order['is_paid'] = ($totalPaid >= (float)$order['total']) ? 1 : 0;
             $order['has_invoice'] = (int)($order['has_invoice'] ?? 0) > 0 ? 1 : 0;
+            $order['has_legal_invoice'] = (int)($order['has_legal_invoice'] ?? 0) > 0 ? 1 : 0;
         }
 
         echo json_encode($orders);
@@ -238,6 +239,56 @@ class OrderController {
         $details = $stmtDetails->fetchAll(PDO::FETCH_ASSOC);
 
         require_once '../views/admin/sales/ticket.php';
+    }
+
+    /**
+     * Actualiza el tipo de documento de una venta (TK a FAC) vía AJAX
+     */
+    public function updateSaleDocTypeApi() {
+        header('Content-Type: application/json');
+        $this->checkAdminAccess();
+
+        $data = json_decode(file_get_contents('php://input'), true);
+        $saleId = $data['id'] ?? null;
+        $newType = $data['doc_type'] ?? null; // 'factura' o 'ticket'
+
+        if (!$saleId || !$newType) {
+            echo json_encode(['success' => false, 'message' => 'Datos incompletos']);
+            exit;
+        }
+
+        try {
+            $db = (new Database())->getConnection();
+            
+            // 1. Obtener el número actual
+            $stmt = $db->prepare("SELECT nro_factura FROM pos_ventas_cabecera WHERE id = :id");
+            $stmt->execute([':id' => $saleId]);
+            $sale = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$sale) throw new Exception("Venta no encontrada");
+
+            $currentNro = $sale['nro_factura'];
+            $newNro = $currentNro;
+
+            // 2. Realizar el intercambio de prefijos según lógica de negocio
+            if ($newType === 'factura' && strpos($currentNro, 'TK-') === 0) {
+                $newNro = 'FAC-' . substr($currentNro, 3);
+            } elseif ($newType === 'ticket' && strpos($currentNro, 'FAC-') === 0) {
+                $newNro = 'TK-' . substr($currentNro, 4);
+            }
+
+            if ($newNro !== $currentNro) {
+                // 3. Persistir en Base de Datos
+                $update = $db->prepare("UPDATE pos_ventas_cabecera SET nro_factura = :nro WHERE id = :id");
+                $res = $update->execute([':nro' => $newNro, ':id' => $saleId]);
+                echo json_encode(['success' => $res]);
+            } else {
+                echo json_encode(['success' => true, 'message' => 'Sin cambios']);
+            }
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        exit;
     }
 
     /**

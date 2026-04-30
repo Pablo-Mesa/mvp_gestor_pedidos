@@ -31,6 +31,16 @@
                         </div>
                     <?php endif; ?>
 
+                    <?php if(!empty($order['billing_ruc']) && (int)($order['has_legal_invoice'] ?? 0) === 0): ?>
+                        <div class="alert alert-primary border-0 shadow-sm d-flex align-items-center mb-4">
+                            <i class="fas fa-file-invoice me-3 fa-2x"></i>
+                            <div>
+                                <h6 class="mb-1 fw-bold">SOLICITUD DE FACTURA LEGAL</h6>
+                                <span>Emitir a nombre de: <strong><?php echo htmlspecialchars($order['billing_name']); ?></strong> - RUC: <strong><?php echo htmlspecialchars($order['billing_ruc']); ?></strong></span>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
                     <form action="?route=orders_process_finalize" method="POST" id="form-finalize">
                         <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
                         <input type="hidden" name="document_type" value="ticket">

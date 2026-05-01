@@ -3,7 +3,7 @@ $localPlaceholder = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22
 
 // Definimos el bloque de la tarjeta aquí mismo para que el archivo sea funcional
 if (!function_exists('renderCard')) {
-    function renderCard($item, $baseUrl, $localPlaceholder, $isStoreOpen) {
+    function renderCard($item, $baseUrl, $localPlaceholder, $isStoreOpen, $delay = 0) {
         $physicPath = 'uploads/' . $item['image'];                
         $displayImg = (!empty($item['image']) && file_exists($physicPath)) ? $baseUrl . 'uploads/' . rawurlencode($item['image']) : $localPlaceholder;
         
@@ -12,7 +12,7 @@ if (!function_exists('renderCard')) {
         $pPrice = $item['product_price'] ?? $item['price'] ?? 0;
         $pId = $item['product_id'] ?? $item['id'] ?? 0;
         ?>
-        <div class="product-card <?php echo !$isStoreOpen ? 'is-closed-mode' : ''; ?>">                
+        <div class="product-card <?php echo !$isStoreOpen ? 'is-closed-mode' : ''; ?>" style="animation-delay: <?php echo $delay; ?>s;">                
             <img src="<?php echo $displayImg; ?>" class="product-img">
             <div class="product-body">
                 <div class="product-category">
@@ -29,7 +29,11 @@ if (!function_exists('renderCard')) {
                     </div>
                     <?php if ($isStoreOpen): ?>
                         <button class="btn btn-primary" 
-                            onclick="handleAddToCart(this, '<?php echo $pId; ?>', '<?php echo addslashes($pName); ?>', <?php echo $pPrice; ?>, '<?php echo $item['image']; ?>', document.getElementById('qty_<?php echo $pId; ?>').value)">
+                            data-id="<?php echo $pId; ?>"
+                            data-name="<?php echo htmlspecialchars($pName); ?>"
+                            data-price="<?php echo $pPrice; ?>"
+                            data-image="<?php echo htmlspecialchars($item['image']); ?>"
+                            onclick="handleAddToCart(this, this.dataset.id, this.dataset.name, this.dataset.price, this.dataset.image, this.parentElement.querySelector('.qty-input').value)">
                             Agregar <i class="fas fa-plus"></i>
                         </button>
                     <?php else: ?>
@@ -62,9 +66,9 @@ if (!function_exists('renderCard')) {
             </div>
         <?php else: ?>
             <div class="product-grid">
-                <?php foreach($favorites as $item): ?>
-                    <?php renderCard($item, $baseUrl, $localPlaceholder, $isStoreOpen); ?>
-                <?php endforeach; ?>
+                <?php $delay = 0; foreach($favorites as $item): ?>
+                    <?php renderCard($item, $baseUrl, $localPlaceholder, $isStoreOpen, $delay); ?>
+                <?php $delay += 0.08; endforeach; ?>
             </div>
         <?php endif; ?>
     </section>
@@ -80,31 +84,35 @@ if (!function_exists('renderCard')) {
             </div>
         <?php else: ?>
             <div class="product-grid">
-                <?php foreach($frequent as $item): ?>
-                    <?php renderCard($item, $baseUrl, $localPlaceholder, $isStoreOpen); ?>
-                <?php endforeach; ?>
+                <?php $delay = 0; foreach($frequent as $item): ?>
+                    <?php renderCard($item, $baseUrl, $localPlaceholder, $isStoreOpen, $delay); ?>
+                <?php $delay += 0.08; endforeach; ?>
             </div>
         <?php endif; ?>
     </section>
 
 </div>
 
-<?php 
-?>
-
-<style>
-/* Reutilizamos los estilos de la home para las reacciones y botones */
-.product-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 20px;
-}
-@media (max-width: 768px) {
-    .product-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-}
-</style>
-
-<!-- Script necesario para el carrito (reutilizado de index.php) -->
 <script>
-    // Las funciones toggleReaction y handleAddToCart ya están definidas en client_layout.php o index.php
+/**
+ * Maneja la adición al carrito con feedback visual.
+ * Implementada aquí para resolver el ReferenceError.
+ */
+function handleAddToCart(btn, id, name, price, image, qty) {
+    // 1. Llamar a la función global original (en tool-kit-v002.js / client_layout.php)
+    addToCart(id, name, price, image, qty);
+
+    // 2. Aplicar micro-interacción visual
+    const originalHTML = btn.innerHTML;
+    btn.classList.add('btn-success-animate');
+    btn.innerHTML = '¡Listo! <i class="fas fa-check"></i>';
+    btn.disabled = true;
+
+    // 3. Revertir el botón después de 1.2 segundos
+    setTimeout(() => {
+        btn.classList.remove('btn-success-animate');
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+    }, 1200);
+}
 </script>

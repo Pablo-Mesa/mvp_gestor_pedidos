@@ -454,27 +454,38 @@
     </script>
 
     <script>
-        const isUserLoggedIn = <?php echo isset($_SESSION['client_id']) ? 'true' : 'false'; ?>;
-
-        function toggleUserSidebar() {
-            document.getElementById('userSidebar').classList.toggle('open');
-            document.querySelector('.user-sidebar-overlay').classList.toggle('open');
+        // Usamos 'var' y una validación de existencia para evitar SyntaxError por ya estar declarado
+        // Esto permite que el layout sea la fuente de verdad sin chocar con declaraciones accidentales en las vistas
+        if (typeof isUserLoggedIn === 'undefined') {
+            var isUserLoggedIn = <?php echo isset($_SESSION['client_id']) ? 'true' : 'false'; ?>;
         }
 
-        let cart = JSON.parse(localStorage.getItem('comedor_cart')) || [];
+        function toggleUserSidebar() {
+            const sidebar = document.getElementById('userSidebar');
+            const overlay = document.querySelector('.user-sidebar-overlay');
+            if (sidebar) sidebar.classList.toggle('open');
+            if (overlay) overlay.classList.toggle('open');
+        }
+
+        // Inicialización segura del carrito global
+        if (typeof cart === 'undefined') {
+            var cart = JSON.parse(localStorage.getItem('comedor_cart')) || [];
+        }
 
         function toggleCart() {
             const sidebar = document.querySelector('.cart-sidebar');
+            const overlay = document.querySelector('.cart-overlay');
+            if (!sidebar) return;
+
             const isOpening = !sidebar.classList.contains('open');
 
-            // Validación: Si intentamos abrir el carrito y está vacío, avisamos sutilmente
             if (isOpening && cart.length === 0) {
                 Toast.fire("Tu carrito aún está vacío 🛒", "info");
                 return;
             }
 
             sidebar.classList.toggle('open');
-            document.querySelector('.cart-overlay').classList.toggle('open');
+            if (overlay) overlay.classList.toggle('open');
         }
 
         function addToCart(id, name, price, image, quantity) {

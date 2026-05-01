@@ -242,8 +242,26 @@ body.is-closed.is-compact {
     width: 100%; 
     gap: 1rem;
     background-color: transparent; 
+    margin-top: 1rem;
 }
-.product-card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden; transition: transform 0.2s; display: flex; flex-direction: column; border: #eee 1px solid;}
+.product-card { 
+    background: white; 
+    border-radius: 12px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+    overflow: hidden; 
+    transition: transform 0.2s; 
+    display: flex; 
+    flex-direction: column; 
+    border: #eee 1px solid;
+    opacity: 0; 
+    animation: cardFadeIn 0.6s ease-out forwards;
+}
+
+@keyframes cardFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 .product-card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
 .product-img { width: 100%; height: 180px; object-fit: cover; background-color: #eee; }
 
@@ -261,9 +279,136 @@ body.is-closed.is-compact {
 .product-price { font-size: 1.2rem; color: #28a745; font-weight: bold; margin-bottom: 1rem; }
 .product-actions { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 
-/* Controles de Cantidad */
-.qty-control { display: flex; align-items: center; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; }
-.qty-input { width: 40px; height: 32px; border: none; text-align: center; font-size: 0.9rem; -moz-appearance: textfield; outline: none; }
+/* --- Barra de Reacciones --- */
+.product-reactions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 5px;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.03);
+    margin-bottom: 8px;
+}
+
+.reaction-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #b2bec3;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: none;
+    border: none;
+    padding: 0;
+    position: relative;
+}
+
+.reaction-item:active { transform: scale(0.9); }
+
+/* Colores de marca para reacciones */
+.reaction-item.fav:hover, 
+.reaction-item.fav.active { 
+    color: #ff4757; 
+    transform: scale(1.25); 
+    filter: drop-shadow(0 0 5px rgba(255,71,87,0.3)); 
+}
+
+.reaction-item.like:hover, 
+.reaction-item.like.active { 
+    color: #1e90ff; 
+    transform: scale(1.25); 
+    filter: drop-shadow(0 0 5px rgba(30,144,255,0.3)); 
+}
+
+.reaction-item.comment:hover { 
+    color: #ffa502; 
+    transform: scale(1.25); 
+}
+
+.reaction-count {
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-left: 4px;
+    color: #636e72;
+}
+
+/* Leyenda de Prueba Social */
+.social-legend {
+    font-size: 0.72rem;
+    color: #7f8c8d;
+    margin-bottom: 10px;
+    min-height: 1rem;
+    font-style: italic;
+}
+
+/* Controles de Cantidad Modernos */
+.qty-control {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    border: none;
+}
+
+.qty-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    color: #333;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.qty-btn:hover { background-color: #f8f9fa; border-color: #bbb; }
+.qty-btn:active { transform: scale(0.9); }
+
+.qty-input {
+    width: 40px;
+    border: none;
+    font-size: 1rem;
+    text-align: center;
+    font-weight: bold;
+    background: transparent;
+    outline: none;
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    white-space: nowrap;
+    font-size: 0.875rem;
+    font-weight: bold;
+    color: #444;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 10px 25px;
+    border: 1px solid rgba(20, 20, 255, 0.3);
+    border-radius: 12px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover { background: rgba(255, 255, 255, 0.3); }
+
+.btn-success-animate {
+    background: #28a745 !important;
+    color: white !important;
+    border-color: #28a745 !important;
+}
 
 /* Filtros de Categoría */
 .category-filters { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0rem; margin-bottom: 0.5rem; scrollbar-width: none; }
@@ -1026,4 +1171,104 @@ input:checked + .slider {
 .swal2-container.swal2-top-right {
     top: 70px !important; /* Altura suficiente para despejar la Navbar superior */
     padding-top: 0;
+}
+
+/* --- Estilos para Carruseles y Social Proof (Guest View) --- */
+
+/* Carrusel Infinito de Categorías (Nuestra Especialidad) */
+.marquee-container {
+    width: 100%;
+    overflow: hidden;
+    padding: 20px 0;
+    position: relative;
+    background: linear-gradient(to right, #fbfbfb, #ffffff, #fbfbfb);
+}
+
+.marquee-content {
+    display: flex;
+    width: max-content;
+    animation: marquee-scroll 40s linear infinite;
+}
+
+.marquee-item {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 24px;
+    margin: 0 10px;
+    background: white;
+    border: 1px solid #f0f0f0;
+    border-radius: 100px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+}
+
+.marquee-icon { font-size: 1.5rem; }
+
+.marquee-text {
+    font-weight: 700;
+    color: #2d3436;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.85rem;
+}
+
+/* Carrusel de Reacciones (Los favoritos de la comunidad) */
+.marquee-container-reactions {
+    width: 100%;
+    overflow: hidden;
+    padding: 10px 0;
+    position: relative;
+}
+
+.marquee-content-reactions {
+    display: flex;
+    width: max-content;
+    animation: marquee-scroll 35s linear infinite;
+}
+
+.reaction-item-card {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 20px;
+    margin: 0 10px;
+    background: white;
+    border: 1px solid #f0f0f0;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    width: 240px; /* Ancho fijo para consistencia */
+}
+
+/* Animación de Desplazamiento */
+@keyframes marquee-scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+/* Pausar carruseles al pasar el mouse para facilitar la lectura */
+.marquee-container:hover .marquee-content,
+.marquee-container-reactions:hover .marquee-content-reactions {
+    animation-play-state: paused;
+}
+
+/* Ajustes para tarjetas de reseñas */
+.review-card {
+    transition: transform 0.3s ease;
+}
+
+.review-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Animación de Pop para iconos de reacción */
+@keyframes reaction-pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.4); }
+    100% { transform: scale(1); }
+}
+
+.animate-pop {
+    animation: reaction-pop 0.4s ease-out;
 }

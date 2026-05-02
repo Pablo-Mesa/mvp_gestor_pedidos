@@ -340,13 +340,13 @@ $localPlaceholder = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22
                             <!-- Botón con ID dinámico y data attributes para que JS lea el estado actual -->
                             <?php if ($isStoreOpen): ?>
                                 <button class="btn btn-primary" 
-                                id="btn_add_<?php echo $item['id']; ?>"
-                                data-id="<?php echo $item['product_id']; ?>"
-                                data-name="<?php echo htmlspecialchars($item['product_name']); ?>"
-                                data-price="<?php echo $item['product_price']; ?>"
-                                data-image="<?php echo htmlspecialchars($item['image']); ?>"
-                                onclick="handleAddToCart(this, this.dataset.id, this.dataset.name, this.dataset.price, this.dataset.image, document.getElementById('qty_<?php echo $item['id']; ?>').value)">
-                                Agregar <i class="fas fa-plus"></i>
+                                    id="btn_add_<?php echo $item['id']; ?>"
+                                    data-id="<?php echo $item['product_id']; ?>"
+                                    data-name="<?php echo htmlspecialchars($item['product_name']); ?>"
+                                    data-price="<?php echo $item['product_price']; ?>"
+                                    data-image="<?php echo htmlspecialchars($item['image']); ?>"
+                                    onclick="handleAddToCart(this, this.dataset.id, this.dataset.name, this.dataset.price, this.dataset.image, document.getElementById('qty_<?php echo $item['id']; ?>').value)">
+                                    Agregar <i class="fas fa-plus"></i>
                                 </button>
                             <?php else: ?>
                                 <button class="btn btn-primary" style="background: #dfe6e9; color: #b2bec3; border-color: #b2bec3; cursor: not-allowed;" disabled>

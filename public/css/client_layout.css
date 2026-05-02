@@ -126,7 +126,15 @@ body.is-closed.is-compact {
 }
 
 /* Botones y Utilidades */
-.btn { padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; cursor: pointer; border: none; font-size: 0.9rem; }
+.btn {
+    padding: 0.5rem 1rem;
+    border-radius: 4px; 
+    text-decoration: none; 
+    cursor: pointer; 
+    border: none; 
+    font-size: 0.9rem;
+}
+
 .btn-icon { background: none; border: none; font-size: 1.2rem; cursor: pointer; position: relative; color: #333; }
 
 /* Menú Lateral de Usuario (Sidebar) */
@@ -383,6 +391,7 @@ body.is-closed.is-compact {
 
 .btn-primary {
     display: inline-flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
     gap: 8px;

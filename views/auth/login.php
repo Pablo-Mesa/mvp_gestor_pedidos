@@ -1,46 +1,98 @@
+<?php $baseUrl = str_replace('index.php', '', $_SERVER['SCRIPT_NAME']); ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Comedor App</title>
-    <link rel="icon" type="image/png" href="assets/icono_solver_nobg.png">  
+    <title>Iniciar Sesión | Solver</title>
+    <meta name="theme-color" content="#f0f2f5">
+    <link rel="icon" type="image/png" href="<?php echo $baseUrl; ?>assets/icono_solver_nobg.png">  
+    <!-- Tailwind para prototipado rápido o estilos de v0 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f2f5; margin: 0; }
-        .login-container { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        h2 { text-align: center; color: #333; margin-bottom: 1.5rem; }
-        .form-group { margin-bottom: 1rem; }
-        label { display: block; margin-bottom: 0.5rem; color: #666; }
-        input { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 0.75rem; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; }
-        button:hover { background-color: #0056b3; }
-        .error { color: red; text-align: center; margin-bottom: 1rem; font-size: 0.9rem; border: 1px solid red; padding: 0.5rem; border-radius: 4px; background-color: #fff0f0; }
-        .links { text-align: center; margin-top: 1rem; font-size: 0.9rem; }
-        .links a { color: #007bff; text-decoration: none; }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
     </style>
 </head>
-<body>
-    <div class="login-container">
-        <h2>Iniciar Sesión</h2>
-        
-        <?php if (isset($error)): ?>
-            <div class="error"><?php echo htmlspecialchars($error); ?></div>
-        <?php endif; ?>
+<body class="bg-slate-50 min-h-screen flex flex-col justify-center items-center p-4">
+    
+    <div class="w-full max-w-[400px] space-y-8">
+        <!-- Logo y Branding -->
+        <div class="text-center space-y-4">
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-white shadow-xl shadow-blue-100/50 mb-2">
+                <img src="<?php echo $baseUrl; ?>assets/icono_solver_nobg.png" alt="Solver Logo" class="w-14 h-14 object-contain">
+            </div>
+            <div>
+                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Solver</h1>
+                <p class="text-slate-500 font-medium">Gestión de Logística & Menú</p>
+            </div>
+        </div>
 
-        <form action="?route=login" method="POST">
-            <div class="form-group">
-                <label for="email">Correo Electrónico</label>
-                <input type="email" id="email" name="email" required placeholder="admin@comedor.com">
-            </div>
+        <!-- Card de Login -->
+        <div class="glass-card p-8 rounded-[2rem] shadow-2xl shadow-slate-200/50">
+            <h2 class="text-xl font-bold text-slate-800 mb-6">Iniciar Sesión</h2>
             
-            <div class="form-group">
-                <label for="password">Contraseña</label>
-                <input type="password" id="password" name="password" required placeholder="********">
-            </div>
-            
-            <button type="submit">Ingresar</button>
-            <div style="margin-top: 10px; text-align: right;"><a href="?route=forgot_password" style="font-size: 0.8rem; color: #666; text-decoration: none;">¿Olvidaste tu contraseña?</a></div>
-        </form>
+            <?php if (isset($error)): ?>
+                <div class="mb-6 p-4 rounded-2xl bg-red-50 border border-red-100 flex items-center gap-3 text-red-600 text-sm animate-pulse">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span class="font-semibold"><?php echo htmlspecialchars($error); ?></span>
+                </div>
+            <?php endif; ?>
+
+            <form action="?route=login" method="POST" class="space-y-5">
+                <div class="space-y-2">
+                    <label for="email" class="text-sm font-semibold text-slate-600 ml-1">Correo Electrónico</label>
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <input type="email" id="email" name="email" required 
+                            class="block w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 text-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
+                            placeholder="admin@comedor.com">
+                    </div>
+                </div>
+                
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center ml-1">
+                        <label for="password" class="text-sm font-semibold text-slate-600">Contraseña</label>
+                        <a href="?route=forgot_password" class="text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors">¿Olvidaste tu clave?</a>
+                    </div>
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <input type="password" id="password" name="password" required 
+                            class="block w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 text-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
+                            placeholder="••••••••">
+                    </div>
+                </div>
+                
+                <button type="submit" 
+                    class="w-full bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-2xl shadow-lg shadow-slate-200 transition-all transform active:scale-[0.98] mt-4">
+                    Ingresar al Panel
+                </button>
+            </form>
+        </div>
+
+        <!-- Footer Informativo -->
+        <p class="text-center text-slate-400 text-xs font-medium">
+            &copy; <?php echo date('Y'); ?> Solver Logística. Todos los derechos reservados.
+        </p>
     </div>
+
+    <script>
+        // Pequeño script para feedback visual en el botón
+        document.querySelector('form').addEventListener('submit', function() {
+            const btn = this.querySelector('button');
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Cargando...';
+            btn.disabled = true;
+            btn.classList.add('opacity-80', 'cursor-not-allowed');
+        });
+    </script>
 </body>
 </html>

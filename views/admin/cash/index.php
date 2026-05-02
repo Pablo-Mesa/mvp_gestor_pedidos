@@ -180,7 +180,7 @@ if (isset($recentSessions)) {
 <!-- Modal Abrir Caja -->
 <div class="modal fade" id="modalOpenCash" tabindex="-1">
     <div class="modal-dialog">
-        <form action="?route=cash_open" method="POST" class="modal-content">
+        <form action="?route=cash_open" method="POST" class="modal-content" id="formOpenCash">
             <div class="modal-header">
                 <h5 class="modal-title">Apertura de Caja</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -199,7 +199,7 @@ if (isset($recentSessions)) {
                                 </option>
                             <?php endforeach; ?>
                         </select>
-                        <small class="text-muted">Como administrador, puedes abrir la caja para ti o para otro colega.</small>
+                        <small class="text-muted">Como administrador, puedes abrir la caja para ti o asignar a un cajero responsable.</small>
                     <?php else: ?>
                         <input type="hidden" name="user_id" value="<?php echo $_SESSION['user_id']; ?>">
                         <input type="text" class="form-control bg-light" value="<?php echo htmlspecialchars($_SESSION['user_name']); ?>" readonly>
@@ -290,6 +290,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalOpen = document.getElementById('modalOpenCash');
     if (modalOpen) {
         modalOpen.addEventListener('shown.bs.modal', updateRoleField);
+    }
+
+    // Interceptor de envío de formulario para confirmación de apertura
+    const formOpen = document.getElementById('formOpenCash');
+    if (formOpen) {
+        formOpen.addEventListener('submit', function(e) {
+            if (!this.checkValidity()) return;
+            e.preventDefault();
+            
+            const amount = this.querySelector('input[name="opening_amount"]').value;
+            const select = document.getElementById('select_cashier');
+            const cashier = select ? select.options[select.selectedIndex].text : '<?php echo addslashes($_SESSION['user_name'] ?? "Admin"); ?>';
+            
+            Swal.fire({
+                title: '¿Confirmar Apertura?',
+                html: `Vas a abrir la caja para: <b>${cashier}</b><br>Monto inicial registrado: <b style="font-size: 1.4rem; color: #0d6efd;">Gs. ${new Intl.NumberFormat('es-PY').format(amount)}</b>`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Confirmar e Iniciar',
+                cancelButtonText: 'Revisar',
+                confirmButtonColor: '#0d6efd',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) this.submit();
+            });
+        });
     }
 });
 </script>

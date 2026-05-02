@@ -21,6 +21,8 @@ class UserController {
     }
 
     public function create() {
+        $userModel = new User();
+        $roles = $userModel->getRoles();
         $content_view = '../views/admin/users/form.php';
         require_once '../views/layouts/admin_layout.php';
     }
@@ -51,6 +53,7 @@ class UserController {
 
         $userModel = new User();
         $user = $userModel->readOne($id);
+        $roles = $userModel->getRoles();
         
         if (!$user) { header('Location: ?route=users'); exit; }
 

@@ -30,10 +30,14 @@ $action = $isEdit ? '?route=users_update' : '?route=users_store';
 
         <div class="form-group mb-3">
             <label class="form-label">Rol en el Sistema</label>
-            <select name="role" class="form-select" required>
-                <option value="cajero" <?php echo ($isEdit && $user['role'] === 'cajero') ? 'selected' : ''; ?>>💰 Cajero / Operador de Caja</option>
-                <option value="delivery" <?php echo ($isEdit && $user['role'] === 'delivery') ? 'selected' : ''; ?>>🛵 Repartidor / Logística</option>
-                <option value="admin" <?php echo ($isEdit && $user['role'] === 'admin') ? 'selected' : ''; ?>>🛡️ Administrador (Acceso Total)</option>
+            <select name="role_id" class="form-select" required>
+                <option value="">Seleccionar rol...</option>
+                <?php foreach($roles as $role): ?>
+                    <option value="<?php echo $role['id']; ?>" 
+                        <?php echo ($isEdit && $user['role_id'] == $role['id']) ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($role['name']); ?>
+                    </option>
+                <?php endforeach; ?>
             </select>
             <small class="text-muted mt-1 d-block">Los repartidores solo ven sus pedidos asignados en la App de Logística.</small>
         </div>

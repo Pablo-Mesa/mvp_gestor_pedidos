@@ -19,7 +19,10 @@ class User {
      * Obtiene todos los usuarios del staff (admins y repartidores)
      */
     public function readAll() {
-        $query = "SELECT id, name, email, role, is_active FROM " . $this->table . " ORDER BY role ASC, name ASC";
+        $query = "SELECT u.id, u.name, u.email, r.slug as role, u.is_active 
+                  FROM " . $this->table . " u
+                  LEFT JOIN roles r ON u.role_id = r.id
+                  ORDER BY r.name ASC, u.name ASC";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
         return $stmt;
@@ -29,7 +32,10 @@ class User {
      * Obtiene los datos de un usuario específico
      */
     public function readOne($id) {
-        $query = "SELECT id, name, email, role, is_active FROM " . $this->table . " WHERE id = :id LIMIT 1";
+        $query = "SELECT u.id, u.name, u.email, r.slug as role, u.role_id, u.is_active 
+                  FROM " . $this->table . " u
+                  LEFT JOIN roles r ON u.role_id = r.id
+                  WHERE u.id = :id LIMIT 1";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id', $id);
         $stmt->execute();
@@ -40,16 +46,16 @@ class User {
      * Crea un nuevo usuario de staff
      */
     public function create($data) {
-        $query = "INSERT INTO " . $this->table . " (name, email, password, role, is_active) VALUES (:name, :email, :password, :role, :is_active)";
+        $query = "INSERT INTO " . $this->table . " (name, email, password, role_id, is_active) VALUES (:name, :email, :password, :role_id, :is_active)";
         $stmt = $this->conn->prepare($query);
         
         $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
         
-        $stmt->bindParam(':name', $data['name']);
-        $stmt->bindParam(':email', $data['email']);
-        $stmt->bindParam(':password', $hashedPassword);
-        $stmt->bindParam(':role', $data['role']);
-        $stmt->bindParam(':is_active', $data['is_active']);
+        $stmt->bindValue(':name', $data['name']);
+        $stmt->bindValue(':email', $data['email']);
+        $stmt->bindValue(':password', $hashedPassword);
+        $stmt->bindValue(':role_id', $data['role_id']);
+        $stmt->bindValue(':is_active', $data['is_active']);
         
         return $stmt->execute();
     }
@@ -59,18 +65,18 @@ class User {
      */
     public function update($data) {
         $passwordPart = !empty($data['password']) ? ", password = :password" : "";
-        $query = "UPDATE " . $this->table . " SET name = :name, email = :email, role = :role, is_active = :is_active " . $passwordPart . " WHERE id = :id";
+        $query = "UPDATE " . $this->table . " SET name = :name, email = :email, role_id = :role_id, is_active = :is_active " . $passwordPart . " WHERE id = :id";
         
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':name', $data['name']);
-        $stmt->bindParam(':email', $data['email']);
-        $stmt->bindParam(':role', $data['role']);
-        $stmt->bindParam(':is_active', $data['is_active']);
-        $stmt->bindParam(':id', $data['id']);
+        $stmt->bindValue(':name', $data['name']);
+        $stmt->bindValue(':email', $data['email']);
+        $stmt->bindValue(':role_id', $data['role_id']);
+        $stmt->bindValue(':is_active', $data['is_active']);
+        $stmt->bindValue(':id', $data['id']);
 
         if (!empty($data['password'])) {
             $hashed = password_hash($data['password'], PASSWORD_DEFAULT);
-            $stmt->bindParam(':password', $hashed);
+            $stmt->bindValue(':password', $hashed);
         }
 
         return $stmt->execute();
@@ -87,7 +93,10 @@ class User {
      * Valida las credenciales de un administrador o usuario del sistema.
      */
     public function login($email, $password) {
-        $query = "SELECT id, name, password, role, is_active FROM " . $this->table . " WHERE email = :email LIMIT 1";
+        $query = "SELECT u.id, u.name, u.password, r.slug as role, u.is_active 
+                  FROM " . $this->table . " u
+                  LEFT JOIN roles r ON u.role_id = r.id
+                  WHERE u.email = :email LIMIT 1";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':email', $email);
         $stmt->execute();
@@ -105,6 +114,16 @@ class User {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Obtiene todos los roles disponibles para el staff
+     */
+    public function getRoles() {
+        $query = "SELECT id, name, slug FROM roles WHERE slug != 'cliente' ORDER BY name ASC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**

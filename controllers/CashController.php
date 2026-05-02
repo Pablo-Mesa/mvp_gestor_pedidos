@@ -18,9 +18,28 @@ class CashController {
         $activeSession = $model->getActiveSession($_SESSION['user_id']);
         $movements = [];
         $recentSessions = $model->getRecentSessions();
-        $cashiers = array_filter($userModel->readAll()->fetchAll(PDO::FETCH_ASSOC), function($u) {
-            return in_array($u['role'], ['admin', 'cajero']);
-        });
+
+        // Recuperamos el staff. Usamos un fetch robusto para asegurar que los datos estén disponibles.
+        $stmt = $userModel->readAll();
+        $allUsers = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+
+        $cashiers = array_values(array_filter($allUsers, function($u) {
+            // Normalización defensiva de claves (por si la DB devuelve 'Role' o 'IS_ACTIVE')
+            $u = array_change_key_case($u, CASE_LOWER);
+            
+            $role = strtolower(trim($u['role'] ?? ''));
+            $isActive = (int)($u['is_active'] ?? 0);
+
+            // RBAC: Solo permitimos roles autorizados para manejar valores.
+            // Estos slugs deben coincidir exactamente con los insertados en la migración SQL.
+            $isAuthorizedRole = (
+                $role === 'admin' || 
+                $role === 'cajero'
+            );
+
+            return $isAuthorizedRole && $isActive === 1;
+        }));
+
         $totals = ['ingress' => 0, 'egress' => 0];
 
         if ($activeSession) {

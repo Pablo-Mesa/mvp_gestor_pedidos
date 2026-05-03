@@ -252,13 +252,14 @@
         $user_role = $_SESSION['user_role'] ?? 'staff';
 
         $menu_structure = [
-            ['route' => 'admin',       'label' => 'Dashboard',        'icon' => 'fas fa-chart-pie'],
-            ['route' => 'pos',         'label' => 'Recepción',        'icon' => 'fas fa-concierge-bell'],            
+            ['route' => 'admin',       'label' => 'Dashboard',        'icon' => 'fas fa-chart-pie', 'roles' => ['admin', 'cajero']],
+            ['route' => 'pos',         'label' => 'Recepción',        'icon' => 'fas fa-concierge-bell', 'roles' => ['admin', 'cajero']],            
             [
                 'label' => 'Pedidos',
                 'icon' => 'fas fa-box',
                 'id' => 'menuOrders',
                 'badge_id' => 'badge-orders-count',
+                'roles' => ['admin', 'cajero'],
                 'children' => [
                     ['route' => 'orders',         'label' => 'Todos los Pedidos', 'icon' => 'fas fa-list'],
                     ['route' => 'orders_pending', 'label' => 'Solo Pendientes',  'icon' => 'fas fa-clock'],
@@ -268,6 +269,7 @@
                 'label' => 'Tesorería',
                 'icon' => 'fas fa-vault',
                 'id' => 'menuTreasury',
+                'roles' => ['admin', 'cajero'],
                 'children' => [
                     ['route' => 'cash',           'label' => 'Apertura y Cierre', 'icon' => 'fas fa-key'],
                     ['route' => 'sales_history',  'label' => 'Facturación / Tickets', 'icon' => 'fas fa-file-invoice-dollar'],
@@ -278,6 +280,7 @@
                 'label' => 'Gestión Menú',
                 'icon' => 'fas fa-utensils',
                 'id' => 'menuCat',
+                'roles' => ['admin'],
                 'children' => [
                     ['route' => 'menus',       'label' => 'Planificar Día',  'icon' => 'fas fa-calendar-alt'],
                     ['route' => 'products',    'label' => 'Productos',       'icon' => 'fas fa-hamburger'],
@@ -288,6 +291,7 @@
                 'label' => 'Logística',
                 'icon' => 'fas fa-truck',
                 'id' => 'menuLogistics',
+                'roles' => ['admin'],
                 'children' => [
                     ['route' => 'admin_delivery_assists', 'label' => 'Asistencias Repartidores', 'icon' => 'fas fa-user-check'],
                     ['route' => 'settings_delivery',     'label' => 'Tarifas de Delivery',      'icon' => 'fas fa-money-bill-wave'],
@@ -297,6 +301,7 @@
                 'label' => 'Configuraciones',
                 'icon' => 'fas fa-cog',
                 'id' => 'menuSettings',
+                'roles' => ['admin'],
                 'children' => [
                     ['route' => 'empresa',          'label' => 'Datos de Empresa',     'icon' => 'fas fa-building'],
                     ['route' => 'settings_contact',  'label' => 'Canales de Contacto',  'icon' => 'fas fa-phone-volume'],
@@ -304,8 +309,8 @@
                     ['route' => 'settings_checkout', 'label' => 'Ajustes de Checkout',  'icon' => 'fas fa-shopping-cart'],
                     ['route' => 'hero_promos',       'label' => 'Hero Promo',           'icon' => 'fas fa-palette'],
                     ['route' => 'settings_location', 'label' => 'Ajustes de Ubicación', 'icon' => 'fas fa-map-marker-alt'],
-                    ['route' => 'users',             'label' => 'Staff / Usuarios',     'icon' => 'fas fa-users', 'roles' => ['admin']],
-                    ['route' => 'shortcuts',         'label' => 'Atajos de Teclado',    'icon' => 'fas fa-keyboard'],
+                    ['route' => 'users',             'label' => 'Staff / Usuarios',     'icon' => 'fas fa-users'],
+                    ['route' => 'shortcuts',         'label' => 'Atajos de Teclado',    'icon' => 'fas fa-keyboard', 'roles' => ['admin', 'cajero']],
                     ['route' => 'test_limpio',       'label' => 'Vista Limpia (Test)',  'icon' => 'fas fa-vial'],
                 ]
             ],

@@ -32,14 +32,19 @@ class AdminController {
     public function dashboard() {
         require_once '../models/Order.php';
         require_once '../models/DailyMenu.php';
+        require_once '../models/CashRegister.php';
         
         // Parámetros de vista
         $view_mode = $_GET['view_mode'] ?? 'daily';
         $selected_date = $_GET['date'] ?? date('Y-m-d');
         $selected_month = $_GET['month'] ?? date('Y-m');
 
-        // Obtener datos reales de la DB
         $orderModel = new Order();
+        $cashModel = new CashRegister();
+
+        // Estado de la caja
+        $activeSession = $cashModel->getActiveSession($_SESSION['user_id']);
+        $cash_status = $activeSession ? 'Abierta' : 'Cerrada';
 
         if ($view_mode === 'monthly') {
             list($year, $month) = explode('-', $selected_month);
@@ -52,7 +57,13 @@ class AdminController {
                 'pedidos_pendientes' => $mStats['orders'], // En mensual lo usamos como total pedidos
                 'ingresos_hoy' => $mStats['income'],
                 'platos_vendidos' => $mStats['dishes'],
+                'web_income' => $mStats['web_income'] ?? 0,
+                'local_income' => $mStats['local_income'] ?? 0,
+                'waiter_income' => $mStats['waiter_income'] ?? 0,
                 'chart_data' => $mStats['chart'],
+                'cash_status' => $cash_status,
+                'active_session' => null,
+                'recent_movements' => [],
                 'low_stock_items' => [] // No mostramos stock bajo en vista mensual
             ];
         } else {
@@ -64,7 +75,26 @@ class AdminController {
                 'pedidos_pendientes' => $stats['pending_orders'],
                 'ingresos_hoy' => $stats['income_today'],
                 'platos_vendidos' => $stats['dishes_sold'],
+                'web_income' => $stats['web_income'] ?? 0,
+                'local_income' => $stats['local_income'] ?? 0,
+                'waiter_income' => $stats['waiter_income'] ?? 0,
+                'web_orders_count' => $stats['web_orders_count'] ?? 0,
+                'local_orders_count' => $stats['local_orders_count'] ?? 0,
+                'cash_status' => $cash_status,
+                'active_session' => $activeSession,
+                'recent_movements' => []
             ];
+
+            // Enriquecer con detalles de caja si hay sesión activa
+            if ($activeSession) {
+                $sessionTotals = $cashModel->getSessionTotals($activeSession['id']);
+                $data['session_ingress'] = $sessionTotals['ingress'] ?? 0;
+                $data['session_egress'] = $sessionTotals['egress'] ?? 0;
+                $data['session_expected'] = $activeSession['opening_amount'] + $data['session_ingress'] - $data['session_egress'];
+                
+                // Obtener 5 movimientos recientes para el dashboard
+                $data['recent_movements'] = array_slice($cashModel->getMovements($activeSession['id']), 0, 5);
+            }
         }
 
         // Obtener cantidad de pedidos completados hoy para el gráfico

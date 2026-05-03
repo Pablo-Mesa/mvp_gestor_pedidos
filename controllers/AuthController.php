@@ -7,7 +7,7 @@ class AuthController {
     public function login() {
         // Redirección automática si ya existe una sesión activa
         if (isset($_SESSION['user_role'])) {
-            if ($_SESSION['user_role'] === 'admin') {
+            if ($_SESSION['user_role'] === 'admin' || $_SESSION['user_role'] === 'cajero') {
                 header('Location: ?route=admin');
                 exit;
             } elseif ($_SESSION['user_role'] === 'delivery') {
@@ -34,7 +34,7 @@ class AuthController {
                 $_SESSION['user_role'] = $user->role;
                 
                 // Redireccionar según el rol específico
-                if ($user->role === 'admin') {
+                if ($user->role === 'admin' || $user->role === 'cajero') {
                     header('Location: ?route=admin');
                 } elseif ($user->role === 'delivery') {
                     header('Location: ?route=delivery');

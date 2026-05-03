@@ -537,47 +537,92 @@ class Order {
     public function getDashboardStats($date = null) {
         $target_date = $date ?: date('Y-m-d');
 
-        // Pedidos Pendientes totales (no solo de hoy)
-        $q1 = "SELECT COUNT(*) FROM " . $this->table . " WHERE status = 'pending' AND DATE(created_at) = :target_date";
-        $stmt1 = $this->conn->prepare($q1);
-        $stmt1->execute([':target_date' => $target_date]);
-        $pending = $stmt1->fetchColumn();
+        $stats = [
+            'pending_orders' => 0,
+            'income_today' => 0,
+            'dishes_sold' => 0,
+            'web_income' => 0,
+            'local_income' => 0,
+            'waiter_income' => 0,
+            'web_orders_count' => 0,
+            'local_orders_count' => 0
+        ];
 
-        // Ingresos de hoy (excluyendo cancelados y rechazados)
-        $q2 = "SELECT SUM(total) FROM " . $this->table . " WHERE DATE(created_at) = :target_date AND status NOT IN ('cancelled', 'rejected')";
+        // Pedidos Pendientes totales (no solo de hoy)
+        $q1 = "SELECT COUNT(*) FROM " . $this->table . " WHERE status = 'pending' AND DATE(created_at) = :date";
+        $stmt1 = $this->conn->prepare($q1);
+        $stmt1->execute([':date' => $target_date]);
+        $stats['pending_orders'] = $stmt1->fetchColumn();
+
+        // Ingresos desglosados por Canal
+        $q2 = "SELECT channel_id, SUM(total) as income, COUNT(id) as qty 
+               FROM " . $this->table . " 
+               WHERE DATE(created_at) = :date AND status NOT IN ('cancelled', 'rejected')
+               GROUP BY channel_id";
         $stmt2 = $this->conn->prepare($q2);
-        $stmt2->execute([':target_date' => $target_date]);
-        $income = $stmt2->fetchColumn() ?: 0;
+        $stmt2->execute([':date' => $target_date]);
+        
+        while($row = $stmt2->fetch(PDO::FETCH_ASSOC)) {
+            $stats['income_today'] += $row['income'];
+            if ($row['channel_id'] == 1) {
+                $stats['web_income'] = $row['income'];
+                $stats['web_orders_count'] = $row['qty'];
+            } elseif ($row['channel_id'] == 2) {
+                $stats['local_income'] = $row['income'];
+                $stats['local_orders_count'] = $row['qty'];
+            } elseif ($row['channel_id'] == 3) {
+                $stats['waiter_income'] = $row['income'];
+            }
+        }
 
         // Platos/Items vendidos hoy (excluyendo anulados)
-        $q3 = "SELECT SUM(quantity) FROM orders_items oi JOIN orders o ON oi.order_id = o.id WHERE DATE(o.created_at) = :target_date AND o.status NOT IN ('cancelled', 'rejected')";
+        $q3 = "SELECT SUM(quantity) FROM orders_items oi 
+               JOIN orders o ON oi.order_id = o.id 
+               WHERE DATE(o.created_at) = :date AND o.status NOT IN ('cancelled', 'rejected')";
         $stmt3 = $this->conn->prepare($q3);
-        $stmt3->execute([':target_date' => $target_date]);
-        $sold = $stmt3->fetchColumn() ?: 0;
+        $stmt3->execute([':date' => $target_date]);
+        $stats['dishes_sold'] = $stmt3->fetchColumn() ?: 0;
 
-        return [
-            'pending_orders' => $pending,
-            'income_today' => $income,
-            'dishes_sold' => $sold
-        ];
+        return $stats;
     }
 
     /**
      * Obtiene estadísticas agregadas y desglose diario para un mes específico
      */
     public function getMonthlyStats($year, $month) {
-        // Totales del mes
-        $q = "SELECT 
-                COUNT(id) as total_orders,
-                SUM(total) as total_income,
-                (SELECT SUM(quantity) FROM orders_items oi JOIN orders o2 ON oi.order_id = o2.id 
-                 WHERE o2.status NOT IN ('cancelled', 'rejected') AND YEAR(o2.created_at) = :y AND MONTH(o2.created_at) = :m) as dishes_sold
-              FROM " . $this->table . " 
-              WHERE status NOT IN ('cancelled', 'rejected') AND YEAR(created_at) = :y AND MONTH(created_at) = :m";
-        
+        $stats = [
+            'income' => 0,
+            'orders' => 0,
+            'dishes' => 0,
+            'web_income' => 0,
+            'local_income' => 0,
+            'waiter_income' => 0,
+            'chart' => []
+        ];
+
+        // Ingresos y pedidos mensuales desglosados por canal
+        $q = "SELECT channel_id, SUM(total) as income, COUNT(id) as qty
+              FROM " . $this->table . "
+              WHERE status NOT IN ('cancelled', 'rejected') AND YEAR(created_at) = :y AND MONTH(created_at) = :m
+              GROUP BY channel_id";
         $stmt = $this->conn->prepare($q);
         $stmt->execute([':y' => $year, ':m' => $month]);
-        $totals = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $stats['income'] += $row['income'];
+            $stats['orders'] += $row['qty'];
+            if ($row['channel_id'] == 1) $stats['web_income'] = $row['income'];
+            elseif ($row['channel_id'] == 2) $stats['local_income'] = $row['income'];
+            elseif ($row['channel_id'] == 3) $stats['waiter_income'] = $row['income'];
+        }
+
+        // Total de platos
+        $qD = "SELECT SUM(quantity) FROM orders_items oi 
+               JOIN orders o ON oi.order_id = o.id 
+               WHERE o.status NOT IN ('cancelled', 'rejected') AND YEAR(o.created_at) = :y AND MONTH(o.created_at) = :m";
+        $stmtD = $this->conn->prepare($qD);
+        $stmtD->execute([':y' => $year, ':m' => $month]);
+        $stats['dishes'] = $stmtD->fetchColumn() ?: 0;
 
         // Desglose diario para el gráfico de barras
         $qChart = "SELECT DAY(created_at) as day, SUM(total) as income 
@@ -587,14 +632,9 @@ class Order {
                    ORDER BY DAY(created_at) ASC";
         $stmtChart = $this->conn->prepare($qChart);
         $stmtChart->execute([':y' => $year, ':m' => $month]);
-        $dailyData = $stmtChart->fetchAll(PDO::FETCH_ASSOC);
+        $stats['chart'] = $stmtChart->fetchAll(PDO::FETCH_ASSOC);
 
-        return [
-            'income' => $totals['total_income'] ?: 0,
-            'orders' => $totals['total_orders'] ?: 0,
-            'dishes' => $totals['dishes_sold'] ?: 0,
-            'chart'  => $dailyData
-        ];
+        return $stats;
     }
 }
 ?>

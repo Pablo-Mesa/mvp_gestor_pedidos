@@ -74,9 +74,33 @@
     /* Grid de Stats */
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         gap: 20px;
-        margin-bottom: 10px;
+        margin-bottom: 25px;
+    }
+
+    .stats-grid.summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+        background: white;
+        padding: 0;
+        border-radius: 12px;
+        border: 1px solid #f1f3f5;
+        margin-bottom: 30px;
+    }
+
+    .stats-grid.channels {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+
+    .section-area-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #2d3436;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
 
     .stat-card {
@@ -96,24 +120,52 @@
         box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05);
     }
 
-    .stat-card.pending { border-bottom: 4px solid #fab005; }
-    .stat-card.income { border-bottom: 4px solid #40c057; }
+    .stats-grid.summary .stat-card {
+        flex: 1;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        padding: 12px 25px;
+        border-right: 1px solid #f1f3f5;
+        border-radius: 0;
+        min-width: 200px;
+    }
+
+    .stats-grid.summary .stat-card:last-child {
+        border-right: none;
+    }
+
+    .stat-card.pending { border-left: 4px solid #fab005; }
+    .stat-card.income { border-left: 4px solid #40c057; }
     .stat-card.sales { border-bottom: 4px solid #228be6; }
+    .stat-card.commission { border-bottom: 4px solid #7950f2; }
+    .stat-card.web { border-bottom: 4px solid #0984e3; }
+    .stat-card.local { border-bottom: 4px solid #00b894; }
+    .stat-card.waiter { border-bottom: 4px solid #6c5ce7; }
 
     .stat-icon {
-        width: 60px;
-        height: 60px;
+        width: 48px;
+        height: 48px;
         border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.5rem;
+        font-size: 1.2rem;
         background: #f8f9fa;
+    }
+    
+    .stat-badge {
+        font-size: 0.7rem;
+        padding: 2px 8px;
+        border-radius: 10px;
     }
 
     .pending .stat-icon { color: #ffc107; background: #fff9db; }
     .income .stat-icon { color: #28a745; background: #ebfbee; }
     .sales .stat-icon { color: #17a2b8; background: #e3f2fd; }
+    .web .stat-icon { color: #0984e3; background: #e3f2fd; }
+    .local .stat-icon { color: #00b894; background: #ebfbee; }
+    .waiter .stat-icon { color: #6c5ce7; background: #f3f0ff; }
 
     .stat-info h3 {
         font-size: 0.9rem;
@@ -124,48 +176,16 @@
     }
 
     .stat-value {
-        font-size: 1.5rem;
-        font-weight: 800;
+        font-size: 1.3rem;
+        font-weight: 700;
         color: #2d3436;
         margin: 0;
     }
 
-    /* Layout Visual (Gráfico + Acciones) */
-    .dashboard-visuals {
-        display: flex;
-        gap: 30px;
-        justify-content: space-between;
-        align-items: flex-start;
-        width: 100%;
-        margin-top: 20px;
-    }
-
-    .chart-container {
-        background: white;
-        padding: 25px;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        min-width: 350px;
-    }
-
-    .chart-header h2 {
-        font-size: 1.1rem;
-        color: #2d3436;
-        margin-bottom: 20px;
-        font-weight: 600;
-    }
-
-    .chart-wrapper {
-        position: relative;
-        height: 210px;
-    }
-
     /* Acciones Rápidas */
     .quick-actions {
-        flex: 1.5;
+        width: 100%;
+        margin-top: 20px;
     }
     .quick-actions h2 { 
         text-align: left;
@@ -177,7 +197,7 @@
 
     .actions-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(6, 1fr);
         gap: 12px;
     }
 
@@ -187,14 +207,14 @@
         padding: 12px 15px;
         border-radius: 10px;
         display: flex;
-        flex-direction: row;
+        flex-direction: column;
         align-items: center;
         gap: 12px;
         text-decoration: none;
         color: #495057;
         transition: all 0.2s ease;
         box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-        text-align: left;
+        text-align: center;
     }
 
     @keyframes fadeIn {
@@ -208,20 +228,17 @@
         width: 20px;
         text-align: center;
     }
-    .action-btn span { font-weight: 600; font-size: 0.85rem; line-height: 1.2; }
+    .action-btn span { font-weight: 600; font-size: 0.8rem; line-height: 1.2; }
 
     .action-btn:hover {
         border-color: #0984e3;
         background: #f8fbff;
-        transform: translateX(4px);
+        transform: translateY(-4px);
     }
 
     @media (max-width: 768px) {
-        .stats-grid, .actions-grid { grid-template-columns: 1fr; }
-        .dashboard-visuals { 
-            flex-direction: column;
-            align-items: center;
-         }
+        .stats-grid { grid-template-columns: 1fr; }
+        .actions-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
          .quick-actions h2 {
             text-align: center;
             margin-top: 10px;
@@ -267,160 +284,172 @@
     </div>
     <?php endif; ?>
 
-    <!-- Sección de Stats -->           
-    <div class="stats-grid">
-        
-        <div class="stat-card pending">
-            <div class="stat-icon">
-                <i class="fas fa-clock"></i>
-            </div>
+    <!-- Desempeño por Canal -->
+    <h2 class="section-area-title"><i class="fas fa-project-diagram"></i> Rendimiento por Fuente</h2>
+    <div class="stats-grid channels">
+        <!-- web -->
+        <div class="stat-card web">
+            <div class="stat-icon"><i class="fas fa-globe"></i></div>
             <div class="stat-info">
-                <h3><?= $data['view_mode'] == 'daily' ? 'Pedidos Recibidos' : 'Total Pedidos' ?></h3>
-                <p class="stat-value"><?php echo $data['pedidos_pendientes']; ?></p>
+                <h3>Ingresos Canal Web</h3>
+                <p class="stat-value">Gs. <?php echo number_format($data['web_income'] ?? 0, 0, ',', '.'); ?></p>
+                <small style="color: #7950f2; font-weight: bold; font-size: 0.75rem;">
+                    Comisión Solver (10%): Gs. <?php echo number_format(($data['web_income'] ?? 0) * 0.10, 0, ',', '.'); ?>
+                </small>
             </div>
         </div>
-        
-        <div class="stat-card income">
-            <div class="stat-icon">
-                <i class="fas fa-money-bill-wave"></i>
-            </div>
+        <!-- mostrador -->
+        <div class="stat-card local">
+            <div class="stat-icon"><i class="fas fa-cash-register"></i></div>
             <div class="stat-info">
-                <h3><?= $data['view_mode'] == 'daily' ? 'Ingresos Hoy' : 'Ingresos Mes' ?></h3>
-                <p class="stat-value">Gs. <?php echo number_format($data['ingresos_hoy'], 0, ',', '.'); ?></p>
+                <h3>Ingresos Mostrador</h3>
+                <p class="stat-value">Gs. <?php echo number_format($data['local_income'] ?? 0, 0, ',', '.'); ?></p>
+                <small class="text-success" style="font-size: 0.7rem; font-weight: bold;">
+                    <i class="fas fa-check-circle"></i> Herramienta gratuita Solver
+                </small>
             </div>
         </div>
-        
-        <div class="stat-card sales">
-            <div class="stat-icon">
-                <i class="fas fa-utensils"></i>
-            </div>
+        <!-- mozos -->
+        <div class="stat-card waiter">
+            <div class="stat-icon"><i class="fas fa-user-tie"></i></div>
             <div class="stat-info">
-                <h3>Platos Vendidos</h3>
-                <p class="stat-value"><?php echo $data['platos_vendidos']; ?></p>
+                <h3>Ingresos Mozos (Mesas)</h3>
+                <p class="stat-value">Gs. <?php echo number_format($data['waiter_income'] ?? 0, 0, ',', '.'); ?></p>
+                <small class="text-success" style="font-size: 0.7rem; font-weight: bold;">
+                    <i class="fas fa-check-circle"></i> Sin costos para el local
+                </small>
             </div>
         </div>
-        
     </div>
 
-    <div class="dashboard-visuals">
-        
-        <!-- Gráfico de Estado de Pedidos -->
-        <div class="chart-container">
-            <div class="chart-header">
-                <h2><i class="fas <?= $data['view_mode'] == 'daily' ? 'fa-chart-pie' : 'fa-chart-bar' ?>"></i> <?= $data['view_mode'] == 'daily' ? 'Rendimiento del Día' : 'Ingresos por Día' ?></h2>
+    <!-- Gestión de Tesorería -->
+    <h2 class="section-area-title"><i class="fas fa-vault"></i> Tesorería y Movimientos</h2>
+    <div class="stats-grid channels">
+        <?php if($data['active_session']): ?>
+            <!-- Balance de Caja -->
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-cash-register"></i></div>
+                <div class="stat-info">
+                    <h3>Sesión en <?php echo htmlspecialchars($data['active_session']['cash_station']); ?></h3>
+                    <p class="stat-value">Gs. <?php echo number_format($data['session_expected'] ?? 0, 0, ',', '.'); ?></p>
+                    <small class="text-muted" style="font-size: 0.7rem;">Saldo esperado en efectivo</small>
+                </div>
             </div>
-            <div class="chart-wrapper">
-                <canvas id="orderStatusChart"></canvas>
+            <!-- Ingresos -->
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #28a745; background: #ebfbee;"><i class="fas fa-arrow-up"></i></div>
+                <div class="stat-info">
+                    <h3>Ingresos de Sesión</h3>
+                    <p class="stat-value">Gs. <?php echo number_format($data['session_ingress'] ?? 0, 0, ',', '.'); ?></p>
+                    <small class="text-muted" style="font-size: 0.7rem;">Solo esta sesión</small>
+                </div>
+            </div>
+            <!-- Egresos -->
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #dc3545; background: #fff5f5;"><i class="fas fa-arrow-down"></i></div>
+                <div class="stat-info">
+                    <h3>Egresos / Gastos</h3>
+                    <p class="stat-value">Gs. <?php echo number_format($data['session_egress'] ?? 0, 0, ',', '.'); ?></p>
+                    <small class="text-muted" style="font-size: 0.7rem;">Solo esta sesión</small>
+                </div>
+            </div>
+        <?php else: ?>
+            <div class="stat-card" style="grid-column: span 3; justify-content: center; border-style: dashed; background: #f8f9fa;">
+                <div class="text-center py-2">
+                    <i class="fas fa-lock text-muted mb-2" style="font-size: 1.5rem;"></i>
+                    <p class="mb-0 text-muted fw-bold">No hay una sesión de caja activa para tu usuario.</p>
+                    <a href="?route=cash" class="btn btn-sm btn-primary mt-2">Realizar Apertura</a>
+                </div>
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <!-- Listado de Movimientos Recientes -->
+    <?php if($data['active_session'] && !empty($data['recent_movements'])): ?>
+    <div class="stats-grid" style="grid-template-columns: 1fr;">
+         <div class="stat-card" style="display: block; padding: 0;">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <h3 class="mb-0 fw-bold" style="font-size: 0.85rem; text-transform: uppercase; color: #636e72;">Últimos Movimientos de la Sesión</h3>
+                <a href="?route=cash" class="btn btn-sm btn-outline-secondary" style="font-size: 0.7rem;">Ver Tesorería</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0" style="font-size: 0.85rem;">
+                    <tbody>
+                        <?php foreach($data['recent_movements'] as $mov): ?>
+                            <tr>
+                                <td class="ps-4 py-2" style="width: 40px;">
+                                    <i class="fas <?php echo $mov['type'] === 'ingress' ? 'fa-circle-arrow-up text-success' : 'fa-circle-arrow-down text-danger'; ?>"></i>
+                                </td>
+                                <td class="py-2">
+                                    <span class="fw-bold d-block text-dark"><?php echo htmlspecialchars($mov['description']); ?></span>
+                                    <small class="text-muted"><?php echo date('H:i', strtotime($mov['created_at'])); ?> • Fuente: <?php echo ucfirst($mov['source']); ?></small>
+                                </td>
+                                <td class="text-end pe-4 py-2 fw-bold text-dark">
+                                    <?php echo $mov['type'] === 'ingress' ? '+' : '-'; ?> Gs. <?php echo number_format($mov['amount'], 0, ',', '.'); ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+         </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- Resumen Operativo (Estilo Barra Compacta) -->
+    <div class="stats-grid summary">
+        <div class="stat-card pending">
+            <div class="stat-icon" style="width: 36px; height: 36px; font-size: 1rem;"><i class="fas fa-clipboard-list"></i></div>
+            <div class="stat-info">
+                <h3 style="font-size: 0.75rem; margin-bottom: 2px;">Total Pedidos</h3>
+                <p class="stat-value" style="font-size: 1.2rem;"><?php echo ($data['view_mode'] == 'daily') ? (($data['web_orders_count'] ?? 0) + ($data['local_orders_count'] ?? 0)) : $data['pedidos_pendientes']; ?></p>
+                <small class="<?= ($data['cash_status'] ?? 'Cerrada') === 'Abierta' ? 'text-success' : 'text-danger' ?>" style="font-size: 0.65rem; font-weight: 700;">
+                    ● Caja <?= $data['cash_status'] ?? 'Cerrada' ?>
+                </small>
             </div>
         </div>
-
-        <!-- Sección de Acciones Rápidas -->
-        <?php if ($data['view_mode'] === 'daily'): ?>
-        <section class="quick-actions">
-            <h2>Acciones Rápidas</h2>
-            <div class="actions-grid">
-                <a href="?route=cash" class="action-btn">
-                    <i class="fas fa-key"></i>
-                    <span>Apertura de Caja <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + C]</small></span>
-                </a>
-                <a href="?route=orders" class="action-btn">
-                    <i class="fas fa-list"></i>
-                    <span>Pedidos <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + O]</small></span>
-                </a>
-                <a href="?route=sales_history" class="action-btn">
-                    <i class="fas fa-file-invoice-dollar"></i>
-                    <span>Facturacion/Ticket <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + F]</small></span>
-                </a>
-                <a href="?route=payments_report" class="action-btn">
-                    <i class="fas fa-money-check-alt"></i>
-                    <span>Pagos <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + R]</small></span>
-                </a>
-                <a href="?route=cash" class="action-btn">
-                    <i class="fas fa-vault"></i>
-                    <span>Movimientos Caja <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + C]</small></span>
-                </a>
-                <a href="?route=pos" class="action-btn">
-                    <i class="fas fa-cash-register"></i>
-                    <span>Punto de Venta <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + P]</small></span>
-                </a>
+        <div class="stat-card income">
+            <div class="stat-icon" style="width: 36px; height: 36px; font-size: 1rem;"><i class="fas fa-wallet"></i></div>
+            <div class="stat-info">
+                <h3 style="font-size: 0.75rem; margin-bottom: 2px;">Venta Total Bruta</h3>
+                <p class="stat-value" style="font-size: 1.2rem;">Gs. <?php echo number_format($data['ingresos_hoy'], 0, ',', '.'); ?></p>
+                <small class="text-muted" style="font-size: 0.65rem;">Todos los canales</small>
             </div>
-        </section>
-        <?php endif; ?>
+        </div>
+    </div>
 
-    </div> 
-    <!-- Cierre de dashboard-visuals -->
+    <!-- Sección de Acciones Rápidas -->
+    <?php if ($data['view_mode'] === 'daily'): ?>
+    <section class="quick-actions">
+        <h2>Acciones Rápidas</h2>
+        <div class="actions-grid">
+            <a href="?route=cash" class="action-btn">
+                <i class="fas fa-key"></i>
+                <span>Apertura de Caja <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + C]</small></span>
+            </a>
+            <a href="?route=orders" class="action-btn">
+                <i class="fas fa-list"></i>
+                <span>Pedidos <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + O]</small></span>
+            </a>
+            <a href="?route=sales_history" class="action-btn">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <span>Facturacion/Ticket <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + F]</small></span>
+            </a>
+            <a href="?route=payments_report" class="action-btn">
+                <i class="fas fa-money-check-alt"></i>
+                <span>Pagos <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + R]</small></span>
+            </a>
+            <a href="?route=cash" class="action-btn">
+                <i class="fas fa-vault"></i>
+                <span>Movimientos Caja <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + C]</small></span>
+            </a>
+            <a href="?route=pos" class="action-btn">
+                <i class="fas fa-cash-register"></i>
+                <span>Punto de Venta <small class="text-muted d-block" style="font-size: 0.7rem;">[Alt + P]</small></span>
+            </a>
+        </div>
+    </section>
+    <?php endif; ?>
 
 </div>
 <!-- Cierre de dashboard-container -->
-
-<!-- Librería Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const canvas = document.getElementById('orderStatusChart');
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    const viewMode = '<?= $data['view_mode'] ?>';
-    
-    if (viewMode === 'monthly') {
-        const chartData = <?php echo json_encode($data['chart_data'] ?? []); ?>;
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: chartData.map(d => d.day),
-                datasets: [{
-                    label: 'Ingresos (Gs.)',
-                    data: chartData.map(d => d.income),
-                    backgroundColor: '#0984e3',
-                    borderRadius: 5
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return value.toLocaleString('es-PY');
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        return;
-    }
-
-    // Datos desde PHP
-    const pending = <?php echo (int)($data['pedidos_pendientes'] ?? 0); ?>;
-    const completed = <?php echo (int)($data['pedidos_completados_hoy'] ?? 0); ?>;
-
-    // Lógica para mostrar gráfico vacío si no hay datos
-    const hasData = (pending + completed) > 0;
-    const dataValues = hasData ? [pending, completed] : [0, 0];
-    const bgColors = hasData ? ['#ffc107', '#28a745'] : ['#dfe6e9'];
-    const labels = hasData ? ['Pendientes', 'Completados'] : ['Sin pedidos'];
-
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: dataValues,
-                backgroundColor: bgColors,
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '70%',
-            plugins: { legend: { position: 'bottom' } }
-        }
-    });
-});
-</script>

@@ -51,6 +51,7 @@
         gap: 10px;
         margin-bottom: 15px;
     }
+
     .btn-export {
         padding: 10px;
         border-radius: 10px;
@@ -64,6 +65,7 @@
         cursor: pointer;
         transition: 0.2s;
     }
+    
     .btn-pdf { background: #636e72; color: white; }
     .btn-wa { background: #25D366; color: white; }
 
@@ -136,6 +138,36 @@
     </div>
 </div>
 
+<!-- resumen de entregas (KPIs arriba para mejor jerarquía) -->
+<div class="history-kpi-grid">
+    <div class="kpi-card kpi-digital">
+        <label>Entregados</label>
+        <span><?php echo $summary['count']; ?></span>
+    </div>
+    <div class="kpi-card kpi-cash">
+        <label>Cobrado (Bruto)</label>
+        <span style="color: #d63031;">Gs. <?php echo number_format($summary['cash'], 0, ',', '.'); ?></span>
+    </div>
+    <div class="kpi-card kpi-settle">
+        <label>Saldo a Entregar</label>
+        <?php 
+            // Saldo = Lo cobrado en efectivo menos la comisión (ganancia) que el delivery retiene
+            $toDeliver = $summary['cash'] - $summary['earnings'];
+        ?>
+        <span style="font-size: 1.1rem; font-weight: 900;">Gs. <?php echo number_format($toDeliver, 0, ',', '.'); ?></span>
+    </div>
+</div>
+
+<!-- botones de exportación -->
+<div class="history-actions-grid">
+    <button class="btn-export btn-pdf" onclick="window.print()">
+        <i class="fas fa-file-pdf"></i> PDF / Imprimir
+    </button>
+    <button class="btn-export btn-wa" onclick="shareHistoryWA()">
+        <i class="fab fa-whatsapp"></i> Compartir WA
+    </button>
+</div>
+
 <!-- tabla de entregas -->
 <div class="history-table-container">
     <?php if(empty($orders)): ?>
@@ -168,36 +200,6 @@
             </div>
         <?php endforeach; ?>
     <?php endif; ?>
-</div>
-
-<!-- botones de exportación -->
-<div class="history-actions-grid">
-    <button class="btn-export btn-pdf" onclick="window.print()">
-        <i class="fas fa-file-pdf"></i> PDF / Imprimir
-    </button>
-    <button class="btn-export btn-wa" onclick="shareHistoryWA()">
-        <i class="fab fa-whatsapp"></i> Compartir WA
-    </button>
-</div>
-
-<!-- resumen de entregas -->
-<div class="history-kpi-grid">
-    <div class="kpi-card kpi-digital">
-        <label>Entregados</label>
-        <span><?php echo $summary['count']; ?></span>
-    </div>
-    <div class="kpi-card kpi-cash">
-        <label>Cobrado (Bruto)</label>
-        <span style="color: #d63031;">Gs. <?php echo number_format($summary['cash'], 0, ',', '.'); ?></span>
-    </div>
-    <div class="kpi-card kpi-settle">
-        <label>Saldo a Entregar</label>
-        <?php 
-            // Saldo = Lo cobrado en efectivo menos la comisión (ganancia) que el delivery retiene
-            $toDeliver = $summary['cash'] - $summary['earnings'];
-        ?>
-        <span style="font-size: 1.1rem; font-weight: 900;">Gs. <?php echo number_format($toDeliver, 0, ',', '.'); ?></span>
-    </div>
 </div>
 
 <!-- Pie de página exclusivo para impresión -->

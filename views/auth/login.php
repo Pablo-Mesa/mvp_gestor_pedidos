@@ -10,6 +10,7 @@
     <!-- Tailwind para prototipado rápido o estilos de v0 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/css_cubo.css">
     <style>
         body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
         .glass-card {
@@ -18,14 +19,15 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
     </style>
+    <script src="<?php echo $baseUrl; ?>js/tool-kit-v002.js"></script>
+    
 </head>
 <body class="bg-slate-50 min-h-screen flex flex-col justify-center items-center p-4">
-    
+
     <div class="w-full max-w-[400px] space-y-8">
         <!-- Logo y Branding -->
-        <div class="text-center space-y-4">
-            <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-white shadow-xl shadow-blue-100/50 mb-2">
-                <img src="<?php echo $baseUrl; ?>assets/icono_solver_nobg.png" alt="Solver Logo" class="w-14 h-14 object-contain">
+        <div class="text-center space-y-4">            
+            <div id="here_cube" class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-white shadow-xl shadow-blue-100/50 mb-2">
             </div>
             <div>
                 <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Solver</h1>
@@ -45,6 +47,9 @@
             <?php endif; ?>
 
             <form action="?route=login" method="POST" class="space-y-5">
+                <!-- Token de seguridad CSRF -->
+                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+
                 <div class="space-y-2">
                     <label for="email" class="text-sm font-semibold text-slate-600 ml-1">Correo Electrónico</label>
                     <div class="relative group">
@@ -93,6 +98,7 @@
             btn.disabled = true;
             btn.classList.add('opacity-80', 'cursor-not-allowed');
         });
+        drawCube("here_cube", false, "28px");
     </script>
 </body>
 </html>

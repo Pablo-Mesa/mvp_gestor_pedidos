@@ -56,7 +56,7 @@ $containerPadding = $is58mm ? '2px' : '0px';
     </style>
 
 </head>
-<body onload="window.print()">
+<body>
 
     <div class="ticket">
         <h2>SOLVER - APP</h2>

@@ -447,6 +447,12 @@ switch ($route) {
         $controller->show();
         break;
 
+    case 'orders_details_api':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->detailsApi();
+        break;
+
     case 'orders_api':
         require_once '../controllers/OrderController.php';
         $controller = new OrderController();

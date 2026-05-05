@@ -11,7 +11,7 @@
     .badge-info { background: #d1ecf1; color: #0c5460; }
     .badge-warning { background: #fff3cd; color: #856404; }
     .badge-danger { background: #f8d7da; color: #721c24; }
-
+    
     /* Header y Filtros */
     .header-actions {
         display: flex;

@@ -18,7 +18,7 @@ $fontSize = (isset($format) && $format === '58mm') ? '11px' : '13px';
         @media print { body { background: white; } .ticket { box-shadow: none; width: 100%; } }
     </style>
 </head>
-<body onload="window.print(); setTimeout(() => window.close(), 1000);">
+<body>
     <div class="ticket">
         <div class="center header-info">
             <h2 style="margin:0; font-size: 1.4em;"><?php echo htmlspecialchars($empresa['razon_social'] ?? 'SOLVER POS'); ?></h2>

@@ -62,6 +62,9 @@ class OrderController {
         $cashModel = new CashRegister();
         $isCashOpen = $cashModel->getActiveSession($_SESSION['user_id']) ? true : false;
 
+        // Obtener pedidos pendientes de facturación para el modal rápido
+        $pendingInvoices = $orderModel->getOrdersAwaitingInvoice();
+
         $content_view = '../views/admin/orders/index.php';
         require_once '../views/layouts/admin_layout.php';
     }
@@ -91,6 +94,9 @@ class OrderController {
         // Verificar si el usuario tiene una caja abierta
         $cashModel = new CashRegister();
         $isCashOpen = $cashModel->getActiveSession($_SESSION['user_id']) ? true : false;
+
+        // Obtener pedidos pendientes de facturación para el modal rápido
+        $pendingInvoices = $orderModel->getOrdersAwaitingInvoice();
 
         $content_view = '../views/admin/orders/index.php';
         require_once '../views/layouts/admin_layout.php';
@@ -179,6 +185,33 @@ class OrderController {
 
         $content_view = '../views/admin/orders/show.php';
         require_once '../views/layouts/admin_layout.php';
+    }
+
+    /**
+     * Endpoint AJAX para obtener detalles de un pedido (Admin)
+     */
+    public function detailsApi() {
+        if (ob_get_length()) ob_clean(); // Asegura que no haya salida previa (avisos PHP, etc.)
+        header('Content-Type: application/json');
+        
+        if (!isset($_SESSION['user_role']) || !in_array($_SESSION['user_role'], ['admin', 'cajero'])) {
+            echo json_encode(['success' => false, 'message' => 'No autorizado']);
+            exit;
+        }
+
+        $id = $_GET['id'] ?? null;
+        if (!$id) {
+            echo json_encode(['success' => false, 'message' => 'ID no proporcionado']);
+            exit;
+        }
+
+        $orderModel = new Order();
+        $orderModel->id = $id;
+        $order = $orderModel->readOne(); // Obtener los datos principales del pedido
+        $details = $orderModel->readDetails(); // Obtener los detalles de los ítems
+
+        echo json_encode(['success' => true, 'order' => $order, 'details' => $details]); // Devolver ambos
+        exit;
     }
 
     public function ticket() {
@@ -332,10 +365,20 @@ class OrderController {
             $ventaId = $orderModel->finalizeSale(null, null, $docType); 
             
             if ($ventaId) {
-                // AISLAMIENTO: Volvemos al historial de ventas con el flag de impresión, sin entrar a la vista de cobro
-                header('Location: ?route=sales_history&success=paid&print_sale_id=' . $ventaId);
+                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => true, 'print_sale_id' => $ventaId]);
+                    exit;
+                }
+                // AISLAMIENTO: Volvemos a la vista de pedidos con el flag de impresión
+                header('Location: ?route=orders&success=paid&print_sale_id=' . $ventaId);
             } else {
-                header('Location: ?route=sales_history&error=' . urlencode($orderModel->error));
+                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => $orderModel->error]);
+                    exit;
+                }
+                header('Location: ?route=orders&error=' . urlencode($orderModel->error));
             }
             exit;
         }
@@ -377,8 +420,18 @@ class OrderController {
             $sessionId = $activeSession ? $activeSession['id'] : null;
 
             if ($order->finalizeSale($finalPayments, $sessionId, $docType)) {
-                header('Location: ?route=sales_history&success=paid');
+                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => true]);
+                    exit;
+                }
+                header('Location: ?route=orders&success=paid');
             } else {
+                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => $order->error]);
+                    exit;
+                }
                 header('Location: ?route=orders_finalize&id=' . $order->id . '&error=' . urlencode($order->error));
             }
         }

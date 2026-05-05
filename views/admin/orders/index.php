@@ -511,11 +511,11 @@
                     <button type="button" class="btn btn-primary" id="qa-btn-80">
                         <i class="fas fa-print"></i> Comanda Cocina 80mm
                     </button>
-                    <a href="#" class="btn btn-info" id="qa-btn-quick-invoice">
+                    <button type="button" class="btn btn-info" id="qa-btn-quick-invoice">
                         <i class="fas fa-file-invoice-dollar"></i> GENERAR TICKET (RÁPIDO)
-                    </a>
+                    </button>
                 </div>
-                
+
                 <!-- Logistica -->
                 <div id="qa-delivery-section" class="mb-3" style="display: none;">
                     <hr class="my-2">
@@ -531,12 +531,128 @@
                 
                 <!-- Cobrar Pedido y Ver Detalles del Pedido -->
                 <div class="d-grid gap-2">
-                    <a href="#" class="btn btn-success btn-lg" id="qa-btn-pay">
+                    <button type="button" class="btn btn-success btn-lg" id="qa-btn-pay">
                         <i class="fas fa-cash-register"></i> COBRAR PEDIDO
-                    </a>
-                    <a href="#" class="btn btn-outline-info" id="qa-btn-view">
+                    </button>
+                    <button type="button" class="btn btn-outline-info" id="qa-btn-view">
                         <i class="fas fa-eye"></i> Ver Detalle Completo
-                    </a>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Detalle de Pedido (In-view) -->
+<div class="modal fade" id="modalOrderDetail" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="od-modal-title">Detalle de Pedido #000</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="od-modal-body"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Cobro Mixto (In-view) -->
+<div class="modal fade" id="modalPayOrder" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form id="form-pay-modal">
+                <div class="modal-header bg-success text-white py-2">
+                    <h6 class="modal-title"><i class="fas fa-cash-register me-2"></i>Cobrar Pedido #<span id="pay-modal-id">0</span></h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="order_id" id="pay-input-order-id">
+                    <div class="row">
+                        <div class="col-md-7">
+                            <table class="table table-sm table-borderless align-middle">
+                                <thead><tr class="text-muted small"><th>MÉTODO</th><th style="width:160px">MONTO</th><th>REF.</th></tr></thead>
+                                <tbody>
+                                    <?php 
+                                    $pMethods = ['efectivo' => '💵 Efectivo', 'pos' => '💳 Tarjeta', 'transferencia' => '🏦 Transf.', 'qr' => '📱 QR'];
+                                    $pi = 0; foreach($pMethods as $key => $label): ?>
+                                    <tr>
+                                        <td class="small fw-bold"><?php echo $label; ?></td>
+                                        <td>
+                                            <input type="hidden" name="payments[<?php echo $pi; ?>][metodo]" value="<?php echo $key; ?>">
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" name="payments[<?php echo $pi; ?>][monto]" class="form-control fw-bold pay-input" data-method="<?php echo $key; ?>" value="0" min="0">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="fillRemainingPay('<?php echo $key; ?>')"><i class="fas fa-magic"></i></button>
+                                            </div>
+                                        </td>
+                                        <td><input type="text" name="payments[<?php echo $pi; ?>][referencia]" class="form-control form-control-sm" placeholder="..."></td>
+                                    </tr>
+                                    <?php $pi++; endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="bg-light p-3 rounded border text-center">
+                                <p class="mb-0 text-muted small">TOTAL A COBRAR</p>
+                                <h3 class="fw-bold mb-3" id="pay-modal-total">Gs. 0</h3>
+                                <div id="pay-balance-card" class="p-2 border rounded">
+                                    <p id="pay-balance-label" class="mb-0 small fw-bold text-muted">RESTA COBRAR</p>
+                                    <h4 id="pay-balance-display" class="mb-0">Gs. 0</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="submit" id="pay-btn-submit" class="btn btn-success w-100 py-2 fw-bold">FINALIZAR Y REGISTRAR VENTA</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Pedidos Pendientes de Facturar (Reutilizado de Sales) -->
+<div class="modal fade" id="modalPendingOrders" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Pedidos pendientes de Facturación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-hover mb-0" style="border-collapse: separate; border-spacing: 0;">
+                        <thead class="table-light sticky-top" style="top: 0; z-index: 10; background-color: #f8f9fa !important; box-shadow: 0 2px 2px -1px rgba(0,0,0,0.1);">
+                            <tr>
+                                <th class="ps-3">Pedido</th>
+                                <th>Cliente</th>
+                                <th>Tipo</th>
+                                <th>Total</th>
+                                <th class="text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($pendingInvoices)): ?>
+                                <tr><td colspan="5" class="text-center py-4 text-muted">No hay pedidos pendientes de facturar.</td></tr>
+                            <?php else: ?>
+                            <?php foreach($pendingInvoices as $p): ?>
+                            <tr class="<?php echo (isset($_GET['id']) && $_GET['id'] == $p['id']) ? 'table-warning' : ''; ?>" data-order-id="<?php echo $p['id']; ?>">
+                                <td class="ps-3">#<?php echo $p['id']; ?></td>
+                                <td><?php echo htmlspecialchars($p['client_name']); ?></td>
+                                <td><small class="badge bg-info"><?php echo $p['delivery_type']; ?></small></td>
+                                <td>Gs. <?php echo number_format($p['total'], 0, ',', '.'); ?></td>
+                                <td class="text-center">
+                                    <div class="btn-group">
+                                        <button type="button" onclick="generateInvoiceWithComandaCheck(<?php echo $p['id']; ?>, '<?php echo $p['status']; ?>', 'ticket')" class="btn btn-sm btn-outline-secondary btn-generate-ticket"><i class="fas fa-receipt"></i> Ticket</button>
+                                        <button type="button" onclick="generateInvoiceWithComandaCheck(<?php echo $p['id']; ?>, '<?php echo $p['status']; ?>', 'factura')" class="btn btn-sm btn-primary btn-generate-ticket"><i class="fas fa-file-invoice"></i> Factura</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -569,6 +685,73 @@ if (empty($orders) && $hasFilter):
     // Huella digital de los datos para evitar re-renderizados (parpadeo) innecesarios
     let lastOrdersFingerprint = '';
     const notificationSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+
+    let payModal = null;
+    let detailModal = null;
+
+    /**
+     * Valida si el pedido tiene comanda impresa antes de facturar.
+     */
+    async function generateInvoiceWithComandaCheck(orderId, status, docType) {
+        // Deshabilitar botones en la fila para evitar clics repetidos
+        const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
+        // Fallback a document.activeElement.closest('tr') solo si activeElement es un Element válido
+        let targetRow = row;
+        if (!targetRow && document.activeElement instanceof Element && document.activeElement.closest) {
+            targetRow = document.activeElement.closest('tr');
+        }
+        if (targetRow) {
+            const buttons = row.querySelectorAll('.btn-generate-ticket');
+            buttons.forEach(btn => { btn.classList.add('disabled'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; });
+        }
+
+        const apiUrl = `?route=orders_finalize&id=${orderId}&quick=1&doc_type=${docType}`;
+        
+        if (status === 'pending') {
+            const result = await Swal.fire({
+                title: 'Paso Previo Requerido',
+                text: "El pedido aún no tiene comanda impresa para cocina. Se imprimirá la comanda automáticamente antes de generar el comprobante.",
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonText: 'Imprimir y Continuar',
+                cancelButtonText: 'Cancelar',
+                allowEscapeKey: true,
+                allowOutsideClick: true,
+                keydownListenerCapture: true,
+                didOpen: () => { Swal.getConfirmButton().focus(); }
+            });
+
+            if (result.isConfirmed) {
+                // 1. Disparar impresión de comanda
+                printOrderDirectly(orderId, '80mm');
+                // 2. Pequeña pausa para asegurar que el trigger de impresión se procese y redirigir
+                setTimeout(() => processQuickInvoice(apiUrl), 1200);
+            }
+        } else {
+            processQuickInvoice(apiUrl);
+        }
+    }
+
+    /**
+     * Procesa la facturación rápida vía AJAX para no salir de la vista.
+     */
+    async function processQuickInvoice(url) {
+        try {
+            const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const res = await resp.json();
+            if (res.success) {
+                if (res.print_sale_id) printSaleTicket(res.print_sale_id, '80mm');
+                Toast.fire("Venta registrada correctamente", "success");
+                const m = bootstrap.Modal.getInstance(document.getElementById('modalPendingOrders'));
+                if (m) m.hide();
+                refreshOrders(true);
+            } else {
+                Toast.fire(res.message || "Error al procesar", "error");
+            }
+        } catch (e) {
+            Toast.fire("Error de red", "error");
+        }
+    }
 
     /**
      * Actualiza el estado de un pedido directamente desde la tabla
@@ -642,7 +825,7 @@ if (empty($orders) && $hasFilter):
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
-        .then(() => refreshOrders()); // Refrescar la tabla inmediatamente
+        .then(() => refreshOrders(true)); // Refrescar la tabla y el modal inmediatamente
     }
 
     /**
@@ -654,9 +837,17 @@ if (empty($orders) && $hasFilter):
         if (order) openQuickActions(order);
     }
 
-    function openQuickActions(order) {
+    function renderQuickActions(order) {
         if (!qaModal) {
             const modalEl = document.getElementById('quickActionsModal');
+            
+            // Prevenir que el foco se pierda al actualizar elementos internos
+            modalEl.addEventListener('click', (e) => {
+                if(e.target.closest('.btn')) {
+                    setTimeout(() => e.target.closest('.btn').focus(), 50);
+                }
+            });
+
             qaModal = new bootstrap.Modal(modalEl);
             
             modalEl.addEventListener('shown.bs.modal', () => {
@@ -672,7 +863,8 @@ if (empty($orders) && $hasFilter):
         }
         
         document.getElementById('qa-title').innerText = `Pedido #${order.id} - ${order.user_name}`;
-        document.getElementById('qa-btn-view').href = `?route=orders_show&id=${order.id}`;
+
+        document.getElementById('qa-btn-view').onclick = () => openOrderDetailModal(order.id);
 
         // Aviso de Facturación
         const billingAlert = document.getElementById('qa-billing-alert');
@@ -707,20 +899,48 @@ if (empty($orders) && $hasFilter):
         // --- VALIDACIÓN PASO 1 y 2: COMANDA Y VENTA ---
         quickInvBtn.classList.remove('disabled', 'btn-secondary', 'btn-info');
         
+        quickInvBtn.onclick = null; // Reset click
+
         if (!isConfirmed) {
             quickInvBtn.classList.add('disabled');
             quickInvBtn.innerHTML = '<i class="fas fa-lock"></i> IMPRIMA COMANDA PRIMERO';
-            quickInvBtn.href = 'javascript:void(0)';
-        } else if (hasInvoice) {
-            quickInvBtn.classList.add('btn-secondary');
-            quickInvBtn.innerHTML = '<i class="fas fa-print"></i> RE-IMPRIMIR TICKET VENTA';
-            const orderDate = order.created_at.split(' ')[0];
-            quickInvBtn.href = `?route=sales_history&date=${orderDate}`;
         } else {
-            quickInvBtn.classList.add('btn-info');
-            quickInvBtn.innerHTML = '<i class="fas fa-file-invoice-dollar"></i> GENERAR TICKET (RÁPIDO)';
-            const orderDate = order.created_at.split(' ')[0];
-            quickInvBtn.href = `?route=sales_history&date=${orderDate}`;
+            if (hasInvoice) {
+                quickInvBtn.classList.add('btn-secondary');
+                quickInvBtn.innerHTML = '<i class="fas fa-print"></i> VER/RE-IMPRIMIR TICKETS';
+            } else {
+                quickInvBtn.classList.add('btn-info');
+                quickInvBtn.innerHTML = '<i class="fas fa-file-invoice-dollar"></i> GENERAR TICKET (RÁPIDO)';
+            }
+            quickInvBtn.onclick = () => { 
+                qaModal.hide(); 
+
+                // Filtrar el modal de pendientes para mostrar solo este pedido
+                const pendingModalEl = document.getElementById('modalPendingOrders');
+                const tbody = pendingModalEl.querySelector('tbody');
+                const rows = tbody.querySelectorAll('tr[data-order-id]');
+                let matchFound = false;
+
+                rows.forEach(row => {
+                    if (row.getAttribute('data-order-id') == order.id) {
+                        row.style.display = '';
+                        matchFound = true;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                // Manejo de mensaje si el pedido no está en la lista (ej: ya facturado por otro usuario)
+                let feedbackRow = tbody.querySelector('.filtered-empty-msg');
+                if (!matchFound) {
+                    if (!feedbackRow) { feedbackRow = document.createElement('tr'); feedbackRow.className = 'filtered-empty-msg'; feedbackRow.innerHTML = '<td colspan="5" class="text-center py-4 text-muted">El pedido seleccionado ya no se encuentra pendiente de facturación.</td>'; tbody.appendChild(feedbackRow); }
+                    feedbackRow.style.display = '';
+                } else if (feedbackRow) { feedbackRow.style.display = 'none'; }
+
+                let m = bootstrap.Modal.getInstance(pendingModalEl);
+                if (!m) m = new bootstrap.Modal(pendingModalEl);
+                m.show(); 
+            };
         }
 
         // --- VALIDACIÓN PASO 3: REPARTO (LOGÍSTICA) ---
@@ -737,12 +957,12 @@ if (empty($orders) && $hasFilter):
             payBtn.innerHTML = '<i class="fas fa-lock"></i> DEBE GENERAR TICKET';
             payBtn.classList.add('disabled', 'btn-warning');
             payBtn.classList.remove('btn-success');
-            payBtn.href = 'javascript:void(0)';
+            payBtn.onclick = null;
         } else if (isPaid) {
             payBtn.innerHTML = '<i class="fas fa-check-double"></i> VENTA YA COBRADA';
             payBtn.classList.add('disabled', 'btn-secondary');
             payBtn.classList.remove('btn-success', 'btn-warning');
-            payBtn.href = 'javascript:void(0)';
+            payBtn.onclick = null;
         } else if (isDelivery && !isAssigned) {
             payBtn.innerHTML = '<i class="fas fa-truck"></i> ASIGNE REPARTIDOR';
             payBtn.classList.add('disabled', 'btn-warning');
@@ -754,7 +974,6 @@ if (empty($orders) && $hasFilter):
             payBtn.classList.add('btn-success');
 
             if (!isCashOpen) {
-                payBtn.href = 'javascript:void(0)';
                 payBtn.onclick = (e) => {
                     e.preventDefault();
                     Swal.fire({
@@ -773,16 +992,18 @@ if (empty($orders) && $hasFilter):
                     });
                 };
             } else {
-                payBtn.href = `?route=orders_finalize&id=${order.id}`;
+                payBtn.onclick = () => openPaymentModal(order);
             }
         }
 
-        document.getElementById('qa-btn-80').onclick = () => { printOrderDirectly(order.id, '80mm'); confirmOrderOnPrint(order.id); qaModal.hide(); };
-        document.getElementById('qa-btn-58').onclick = () => { printOrderDirectly(order.id, '58mm'); confirmOrderOnPrint(order.id); qaModal.hide(); };
+        // Eliminamos qaModal.hide() para que el modal permanezca abierto tras imprimir
+        document.getElementById('qa-btn-80').onclick = () => { printOrderDirectly(order.id, '80mm'); confirmOrderOnPrint(order.id); };
+        document.getElementById('qa-btn-58').onclick = () => { printOrderDirectly(order.id, '58mm'); confirmOrderOnPrint(order.id); };
 
         const deliverySection = document.getElementById('qa-delivery-section');
         if (order.delivery_type === 'delivery') {
             deliverySection.style.display = 'block';
+            const assignBtn = document.getElementById('qa-btn-assign');
             const select = document.getElementById('qa-delivery-select');
             select.value = order.delivery_user_id || "";
             
@@ -796,14 +1017,183 @@ if (empty($orders) && $hasFilter):
                 const res = await resp.json();
                 if (res.success) {
                     Toast.fire("Asignado correctamente", "success");
-                    qaModal.hide();
-                    refreshOrders(true);
+                    refreshOrders(true); // Refresca la tabla y el modal abierto
                 }
             };
         } else {
             deliverySection.style.display = 'none';
         }
+    }
+
+    function openQuickActions(order) {
+        renderQuickActions(order);
         qaModal.show();
+    }
+
+    /**
+     * Abre el modal de detalle sin recargar página.
+     */
+    async function openOrderDetailModal(id) {
+        if (!detailModal) detailModal = new bootstrap.Modal(document.getElementById('modalOrderDetail'));
+        document.getElementById('od-modal-title').innerText = `Detalle de Pedido #` + id;
+        document.getElementById('od-modal-body').innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i></div>';
+        detailModal.show();
+        
+        try {
+            const resp = await fetch('index.php?route=orders_details_api&id=' + id, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            
+            const contentType = resp.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                const text = await resp.text();
+                throw new Error(`Se esperaba JSON, pero se recibió: ${text.substring(0, 100)}...`);
+            }
+            
+            const res = await resp.json();
+            if (res.success && res.order && res.details) {
+                const order = res.order;
+                const details = res.details;
+
+                let html = `
+                    <div class="mb-3">
+                        <p class="mb-1"><strong>Cliente:</strong> ${order.user_name}</p>
+                        <p class="mb-1"><strong>Teléfono:</strong> ${order.user_phone || 'No registrado'}</p>
+                        <p class="mb-1"><strong>Tipo de Entrega:</strong> ${order.delivery_type === 'delivery' ? '🛵 Delivery' : (order.delivery_type === 'pickup' ? '🛍️ Retiro' : '🍽️ Mesa Local')}</p>
+                        ${order.observation ? `<div class="alert alert-warning py-1 px-2 mt-2" style="font-size: 0.85rem;"><strong>Observación:</strong> ${order.observation}</div>` : ''}
+                    </div>
+                    <hr>
+                    <h6 class="mb-2">Items del Pedido:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-center">Cant</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+                let totalItemsPrice = 0;
+                details.forEach(it => {
+                    const price = parseFloat(it.price) || 0;
+                    const qty = parseInt(it.quantity) || 0;
+                    const subtotal = price * qty;
+                    totalItemsPrice += subtotal;
+                    html += `<tr><td>${it.product_name}</td><td class="text-center">${qty}</td><td class="text-end">Gs. ${new Intl.NumberFormat('es-PY').format(subtotal)}</td></tr>`;
+                });
+
+                // Añadir costo de delivery si aplica
+                if (order.delivery_type === 'delivery' && parseFloat(order.delivery_cost) > 0) {
+                    html += `<tr>
+                                <td colspan="2" class="text-end fw-bold">Costo de Delivery:</td>
+                                <td class="text-end fw-bold">Gs. ${new Intl.NumberFormat('es-PY').format(parseFloat(order.delivery_cost))}</td>
+                             </tr>`;
+                }
+
+                html += `   </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th colspan="2" class="text-end">Total del Pedido:</th>
+                                    <th class="text-end">Gs. ${new Intl.NumberFormat('es-PY').format(parseFloat(order.total))}</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>`;
+                document.getElementById('od-modal-body').innerHTML = html;
+            } else {
+                throw new Error(res.message || 'Error en respuesta del servidor');
+            }
+        } catch(e) {
+            console.error('Error cargando detalles:', e);
+            document.getElementById('od-modal-body').innerHTML = '<div class="alert alert-danger">Error al cargar: ' + e.message + '</div>';
+        }
+    }
+
+    /**
+     * Abre el modal de pago integrado.
+     */
+    function openPaymentModal(order) {
+        if (!payModal) {
+            const el = document.getElementById('modalPayOrder');
+            payModal = new bootstrap.Modal(el);
+            el.querySelectorAll('.pay-input').forEach(inp => {
+                inp.addEventListener('input', calculatePayBalance);
+                inp.addEventListener('focus', function() { if(this.value == "0") this.value = ""; });
+                inp.addEventListener('blur', function() { if(this.value == "") this.value = "0"; });
+            });
+            document.getElementById('form-pay-modal').onsubmit = submitPayment;
+        }
+        
+        document.getElementById('pay-modal-id').innerText = order.id;
+        document.getElementById('pay-input-order-id').value = order.id;
+        document.getElementById('pay-modal-total').innerText = 'Gs. ' + new Intl.NumberFormat('es-PY').format(order.total);
+        document.getElementById('pay-modal-total').dataset.total = order.total;
+        
+        document.querySelectorAll('.pay-input').forEach(inp => inp.value = 0);
+        const firstInput = document.querySelector(`.pay-input[data-method="${order.payment_method}"]`);
+        if (firstInput) firstInput.value = order.total;
+        
+        calculatePayBalance();
+        qaModal.hide();
+        payModal.show();
+    }
+
+    function calculatePayBalance() {
+        const total = parseFloat(document.getElementById('pay-modal-total').dataset.total);
+        let paid = 0;
+        document.querySelectorAll('.pay-input').forEach(inp => paid += parseFloat(inp.value) || 0);
+        const remaining = total - paid;
+        const display = document.getElementById('pay-balance-display');
+        const card = document.getElementById('pay-balance-card');
+        const label = document.getElementById('pay-balance-label');
+        
+        card.style.backgroundColor = '#fff';
+        if (remaining > 0) {
+            label.innerText = 'RESTA COBRAR';
+            display.innerText = 'Gs. ' + new Intl.NumberFormat('es-PY').format(remaining);
+            display.className = 'mb-0 fw-bold text-danger';
+        } else if (remaining < 0) {
+            label.innerText = 'VUELTO';
+            display.innerText = 'Gs. ' + new Intl.NumberFormat('es-PY').format(Math.abs(remaining));
+            display.className = 'mb-0 fw-bold text-primary';
+        } else {
+            label.innerText = 'ESTADO';
+            display.innerText = 'MONTO EXACTO ✅';
+            display.className = 'mb-0 fw-bold text-success';
+        }
+    }
+
+    window.fillRemainingPay = function(method) {
+        const total = parseFloat(document.getElementById('pay-modal-total').dataset.total);
+        let otherPaid = 0;
+        document.querySelectorAll('.pay-input').forEach(inp => {
+            if (inp.dataset.method !== method) otherPaid += parseFloat(inp.value) || 0;
+        });
+        document.querySelector(`.pay-input[data-method="${method}"]`).value = Math.max(0, total - otherPaid);
+        calculatePayBalance();
+    };
+
+    async function submitPayment(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const btn = document.getElementById('pay-btn-submit');
+        btn.disabled = true;
+        
+        try {
+            const resp = await fetch('?route=orders_process_finalize', {
+                method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const res = await resp.json();
+            if (res.success) {
+                Toast.fire("Cobro registrado", "success");
+                payModal.hide();
+                refreshOrders(true);
+            } else {
+                Toast.fire(res.message || "Error", "error");
+                btn.disabled = false;
+            }
+        } catch(e) { Toast.fire("Error de red", "error"); btn.disabled = false; }
     }
 
     /**
@@ -813,9 +1203,50 @@ if (empty($orders) && $hasFilter):
         // Si hay un SweetAlert abierto, dejamos que él maneje el teclado (Enter/Esc)
         if (window.Swal && Swal.isVisible()) return;
 
-        const modalEl = document.getElementById('quickActionsModal');
-        const isModalOpen = modalEl && modalEl.classList.contains('show');
+        const detailModalEl = document.getElementById('modalOrderDetail');
+        const payModalEl = document.getElementById('modalPayOrder');
+        const qaModalEl = document.getElementById('quickActionsModal');
+        const pendingModalEl = document.getElementById('modalPendingOrders');
+        
+        const isDetailModalOpen = detailModalEl && detailModalEl.classList.contains('show');
+        const isPayModalOpen = payModalEl && payModalEl.classList.contains('show');
+        const isQAModalOpen = qaModalEl && qaModalEl.classList.contains('show');
+        const isPendingModalOpen = pendingModalEl && pendingModalEl.classList.contains('show');
 
+        // Manejo de la tecla Escape con jerarquía de cierre
+        if (e.key === 'Escape') {
+            if (isDetailModalOpen) {
+                bootstrap.Modal.getInstance(detailModalEl).hide();
+                return;
+            }
+            if (isPayModalOpen) {
+                bootstrap.Modal.getInstance(payModalEl).hide();
+                return;
+            }
+            if (isPendingModalOpen) {
+                bootstrap.Modal.getInstance(pendingModalEl).hide();
+                return;
+            }
+            if (isQAModalOpen) {
+                qaModal.hide();
+                return;
+            }
+        }
+
+        // Bloquear navegación inferior o atajos de filtro si hay modales informativos/de proceso abiertos
+        if (isDetailModalOpen || isPayModalOpen) return;
+
+        // 1. Navegación en el Modal de Pedidos Pendientes (Nuevo)
+        if (isPendingModalOpen) {
+            const pendingBtns = Array.from(pendingModalEl.querySelectorAll('.btn-generate-ticket'));
+            if (pendingBtns.length === 0) return;
+            let pIdx = pendingBtns.indexOf(document.activeElement);
+            if (e.key === 'ArrowDown') { e.preventDefault(); pIdx = (pIdx + 1) % pendingBtns.length; pendingBtns[pIdx].focus(); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); pIdx = (pIdx - 1 + pendingBtns.length) % pendingBtns.length; pendingBtns[pIdx].focus(); }
+            return;
+        }
+
+        // 2. Atajos de filtros (Alt + 1-4)
         if (e.altKey && ['1', '2', '3', '4'].includes(e.key)) {
             e.preventDefault();
             const filterForm = document.querySelector('.filter-form');
@@ -839,9 +1270,9 @@ if (empty($orders) && $hasFilter):
             return;
         }
 
-        if (isModalOpen) {
+        if (isQAModalOpen) {
             const selectors = ['#qa-btn-58', '#qa-btn-80', '#qa-btn-quick-invoice', '#qa-delivery-select', '#qa-btn-assign', '#qa-btn-pay', '#qa-btn-view', '#qa-btn-close'];
-            const modalNavElements = selectors.map(s => modalEl.querySelector(s)).filter(el => el && el.offsetParent !== null);
+            const modalNavElements = selectors.map(s => qaModalEl.querySelector(s)).filter(el => el && el.offsetParent !== null);
             let currentIdx = modalNavElements.indexOf(document.activeElement);
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
@@ -865,7 +1296,8 @@ if (empty($orders) && $hasFilter):
             if (focusedBtnIndex < btns.length - 1) {
                 focusedBtnIndex++;
                 btns[focusedBtnIndex].focus();
-                btns[focusedBtnIndex].closest('tr').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                const row = btns[focusedBtnIndex].closest('tr');
+                if (row) row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             } else {
                 const tr = btns[focusedBtnIndex].closest('tr');
                 tr.classList.add('limit-reached-down');
@@ -876,7 +1308,8 @@ if (empty($orders) && $hasFilter):
             if (focusedBtnIndex > 0) {
                 focusedBtnIndex--;
                 btns[focusedBtnIndex].focus();
-                btns[focusedBtnIndex].closest('tr').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                const row = btns[focusedBtnIndex].closest('tr');
+                if (row) row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             } else {
                 const tr = btns[focusedBtnIndex].closest('tr');
                 tr.classList.add('limit-reached-up');
@@ -1008,6 +1441,18 @@ if (empty($orders) && $hasFilter):
             document.getElementById('count-shipped').innerText = newCounts.shipped || 0;
             document.getElementById('count-completed').innerText = newCounts.completed || 0;
             document.getElementById('count-cancelled').innerText = newCounts.cancelled || 0;
+
+            // Sincronizar modal de acciones si está abierto para actualizar progreso en vivo
+            const qaModalEl = document.getElementById('quickActionsModal');
+            if (qaModalEl && qaModalEl.classList.contains('show')) {
+                const titleText = document.getElementById('qa-title').innerText;
+                const idMatch = titleText.match(/#(\d+)/);
+                if (idMatch) {
+                    const currentQAId = idMatch[1];
+                    const updatedOrder = data.find(o => o.id == currentQAId);
+                    if (updatedOrder) renderQuickActions(updatedOrder);
+                }
+            }
 
             restoreFocusAfterRefresh();
             if (hasNewOrders) {

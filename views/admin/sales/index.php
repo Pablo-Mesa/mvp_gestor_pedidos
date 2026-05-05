@@ -190,6 +190,12 @@ let tableBtnIndex = -1;
  * Si no la tiene, fuerza la impresión y luego procede.
  */
 async function generateInvoiceWithComandaCheck(orderId, status, docType) {
+    const row = document.querySelector(`tr[data-order-id="${orderId}"]`) || document.activeElement.closest('tr');
+    if (row) {
+        const buttons = row.querySelectorAll('.btn-generate-ticket');
+        buttons.forEach(btn => { btn.classList.add('disabled'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; });
+    }
+
     const finalizeUrl = `?route=orders_finalize&id=${orderId}&quick=1&doc_type=${docType}`;
     
     if (status === 'pending') {

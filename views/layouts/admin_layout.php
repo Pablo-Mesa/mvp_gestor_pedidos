@@ -433,6 +433,7 @@
             printFrame.onload = function() {
                 printFrame.contentWindow.focus();
                 printFrame.contentWindow.print();
+                printFrame.onload = null; // Limpiar listener para evitar ejecuciones dobles
             };
 
             // Iniciamos la carga del ticket
@@ -442,9 +443,10 @@
         function printSaleTicket(saleId, format = '80mm', overrideDocType = null) {
             const printFrame = document.getElementById('printFrame');
             
-            printFrame.onload = function() {
+            printFrame.onload = () => {
                 printFrame.contentWindow.focus();
                 printFrame.contentWindow.print();
+                printFrame.onload = null; // Limpiar listener
             };
             
             let url = `?route=sales_ticket&id=${saleId}&format=${format}`;

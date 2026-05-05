@@ -61,7 +61,7 @@
             </table>
         </div>
     </div>
-
+    
     <!-- Columna Derecha: Estado y Entrega -->
     <div style="width: 350px; flex-shrink: 0;">
         

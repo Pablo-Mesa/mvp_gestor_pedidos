@@ -470,6 +470,13 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="<?php echo $baseUrl; ?>js/toast.js"></script> <!-- JS de Alertas -->
     <script>
+        // Fix Global: Evita que Bootstrap le robe el foco a SweetAlert2 cuando se lanza desde un modal
+        document.addEventListener('focusin', (e) => {
+            if (e.target.closest('.swal2-container')) {
+                e.stopImmediatePropagation();
+            }
+        }, true);
+
         if(document.getElementById('here_cube')) {
             // En el admin, si no hay logo, dibujamos el cubo un poco más pequeño para el sidebar
             drawCube("here_cube", true, "24px");
@@ -494,6 +501,9 @@
             link.className = 'btn ' + (options.btnClass || 'btn-danger');
             
             modal.style.display = 'flex';
+
+            // Foco automático en el botón de confirmar para accesibilidad por teclado
+            setTimeout(() => link.focus(), 100);
         }
 
         function closeConfirmModal() {

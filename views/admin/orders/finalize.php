@@ -268,7 +268,8 @@ document.addEventListener('DOMContentLoaded', function() {
             confirmButtonColor: '#00b894',
             cancelButtonColor: '#6c757d',
             confirmButtonText: 'Sí, finalizar venta',
-            cancelButtonText: 'No, revisar'
+            cancelButtonText: 'No, revisar',
+            didOpen: () => { Swal.getConfirmButton().focus(); }
         }).then((result) => {
             if (result.isConfirmed) {
                 // Ajuste automático: Si el cajero ingresó un billete grande (ej: 100k para deuda 86k),

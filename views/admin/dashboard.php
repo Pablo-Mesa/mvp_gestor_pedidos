@@ -285,7 +285,11 @@
     <?php endif; ?>
 
     <!-- Desempeño por Canal -->
-    <h2 class="section-area-title"><i class="fas fa-project-diagram"></i> Rendimiento por Fuente</h2>
+    <h2 class="section-area-title">
+        <i class="fas fa-project-diagram"></i> Rendimiento por Fuente
+    </h2>
+    
+    <!-- Estadisticas Canales Recepcion Pedidos -->
     <div class="stats-grid channels">
         <!-- web -->
         <div class="stat-card web">
@@ -294,10 +298,11 @@
                 <h3>Ingresos Canal Web</h3>
                 <p class="stat-value">Gs. <?php echo number_format($data['web_income'] ?? 0, 0, ',', '.'); ?></p>
                 <small style="color: #7950f2; font-weight: bold; font-size: 0.75rem;">
-                    Comisión Solver (10%): Gs. <?php echo number_format(($data['web_income'] ?? 0) * 0.10, 0, ',', '.'); ?>
+                    Comisión Solver (10%): Gs. <?php echo number_format(($data['web_income'] ?? 0) * 0.10, 0, ',', '.'); ?><br />(Solo Pagados)
                 </small>
             </div>
         </div>
+
         <!-- mostrador -->
         <div class="stat-card local">
             <div class="stat-icon"><i class="fas fa-cash-register"></i></div>
@@ -305,10 +310,11 @@
                 <h3>Ingresos Mostrador</h3>
                 <p class="stat-value">Gs. <?php echo number_format($data['local_income'] ?? 0, 0, ',', '.'); ?></p>
                 <small class="text-success" style="font-size: 0.7rem; font-weight: bold;">
-                    <i class="fas fa-check-circle"></i> Herramienta gratuita Solver
-                </small>
+                    <i class="fas fa-check-circle"></i> Comisión Solver (0%).<br />No genera costos al local.
+                </small>                
             </div>
         </div>
+
         <!-- mozos -->
         <div class="stat-card waiter">
             <div class="stat-icon"><i class="fas fa-user-tie"></i></div>
@@ -316,52 +322,60 @@
                 <h3>Ingresos Mozos (Mesas)</h3>
                 <p class="stat-value">Gs. <?php echo number_format($data['waiter_income'] ?? 0, 0, ',', '.'); ?></p>
                 <small class="text-success" style="font-size: 0.7rem; font-weight: bold;">
-                    <i class="fas fa-check-circle"></i> Sin costos para el local
-                </small>
+                    <i class="fas fa-check-circle"></i> Comisión Solver (0%).<br />No genera costos al local.
+                </small>                
             </div>
         </div>
     </div>
 
-    <!-- Gestión de Tesorería -->
-    <h2 class="section-area-title"><i class="fas fa-vault"></i> Tesorería y Movimientos</h2>
-    <div class="stats-grid channels">
-        <?php if($data['active_session']): ?>
-            <!-- Balance de Caja -->
-            <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-cash-register"></i></div>
-                <div class="stat-info">
-                    <h3>Sesión en <?php echo htmlspecialchars($data['active_session']['cash_station']); ?></h3>
-                    <p class="stat-value">Gs. <?php echo number_format($data['session_expected'] ?? 0, 0, ',', '.'); ?></p>
-                    <small class="text-muted" style="font-size: 0.7rem;">Saldo esperado en efectivo</small>
-                </div>
+    <!-- Monitor Global de Tesorería -->
+    <h2 class="section-area-title"><i class="fas fa-vault"></i> Monitor Global de Cajas Abiertas</h2>
+    <div class="card shadow-sm border-0 mb-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Estación / Punto</th>
+                            <th>Cajero Responsable</th>
+                            <th class="text-end">Fondo Inicial</th>
+                            <th class="text-end">Ingresos</th>
+                            <th class="text-end">Egresos</th>
+                            <th class="text-end pe-4">Saldo en Efectivo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if($data['active_session']): ?>
+                            <tr>
+                                <td class="ps-4">
+                                    <span class="badge bg-light text-dark border py-2 px-3">
+                                        <i class="fas fa-desktop me-1"></i> <?php echo htmlspecialchars($data['active_session']['cash_station']); ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="stat-icon me-2" style="width: 30px; height: 30px; font-size: 0.8rem; background: #e3f2fd; color: #0984e3;"><i class="fas fa-user-tie"></i></div>
+                                        <span class="fw-bold"><?php echo htmlspecialchars($_SESSION['user_name']); ?></span>
+                                    </div>
+                                </td>
+                                <td class="text-end text-muted">Gs. <?php echo number_format($data['active_session']['opening_amount'] ?? 0, 0, ',', '.'); ?></td>
+                                <td class="text-end text-success fw-bold">+ Gs. <?php echo number_format($data['session_ingress'] ?? 0, 0, ',', '.'); ?></td>
+                                <td class="text-end text-danger fw-bold">- Gs. <?php echo number_format($data['session_egress'] ?? 0, 0, ',', '.'); ?></td>
+                                <td class="text-end pe-4 fw-bold text-primary" style="font-size: 1rem;">Gs. <?php echo number_format($data['session_expected'] ?? 0, 0, ',', '.'); ?></td>
+                            </tr>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="fas fa-lock fa-2x mb-3 d-block"></i>
+                                    <p class="mb-0 fw-bold">No se detectan sesiones de caja abiertas en este momento.</p>
+                                    <a href="?route=cash" class="btn btn-sm btn-outline-primary mt-2">Gestionar Aperturas</a>
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
-            <!-- Ingresos -->
-            <div class="stat-card">
-                <div class="stat-icon" style="color: #28a745; background: #ebfbee;"><i class="fas fa-arrow-up"></i></div>
-                <div class="stat-info">
-                    <h3>Ingresos de Sesión</h3>
-                    <p class="stat-value">Gs. <?php echo number_format($data['session_ingress'] ?? 0, 0, ',', '.'); ?></p>
-                    <small class="text-muted" style="font-size: 0.7rem;">Solo esta sesión</small>
-                </div>
-            </div>
-            <!-- Egresos -->
-            <div class="stat-card">
-                <div class="stat-icon" style="color: #dc3545; background: #fff5f5;"><i class="fas fa-arrow-down"></i></div>
-                <div class="stat-info">
-                    <h3>Egresos / Gastos</h3>
-                    <p class="stat-value">Gs. <?php echo number_format($data['session_egress'] ?? 0, 0, ',', '.'); ?></p>
-                    <small class="text-muted" style="font-size: 0.7rem;">Solo esta sesión</small>
-                </div>
-            </div>
-        <?php else: ?>
-            <div class="stat-card" style="grid-column: span 3; justify-content: center; border-style: dashed; background: #f8f9fa;">
-                <div class="text-center py-2">
-                    <i class="fas fa-lock text-muted mb-2" style="font-size: 1.5rem;"></i>
-                    <p class="mb-0 text-muted fw-bold">No hay una sesión de caja activa para tu usuario.</p>
-                    <a href="?route=cash" class="btn btn-sm btn-primary mt-2">Realizar Apertura</a>
-                </div>
-            </div>
-        <?php endif; ?>
+        </div>
     </div>
 
     <!-- Listado de Movimientos Recientes -->
@@ -369,22 +383,39 @@
     <div class="stats-grid" style="grid-template-columns: 1fr;">
          <div class="stat-card" style="display: block; padding: 0;">
             <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
-                <h3 class="mb-0 fw-bold" style="font-size: 0.85rem; text-transform: uppercase; color: #636e72;">Últimos Movimientos de la Sesión</h3>
+                <h3 class="mb-0 fw-bold" style="font-size: 0.85rem; text-transform: uppercase; color: #636e72;">Registro Global de Movimientos (Recientes)</h3>
                 <a href="?route=cash" class="btn btn-sm btn-outline-secondary" style="font-size: 0.7rem;">Ver Tesorería</a>
             </div>
             <div class="table-responsive">
-                <table class="table table-sm table-hover mb-0" style="font-size: 0.85rem;">
+                <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4" style="width: 100px;">Hora</th>
+                            <th>Cajero</th>
+                            <th>Descripción / Concepto</th>
+                            <th>Origen</th>
+                            <th class="text-end pe-4">Monto</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         <?php foreach($data['recent_movements'] as $mov): ?>
                             <tr>
-                                <td class="ps-4 py-2" style="width: 40px;">
-                                    <i class="fas <?php echo $mov['type'] === 'ingress' ? 'fa-circle-arrow-up text-success' : 'fa-circle-arrow-down text-danger'; ?>"></i>
+                                <td class="ps-4 py-3">
+                                    <span class="text-muted"><?php echo date('H:i', strtotime($mov['created_at'])); ?></span>
                                 </td>
-                                <td class="py-2">
-                                    <span class="fw-bold d-block text-dark"><?php echo htmlspecialchars($mov['description']); ?></span>
-                                    <small class="text-muted"><?php echo date('H:i', strtotime($mov['created_at'])); ?> • Fuente: <?php echo ucfirst($mov['source']); ?></small>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas <?php echo $mov['type'] === 'ingress' ? 'fa-circle-arrow-up text-success' : 'fa-circle-arrow-down text-danger'; ?> me-2"></i>
+                                        <span class="fw-bold"><?php echo htmlspecialchars($mov['user_name'] ?? 'Staff'); ?></span>
+                                    </div>
                                 </td>
-                                <td class="text-end pe-4 py-2 fw-bold text-dark">
+                                <td>
+                                    <span class="text-dark"><?php echo htmlspecialchars($mov['description']); ?></span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-secondary border"><?php echo ucfirst($mov['source']); ?></span>
+                                </td>
+                                <td class="text-end pe-4 py-2 fw-bold <?php echo $mov['type'] === 'ingress' ? 'text-success' : 'text-danger'; ?>">
                                     <?php echo $mov['type'] === 'ingress' ? '+' : '-'; ?> Gs. <?php echo number_format($mov['amount'], 0, ',', '.'); ?>
                                 </td>
                             </tr>
@@ -395,6 +426,7 @@
          </div>
     </div>
     <?php endif; ?>
+
 
     <!-- Resumen Operativo (Estilo Barra Compacta) -->
     <div class="stats-grid summary">

@@ -591,7 +591,8 @@ if (empty($orders) && $hasFilter):
                 cancelButtonText: 'No, volver',
                 allowEscapeKey: true,
                 allowOutsideClick: true,
-                keydownListenerCapture: true
+                keydownListenerCapture: true,
+                didOpen: () => { Swal.getConfirmButton().focus(); }
             });
 
             if (!result.isConfirmed) {

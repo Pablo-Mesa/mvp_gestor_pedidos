@@ -311,7 +311,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 confirmButtonText: 'Confirmar e Iniciar',
                 cancelButtonText: 'Revisar',
                 confirmButtonColor: '#0d6efd',
-                reverseButtons: true
+                reverseButtons: true,
+                didOpen: () => { Swal.getConfirmButton().focus(); }
             }).then((result) => {
                 if (result.isConfirmed) this.submit();
             });

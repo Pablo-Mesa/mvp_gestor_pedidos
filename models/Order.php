@@ -554,11 +554,13 @@ class Order {
         $stmt1->execute([':date' => $target_date]);
         $stats['pending_orders'] = $stmt1->fetchColumn();
 
-        // Ingresos desglosados por Canal
-        $q2 = "SELECT channel_id, SUM(total) as income, COUNT(id) as qty 
-               FROM " . $this->table . " 
-               WHERE DATE(created_at) = :date AND status NOT IN ('cancelled', 'rejected')
-               GROUP BY channel_id";
+        // Ingresos desglosados por Canal (Solo ventas con factura activa y pago registrado)
+        $q2 = "SELECT o.channel_id, SUM(o.total) as income, COUNT(o.id) as qty 
+               FROM " . $this->table . " o
+               INNER JOIN pos_ventas_cabecera v ON o.id = v.order_id
+               INNER JOIN pagos p ON v.id = p.venta_id
+               WHERE DATE(o.created_at) = :date AND o.status NOT IN ('cancelled', 'rejected') AND v.estado = 1
+               GROUP BY o.channel_id";
         $stmt2 = $this->conn->prepare($q2);
         $stmt2->execute([':date' => $target_date]);
         
@@ -600,11 +602,14 @@ class Order {
             'chart' => []
         ];
 
-        // Ingresos y pedidos mensuales desglosados por canal
-        $q = "SELECT channel_id, SUM(total) as income, COUNT(id) as qty
-              FROM " . $this->table . "
-              WHERE status NOT IN ('cancelled', 'rejected') AND YEAR(created_at) = :y AND MONTH(created_at) = :m
-              GROUP BY channel_id";
+        // Ingresos y pedidos mensuales desglosados por canal (Solo ventas con factura activa y pago registrado)
+        $q = "SELECT o.channel_id, SUM(o.total) as income, COUNT(o.id) as qty
+              FROM " . $this->table . " o
+              INNER JOIN pos_ventas_cabecera v ON o.id = v.order_id
+              INNER JOIN pagos p ON v.id = p.venta_id
+              WHERE o.status NOT IN ('cancelled', 'rejected') AND v.estado = 1 
+              AND YEAR(o.created_at) = :y AND MONTH(o.created_at) = :m
+              GROUP BY o.channel_id";
         $stmt = $this->conn->prepare($q);
         $stmt->execute([':y' => $year, ':m' => $month]);
         
@@ -624,12 +629,15 @@ class Order {
         $stmtD->execute([':y' => $year, ':m' => $month]);
         $stats['dishes'] = $stmtD->fetchColumn() ?: 0;
 
-        // Desglose diario para el gráfico de barras
-        $qChart = "SELECT DAY(created_at) as day, SUM(total) as income 
-                   FROM " . $this->table . " 
-                   WHERE status NOT IN ('cancelled', 'rejected') AND YEAR(created_at) = :y AND MONTH(created_at) = :m
-                   GROUP BY DAY(created_at)
-                   ORDER BY DAY(created_at) ASC";
+        // Desglose diario para el gráfico de barras (Solo ventas con factura activa y pago registrado)
+        $qChart = "SELECT DAY(o.created_at) as day, SUM(o.total) as income 
+                   FROM " . $this->table . " o
+                   INNER JOIN pos_ventas_cabecera v ON o.id = v.order_id
+                   INNER JOIN pagos p ON v.id = p.venta_id
+                   WHERE o.status NOT IN ('cancelled', 'rejected') AND v.estado = 1 
+                   AND YEAR(o.created_at) = :y AND MONTH(o.created_at) = :m
+                   GROUP BY DAY(o.created_at)
+                   ORDER BY DAY(o.created_at) ASC";
         $stmtChart = $this->conn->prepare($qChart);
         $stmtChart->execute([':y' => $year, ':m' => $month]);
         $stats['chart'] = $stmtChart->fetchAll(PDO::FETCH_ASSOC);

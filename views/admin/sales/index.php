@@ -202,7 +202,8 @@ async function generateInvoiceWithComandaCheck(orderId, status, docType) {
             cancelButtonText: 'Cancelar',
             allowEscapeKey: true,
             allowOutsideClick: true,
-            keydownListenerCapture: true
+            keydownListenerCapture: true,
+            didOpen: () => { Swal.getConfirmButton().focus(); }
         });
 
         if (result.isConfirmed) {
@@ -277,7 +278,8 @@ function openSaleQuickActions(sale) {
                     cancelButtonText: 'Cerrar',
                     allowEscapeKey: true,
                     allowOutsideClick: true,
-                    keydownListenerCapture: true
+                    keydownListenerCapture: true,
+                    didOpen: () => { Swal.getConfirmButton().focus(); }
                 }).then((result) => {
                     if (result.isConfirmed) window.location.href = '?route=cash';
                 });
@@ -321,7 +323,8 @@ function openSaleQuickActions(sale) {
                 confirmButtonText: 'Sí, generar factura',
                 cancelButtonText: 'Cancelar',
                 allowEscapeKey: true,
-                keydownListenerCapture: true
+                keydownListenerCapture: true,
+                didOpen: () => { Swal.getConfirmButton().focus(); }
             });
 
             if (result.isConfirmed) {

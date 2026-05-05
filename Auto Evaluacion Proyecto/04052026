@@ -37,4 +37,8 @@ Backups Automatizados: Si el servidor falla, el local pierde su facturación del
 Resumen de Evaluación
 ¿Cubre lo que dice hacer? Sí. El núcleo de toma de pedidos y gestión de estados es funcional y sigue buenos lineamientos de arquitectura (Modelos "gordos", controladores "delgados").
 
-¿Está listo para producción comercial? No todavía. Está en una etapa de MVP Avanzado. Es perfecto para una "Prueba Beta" con un local de confianza, pero antes de cobrar una suscripción a terceros, yo priorizaría la Multi-tenancy y las Notificaciones en tiempo real.
+¿Está listo para producción comercial? No todavía. 
+Está en una etapa de MVP Avanzado.
+Es perfecto para una "Prueba Beta" con un local de confianza, 
+pero antes de cobrar una suscripción a terceros, yo priorizaría la Multi-tenancy y
+las Notificaciones en tiempo real.

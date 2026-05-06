@@ -236,6 +236,23 @@
         transform: translateY(-4px);
     }
 
+    /* Estilos para tabla con scroll interno y cabecera fija */
+    .table-fixed-scroll {
+        max-height: 350px;
+        overflow-y: auto;
+        border-radius: 0 0 12px 12px;
+    }
+
+    .table-fixed-scroll thead th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: #f8f9fa !important; /* Color table-light */
+        padding-top: 8px !important;
+        padding-bottom: 8px !important;
+        box-shadow: inset 0 -1px 0 #dee2e6;
+    }
+
     @media (max-width: 768px) {
         .stats-grid { grid-template-columns: 1fr; }
         .actions-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
@@ -386,7 +403,7 @@
                 <h3 class="mb-0 fw-bold" style="font-size: 0.85rem; text-transform: uppercase; color: #636e72;">Registro Global de Movimientos (Recientes)</h3>
                 <a href="?route=cash" class="btn btn-sm btn-outline-secondary" style="font-size: 0.7rem;">Ver Tesorería</a>
             </div>
-            <div class="table-responsive">
+            <div class="table-responsive table-fixed-scroll">
                 <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
                     <thead class="table-light">
                         <tr>

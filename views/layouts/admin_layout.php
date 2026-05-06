@@ -311,7 +311,6 @@
                     ['route' => 'settings_location', 'label' => 'Ajustes de Ubicación', 'icon' => 'fas fa-map-marker-alt'],
                     ['route' => 'users',             'label' => 'Staff / Usuarios',     'icon' => 'fas fa-users'],
                     ['route' => 'shortcuts',         'label' => 'Atajos de Teclado',    'icon' => 'fas fa-keyboard', 'roles' => ['admin', 'cajero']],
-                    ['route' => 'test_limpio',       'label' => 'Vista Limpia (Test)',  'icon' => 'fas fa-vial'],
                 ]
             ],
         ];

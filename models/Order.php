@@ -412,6 +412,13 @@ class Order {
             if ($existingVenta) {
                 $ventaId = $existingVenta['id'];
                 
+                // MEJORA: Si se solicita Factura y el registro actual es un Ticket (formalización legal)
+                if ($docType === 'factura') {
+                    $qUpgrade = "UPDATE pos_ventas_cabecera SET nro_factura = REPLACE(nro_factura, 'TK-', 'FAC-') 
+                                WHERE id = :vid AND nro_factura LIKE 'TK-%'";
+                    $this->conn->prepare($qUpgrade)->execute([':vid' => $ventaId]);
+                }
+
                 // Validar si ya existe un pago para esta venta para evitar duplicidad
                 $qCheckPago = "SELECT id FROM pagos WHERE venta_id = :vid LIMIT 1";
                 $stCheckPago = $this->conn->prepare($qCheckPago);

@@ -569,7 +569,17 @@ function initMapForOrder(order) {
     if (!container || container._leaflet_id) return; // Evitar reinicializar si ya existe
 
     // Ajuste de zoom y centrado
-    const map = L.map(mapId, { zoomControl: false, dragging: true, touchZoom: true, scrollWheelZoom: false }).setView([order.delivery_lat, order.delivery_lng], 16);
+    const map = L.map(mapId, { 
+        zoomControl: false, 
+        dragging: false,      // Deshabilita el movimiento del mapa
+        touchZoom: false,     // Deshabilita el zoom con dos dedos
+        scrollWheelZoom: false,
+        doubleClickZoom: false,
+        boxZoom: false,
+        keyboard: false,
+        tap: false            // Evita que Leaflet capture eventos de toque que deberían ser scroll
+    }).setView([order.delivery_lat, order.delivery_lng], 16);
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     const markerIcon = L.divIcon({
         className: 'custom-div-icon',

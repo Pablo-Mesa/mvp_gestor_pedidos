@@ -607,11 +607,6 @@ switch ($route) {
         $controller->delete();
         break;
 
-    case 'test_limpio':
-        // Servir el archivo HTML refactorizado para pruebas de diseño
-        require_once 'html_en_bruto.html';
-        break;
-
     default:
         echo "Ruta no encontrada.";
         break;

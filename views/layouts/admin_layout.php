@@ -252,8 +252,9 @@
         $user_role = $_SESSION['user_role'] ?? 'staff';
 
         $menu_structure = [
-            ['route' => 'admin',       'label' => 'Dashboard',        'icon' => 'fas fa-chart-pie', 'roles' => ['admin', 'cajero']],
+            ['route' => 'admin',       'label' => 'Dashboard',        'icon' => 'fas fa-chart-pie', 'roles' => ['admin']],
             ['route' => 'pos',         'label' => 'Recepción',        'icon' => 'fas fa-concierge-bell', 'roles' => ['admin', 'cajero']],            
+            ['route' => 'admin_mozo_monitor', 'label' => 'Monitoreo de Salón', 'icon' => 'fas fa-desktop', 'roles' => ['admin', 'cajero']],
             [
                 'label' => 'Pedidos',
                 'icon' => 'fas fa-box',
@@ -271,7 +272,7 @@
                 'id' => 'menuTreasury',
                 'roles' => ['admin', 'cajero'],
                 'children' => [
-                    ['route' => 'cash',           'label' => 'Apertura y Cierre', 'icon' => 'fas fa-key'],
+                    ['route' => 'cash',           'label' => 'Apertura y Cierre', 'icon' => 'fas fa-key', 'roles' => ['admin']],
                     ['route' => 'sales_history',  'label' => 'Facturación / Tickets', 'icon' => 'fas fa-file-invoice-dollar'],
                     ['route' => 'payments_report','label' => 'Pagos Recibidos',   'icon' => 'fas fa-money-check-alt'],
                 ]
@@ -304,11 +305,11 @@
                 'roles' => ['admin'],
                 'children' => [
                     ['route' => 'empresa',          'label' => 'Datos de Empresa',     'icon' => 'fas fa-building'],
-                    ['route' => 'settings_contact',  'label' => 'Canales de Contacto',  'icon' => 'fas fa-phone-volume'],
                     ['route' => 'settings',          'label' => 'Ajustes de Marca',     'icon' => 'fas fa-brush'],
-                    ['route' => 'settings_checkout', 'label' => 'Ajustes de Checkout',  'icon' => 'fas fa-shopping-cart'],
-                    ['route' => 'hero_promos',       'label' => 'Hero Promo',           'icon' => 'fas fa-palette'],
                     ['route' => 'settings_location', 'label' => 'Ajustes de Ubicación', 'icon' => 'fas fa-map-marker-alt'],
+                    ['route' => 'hero_promos',       'label' => 'Horarios de Atención', 'icon' => 'fas fa-clock'],
+                    ['route' => 'settings_contact',  'label' => 'Canales de Contacto',  'icon' => 'fas fa-phone-volume'],
+                    ['route' => 'settings_checkout', 'label' => 'Ajustes de Checkout',  'icon' => 'fas fa-shopping-cart'],
                     ['route' => 'users',             'label' => 'Staff / Usuarios',     'icon' => 'fas fa-users'],
                     ['route' => 'shortcuts',         'label' => 'Atajos de Teclado',    'icon' => 'fas fa-keyboard', 'roles' => ['admin', 'cajero']],
                 ]
@@ -332,7 +333,8 @@
                         <a class="menu-header-link <?php echo $is_child_active ? 'active-link' : ''; ?>" 
                            data-bs-toggle="collapse" href="#sub_<?php echo $item['id']; ?>">
                             <i class="<?php echo $item['icon']; ?> me-2"></i> <?php echo $item['label']; ?>
-                            <i class="fas fa-chevron-down float-end mt-1" style="font-size: 0.7rem;"></i>
+                            <i class="fas fa-chevron-down float-end mt-1 ms-2" style="font-size: 0.7rem;"></i>
+
                             <?php if(isset($item['badge_id'])): ?>
                                 <span id="<?php echo $item['badge_id']; ?>" class="badge rounded-pill bg-danger float-end mt-1 me-2" style="display:none; font-size: 0.7rem;">0</span>
                             <?php endif; ?>

@@ -1,227 +1,574 @@
-<!DOCTYPE html>
+<!doctype html>
+<html lang="es">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Landing - Fast Food</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-<html class="light" lang="es"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            "colors": {
-                    "surface-variant": "#e0e3e5",
-                    "on-primary": "#ffffff",
-                    "on-surface": "#181c1e",
-                    "tertiary": "#00233a",
-                    "on-background": "#181c1e",
-                    "on-secondary-fixed": "#002020",
-                    "error-container": "#ffdad6",
-                    "surface-bright": "#f7fafc",
-                    "secondary": "#446464",
-                    "outline": "#75777d",
-                    "on-primary-fixed": "#121c2c",
-                    "on-tertiary-fixed-variant": "#2a4a63",
-                    "on-secondary": "#ffffff",
-                    "tertiary-container": "#173952",
-                    "secondary-fixed": "#c6e9e9",
-                    "error": "#ba1a1a",
-                    "primary": "#182232",
-                    "background": "#f7fafc",
-                    "on-error": "#ffffff",
-                    "on-primary-fixed-variant": "#3d4759",
-                    "surface-container": "#ebeef0",
-                    "secondary-container": "#c6e9e9",
-                    "on-tertiary-container": "#83a3c0",
-                    "tertiary-fixed-dim": "#aacae9",
-                    "surface-container-highest": "#e0e3e5",
-                    "inverse-surface": "#2d3133",
-                    "inverse-on-surface": "#eef1f3",
-                    "surface-container-low": "#f1f4f6",
-                    "on-surface-variant": "#45474c",
-                    "surface-container-high": "#e5e9eb",
-                    "secondary-fixed-dim": "#abcdcd",
-                    "on-tertiary": "#ffffff",
-                    "primary-container": "#2d3748",
-                    "on-tertiary-fixed": "#001d31",
-                    "surface-tint": "#555f71",
-                    "surface-container-lowest": "#ffffff",
-                    "outline-variant": "#c5c6cd",
-                    "primary-fixed-dim": "#bdc7dc",
-                    "on-secondary-container": "#4a6a6a",
-                    "surface": "#f7fafc",
-                    "inverse-primary": "#bdc7dc",
-                    "tertiary-fixed": "#cce5ff",
-                    "on-error-container": "#93000a",
-                    "on-secondary-fixed-variant": "#2c4c4c",
-                    "surface-dim": "#d7dadc",
-                    "primary-fixed": "#d9e3f9",
-                    "on-primary-container": "#96a0b5"
-            },
-            "borderRadius": {
-                    "DEFAULT": "0.25rem",
-                    "lg": "0.5rem",
-                    "xl": "0.75rem",
-                    "full": "9999px"
-            },
-            "spacing": {
-                    "container-padding": "24px",
-                    "element-gap": "12px",
-                    "base": "8px",
-                    "section-gap": "48px",
-                    "gutter": "16px"
-            },
-            "fontFamily": {
-                    "headline-lg": ["Inter"],
-                    "label-sm": ["Inter"],
-                    "body-lg": ["Inter"],
-                    "body-md": ["Inter"],
-                    "headline-md": ["Inter"]
-            },
-            "fontSize": {
-                    "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600"}],
-                    "label-sm": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}],
-                    "body-lg": ["18px", {"lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400"}],
-                    "body-md": ["16px", {"lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400"}],
-                    "headline-md": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "500"}]
-            }
-          },
-        },
+    html, body, #app {
+      height: 100%;
+      width: 100%;
+    }
+
+    body {
+      overflow-x: hidden;
+    }
+
+    @font-face {
+      font-family: 'Geist';
+      src: url('https://cdn.jsdelivr.net/npm/geist@1.0.0/dist/fonts/geist-sans-regular.woff2') format('woff2');
+    }
+
+    @font-face {
+      font-family: 'Geist-Bold';
+      src: url('https://cdn.jsdelivr.net/npm/geist@1.0.0/dist/fonts/geist-sans-bold.woff2') format('woff2');
+    }
+
+    body {
+      font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .hero-gradient {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    }
+
+    .section-wave {
+      position: relative;
+      margin-bottom: -2px;
+    }
+
+    .section-wave svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .product-card {
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .product-card:hover {
+      transform: translateY(-8px);
+    }
+
+    .stat-counter {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .testimonial-card {
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .fade-in {
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
       }
-    </script>
-<style>
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
-    </style>
-</head>
-<body class="bg-background text-on-background font-body-md antialiased">
-<!-- Top Navigation (Shell Implementation) -->
-<header class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md docked full-width top-0 sticky z-50 border-b border-slate-100 dark:border-slate-800">
-<div class="flex justify-between items-center px-6 py-3 w-full max-w-7xl mx-auto font-['Inter'] antialiased">
-<span class="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50">Concierge Eats</span>
-<div class="flex items-center gap-4">
-<span class="material-symbols-outlined text-slate-500 dark:text-slate-400" data-icon="person">person</span>
-</div>
-</div>
-</header>
-<main class="min-h-screen flex flex-col items-center" id="closed-view-container">
-<!-- Hero Section -->
-<section class="w-full flex flex-col items-center justify-center py-section-gap px-container-padding text-center bg-surface-container-lowest">
-<div class="relative w-full max-w-4xl h-[400px] rounded-xl overflow-hidden mb-8 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
-<div class="absolute inset-0 bg-gradient-to-t from-primary/60 to-transparent z-10"></div>
-<img class="w-full h-full object-cover" data-alt="A sophisticated and serene view of a high-end restaurant interior during off-hours. The lighting is soft and moody, with warm glows from architectural features reflecting on polished dark surfaces. The color palette is dominated by deep slates, charcoals, and forest greens. The atmosphere is quiet, dependable, and premium, suggesting a temporary pause for rest and preparation in a professional concierge environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBK5FmqXgCw5qboeloysDPYfpGXrP4hNw4dqIJ23zyAkEOMj3Z2HUQCrwvaux_JIdqQK5NW-e20sLzzDp81dKQtjpWuXK-gfCLJUpw4F7eajlQzWIA8p6ws0-lekwmaZI2bVXbcwr7P9FflFVdGI1-onv26S_O7l--ISbbAhYauryc-Hhb_kUNcojGsiB5guNwpOdS-jVKq7tuwlLgafzIgKsCJNMeP9WQYSs0sOdZyFLnYg0_v7U2NONZNM3qORxzVDCdEy-DMivRC"/>
-<div class="absolute inset-0 z-20 flex flex-col items-center justify-center text-on-primary px-6">
-<span class="font-label-sm text-label-sm uppercase tracking-widest mb-4 opacity-90" id="display-site-name">Concierge Eats</span>
-<h1 class="font-headline-lg text-headline-lg mb-6">Estamos recargando energías</h1>
-<div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-6 py-3 rounded-full border border-white/30" id="display-next-opening">
-<span class="material-symbols-outlined" data-icon="schedule">schedule</span>
-<span class="font-headline-md text-body-lg">Abrimos nuevamente mañana a las 11:00 AM</span>
-</div>
-</div>
-</div>
-</section>
-<!-- Info Grid Section -->
-<section class="w-full max-w-7xl px-container-padding py-section-gap">
-<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
-<!-- Contact Card -->
-<div class="bg-surface-container-low rounded-xl p-8 border border-outline-variant flex flex-col items-center text-center">
-<span class="material-symbols-outlined text-secondary text-4xl mb-4" data-icon="contact_support">contact_support</span>
-<h3 class="font-headline-md text-headline-md mb-2">Contacto</h3>
-<p class="text-on-surface-variant mb-8">¿Tienes alguna duda o requerimiento especial?</p>
-<div class="flex flex-col w-full gap-3">
-<button class="w-full bg-primary text-on-primary py-3 rounded-lg font-medium flex items-center justify-center gap-2 hover:opacity-90 transition-opacity" id="btn-contact-whatsapp">
-<span class="material-symbols-outlined" data-icon="chat">chat</span>
-                            WhatsApp
-                        </button>
-<button class="w-full border border-primary text-primary py-3 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-surface-variant transition-colors" id="btn-contact-phone">
-<span class="material-symbols-outlined" data-icon="call">call</span>
-                            Llamar
-                        </button>
-</div>
-</div>
-<!-- Location Card -->
-<div class="bg-surface-container-low rounded-xl p-8 border border-outline-variant flex flex-col">
-<div class="flex items-center gap-3 mb-4">
-<span class="material-symbols-outlined text-secondary" data-icon="location_on">location_on</span>
-<h3 class="font-headline-md text-headline-md">Ubicación</h3>
-</div>
-<div class="w-full h-full min-h-[200px] bg-surface-variant rounded-lg overflow-hidden" id="map-iframe-container">
-<img class="w-full h-full object-cover" data-alt="A clean and minimalist digital map interface showing a premium urban district. The map uses a sophisticated color scheme of soft grays, whites, and subtle slate blues. A single, elegant forest green pin marks the location of the restaurant. The design is clear and functional, emphasizing the upscale metropolitan setting without visual clutter or unnecessary decorative elements." data-location="Madrid, Spain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtbhJgQSvIN6ZVcw22AnC_W51T0Od4Me_yRtpmoLkEfb5fiEO7bnA2rj4LJxBx4l_dn37fHHQECR_oo3kM0XtYnNpYdtE3sZonEWDViWFG3-CY0YSua1n8ZqRpo6azYFy1GVht2XWvgd7sTefLur3CxM8qmlTjG_7Y1YT-GqcF9pjbpobEao8GXWBt_uIaS42tlV7x2eJD245J09XY7m8bJWDF-UdxxqC4NhB0xdElmS-nVc5oogPkZsiJzSfzFHRxoK4cCnyULYOm"/>
-</div>
-</div>
-<!-- Schedule Card -->
-<div class="bg-surface-container-low rounded-xl p-8 border border-outline-variant flex flex-col">
-<div class="flex items-center gap-3 mb-6">
-<span class="material-symbols-outlined text-secondary" data-icon="calendar_today">calendar_today</span>
-<h3 class="font-headline-md text-headline-md">Horarios</h3>
-</div>
-<ul class="flex flex-col gap-3">
-<li class="schedule-list-item flex justify-between items-center py-2 border-b border-outline-variant/30 text-on-surface-variant">
-<span class="font-medium">Lunes - Jueves</span>
-<span class="text-sm">11:00 AM - 10:00 PM</span>
-</li>
-<li class="schedule-list-item flex justify-between items-center py-2 border-b border-outline-variant/30 text-on-surface font-semibold bg-white px-3 -mx-3 rounded-md">
-<span>Viernes</span>
-<span class="text-sm">Cerrado</span>
-</li>
-<li class="schedule-list-item flex justify-between items-center py-2 border-b border-outline-variant/30 text-on-surface-variant">
-<span class="font-medium">Sábado</span>
-<span class="text-sm">01:00 PM - 11:00 PM</span>
-</li>
-<li class="schedule-list-item flex justify-between items-center py-2 text-on-surface-variant">
-<span class="font-medium">Domingo</span>
-<span class="text-sm">12:00 PM - 09:00 PM</span>
-</li>
-</ul>
-</div>
-</div>
-</section>
-<!-- Testimonials Footer -->
-<section class="w-full bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 py-16 px-container-padding">
-<div class="max-w-4xl mx-auto flex flex-col items-center">
-<div class="w-12 h-1 bg-secondary/30 mb-8"></div>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-12">
-<div class="flex flex-col items-center text-center gap-4">
-<p class="font-body-lg text-body-lg italic text-slate-600 dark:text-slate-400">"La atención de Concierge Eats es impecable incluso cuando están cerrados. Siempre cumplen con sus tiempos."</p>
-<span class="font-label-sm text-label-sm text-secondary uppercase">— Julián V.</span>
-</div>
-<div class="flex flex-col items-center text-center gap-4">
-<p class="font-body-lg text-body-lg italic text-slate-600 dark:text-slate-400">"Calidad premium en cada entrega. Vale la pena esperar a que abran para disfrutar su menú."</p>
-<span class="font-label-sm text-label-sm text-secondary uppercase">— Mariana S.</span>
-</div>
-</div>
-</div>
-</section>
-</main>
-<!-- Footer Shell -->
-<footer class="w-full pt-12 pb-24 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800">
-<div class="flex flex-col items-center text-center gap-4 px-6 w-full font-['Inter'] italic text-sm text-slate-600 dark:text-slate-400">
-<div class="flex gap-6 mb-2">
-<a class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors" href="#">Terms of Service</a>
-<a class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors" href="#">Privacy Policy</a>
-<a class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors" href="#">Accessibility</a>
-</div>
-<p>© 2024 Concierge Eats. Dependable. Quiet. Premium.</p>
-</div>
-</footer>
-<!-- Bottom Navigation (Mobile Shell Implementation) -->
-<nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pt-2 pb-safe bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shadow-[0_-4px_20px_rgba(0,0,0,0.04)] z-50">
-<a class="flex flex-col items-center justify-center text-emerald-700 dark:text-emerald-400 transition-all font-['Inter'] text-[11px] font-medium tracking-wide" href="#">
-<span class="material-symbols-outlined" data-icon="home">home</span>
-<span>Home</span>
-</a>
-<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 transition-all font-['Inter'] text-[11px] font-medium tracking-wide" href="#">
-<span class="material-symbols-outlined" data-icon="search">search</span>
-<span>Search</span>
-</a>
-<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 transition-all font-['Inter'] text-[11px] font-medium tracking-wide" href="#">
-<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
-<span>Orders</span>
-</a>
-</nav>
-</body></html>
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .cta-button {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.2);
+      transition: left 0.5s ease;
+    }
+
+    .cta-button:hover::before {
+      left: 100%;
+    }
+
+    .service-icon {
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      background: var(--accent-color);
+      color: white;
+    }
+
+    .review-star {
+      color: var(--accent-color);
+    }
+
+    .sticky-nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(8px);
+      background: rgba(255, 255, 255, 0.95);
+    }
+
+    .menu-link {
+      position: relative;
+      color: var(--text-primary);
+      text-decoration: none;
+      padding-bottom: 4px;
+      transition: color 0.3s ease;
+    }
+
+    .menu-link::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--primary-color);
+      transition: width 0.3s ease;
+    }
+
+    .menu-link:hover::after {
+      width: 100%;
+    }
+
+    .delivery-badge {
+      background: var(--primary-color);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-block;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    @media (max-width: 768px) {
+      .stat-counter {
+        font-size: 2rem;
+      }
+
+      .hero-content h1 {
+        font-size: 2rem;
+      }
+    }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full w-full overflow-x-hidden">
+  <div id="app" class="w-full h-full overflow-auto bg-white">
+        
+        <!-- Navigation Sticky -->
+   <nav class="sticky-nav shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+     <div class="flex items-center gap-2">
+      <div class="w-10 h-10 rounded-lg" style="background: var(--primary-color);"></div><span class="font-bold text-lg hidden sm:inline" style="color: var(--text-primary);" id="nav-name">FastFood Co</span>
+     </div>
+     <div class="hidden md:flex gap-8"><a href="#productos" class="menu-link">Productos</a> <a href="#servicios" class="menu-link">Servicios</a> <a href="#resenas" class="menu-link">Reseñas</a> <a href="#contacto" class="menu-link">Contacto</a>
+     </div>
+     <div class="flex gap-2"><button class="px-4 py-2 text-sm font-medium rounded-lg transition-colors" style="color: var(--primary-color); border: 1px solid var(--primary-color);" onclick="scrollToSection('login')"> Ingresar </button> <button class="px-4 py-2 text-sm font-medium rounded-lg text-white transition-all cta-button" style="background: var(--primary-color);" onclick="scrollToSection('pedido')"> Hacer pedido </button>
+     </div>
+    </div>
+   </nav>
+   
+   <!-- Hero Section -->
+   <section class="hero-gradient text-white py-20 sm:py-32 relative overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+     <div class="grid md:grid-cols-2 gap-8 items-center"><!-- Content -->
+      <div class="hero-content fade-in">
+       <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4" id="hero-title">Comida que conecta</h1>
+       <p class="text-lg sm:text-xl mb-6 opacity-90" id="hero-subtitle">Recetas propias, ingredientes frescos cada día</p>
+       <div class="flex flex-wrap gap-2 mb-8"><span class="delivery-badge">Delivery rápido</span> <span class="delivery-badge">Pick up</span> <span class="delivery-badge">Múltiples pagos</span>
+       </div>
+       <p class="mb-8 text-base sm:text-lg opacity-85">Cada hamburguesa, sándwich y empanada es preparada con precisión. Nuestro compromiso: ingredientes del día, adaptación a tu gusto, sabor diferenciado en cada bocado.</p>
+       <div class="flex flex-col sm:flex-row gap-4"><button class="px-8 py-3 bg-white text-black font-semibold rounded-lg hover:shadow-lg transition-all cta-button" onclick="scrollToSection('pedido')"> Explorar menú </button> <button class="px-8 py-3 border-2 border-white text-white font-semibold rounded-lg hover:bg-white hover:text-black transition-all" onclick="scrollToSection('contacto')"> Saber más </button>
+       </div>
+      </div>
+      
+      <!-- Visual Stats -->
+      <div class="hidden md:grid grid-cols-2 gap-6">
+       <div class="bg-white bg-opacity-10 rounded-xl p-6 backdrop-filter backdrop-blur">
+        <div class="stat-counter mb-2">
+         500+
+        </div>
+        <p class="text-white opacity-80">Clientes satisfechos</p>
+       </div>
+       <div class="bg-white bg-opacity-10 rounded-xl p-6 backdrop-filter backdrop-blur">
+        <div class="stat-counter mb-2">
+         4.8★
+        </div>
+        <p class="text-white opacity-80">Calificación promedio</p>
+       </div>
+       <div class="bg-white bg-opacity-10 rounded-xl p-6 backdrop-filter backdrop-blur">
+        <div class="stat-counter mb-2">
+         15+
+        </div>
+        <p class="text-white opacity-80">Recetas propias</p>
+       </div>
+       <div class="bg-white bg-opacity-10 rounded-xl p-6 backdrop-filter backdrop-blur">
+        <div class="stat-counter mb-2">
+         30min
+        </div>
+        <p class="text-white opacity-80">Entrega promedio</p>
+       </div>
+      </div>
+     </div>
+    </div>
+    
+    <!-- Wave divider -->
+    <div class="section-wave absolute bottom-0 left-0 w-full">
+     <svg viewbox="0 0 1200 120" preserveaspectratio="none"><path d="M0,50 Q300,0 600,50 T1200,50 L1200,120 L0,120 Z" fill="white"></path>
+     </svg>
+    </div>
+   </section>
+   
+   <!-- Productos Destacados -->
+   <section id="productos" class="py-16 sm:py-24 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+     <div class="text-center mb-12 fade-in">
+      <h2 class="text-3xl sm:text-4xl font-bold mb-4" style="color: var(--text-primary);">Nuestros Favoritos</h2>
+      <p class="text-gray-600 text-lg max-w-2xl mx-auto">Cada producto es cuidadosamente preparado con ingredientes seleccionados del día</p>
+     </div>
+     <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6"><!-- Product Card Template -->
+      <div class="product-card bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg">
+       <div class="h-48 bg-gradient-to-br from-orange-200 to-orange-300 flex items-center justify-center text-5xl">
+        🍔
+       </div>
+       <div class="p-5">
+        <h3 class="font-bold text-lg mb-2" style="color: var(--text-primary);">Hamburguesa</h3>
+        <p class="text-gray-600 text-sm mb-4">Carne premium, pan artesanal, adaptable a tu gusto</p>
+        <div class="flex items-center gap-2"><span class="text-yellow-400">★★★★★</span> <span class="text-gray-500 text-sm">(128)</span>
+        </div>
+       </div>
+      </div>
+      <div class="product-card bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg">
+       <div class="h-48 bg-gradient-to-br from-amber-200 to-amber-300 flex items-center justify-center text-5xl">
+        🥪
+       </div>
+       <div class="p-5">
+        <h3 class="font-bold text-lg mb-2" style="color: var(--text-primary);">Sándwich</h3>
+        <p class="text-gray-600 text-sm mb-4">Combinaciones gourmet, ingredientes frescos</p>
+        <div class="flex items-center gap-2"><span class="text-yellow-400">★★★★★</span> <span class="text-gray-500 text-sm">(96)</span>
+        </div>
+       </div>
+      </div>
+      <div class="product-card bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg">
+       <div class="h-48 bg-gradient-to-br from-yellow-200 to-yellow-300 flex items-center justify-center text-5xl">
+        🥟
+       </div>
+       <div class="p-5">
+        <h3 class="font-bold text-lg mb-2" style="color: var(--text-primary);">Empanadas</h3>
+        <p class="text-gray-600 text-sm mb-4">Masa casera, rellenos variados y deliciosos</p>
+        <div class="flex items-center gap-2"><span class="text-yellow-400">★★★★★</span> <span class="text-gray-500 text-sm">(142)</span>
+        </div>
+       </div>
+      </div>
+      <div class="product-card bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg">
+       <div class="h-48 bg-gradient-to-br from-red-200 to-red-300 flex items-center justify-center text-5xl">
+        🍗
+       </div>
+       <div class="p-5">
+        <h3 class="font-bold text-lg mb-2" style="color: var(--text-primary);">Lomito</h3>
+        <p class="text-gray-600 text-sm mb-4">Corte premium, marinado con especias propias</p>
+        <div class="flex items-center gap-2"><span class="text-yellow-400">★★★★★</span> <span class="text-gray-500 text-sm">(87)</span>
+        </div>
+       </div>
+      </div>
+     </div>
+     <div class="text-center mt-12"><button class="px-8 py-3 font-semibold rounded-lg text-white transition-all cta-button" style="background: var(--primary-color);" onclick="scrollToSection('pedido')"> Ver todo el menú </button>
+     </div>
+    </div>
+   </section>
+   
+   <!-- Servicios y Diferenciales -->
+   <section id="servicios" class="py-16 sm:py-24 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+     <div class="text-center mb-12 fade-in">
+      <h2 class="text-3xl sm:text-4xl font-bold mb-4" style="color: var(--text-primary);">¿Por qué elegirnos?</h2>
+      <p class="text-gray-600 text-lg">Tres razones que hacen la diferencia</p>
+     </div>
+     <div class="grid md:grid-cols-3 gap-8"><!-- Diferencial 1 -->
+      <div class="text-center p-8 rounded-xl hover:bg-gray-50 transition-colors">
+       <div class="service-icon mx-auto mb-4"><i data-lucide="leaf" style="width: 28px; height: 28px;"></i>
+       </div>
+       <h3 class="font-bold text-xl mb-3" style="color: var(--text-primary);">Ingredientes Frescos</h3>
+       <p class="text-gray-600">Cada día compramos ingredientes nuevos. Nuestro compromiso es servir productos del día, nunca recalentados.</p>
+      </div><!-- Diferencial 2 -->
+      <div class="text-center p-8 rounded-xl hover:bg-gray-50 transition-colors">
+       <div class="service-icon mx-auto mb-4"><i data-lucide="palette" style="width: 28px; height: 28px;"></i>
+       </div>
+       <h3 class="font-bold text-xl mb-3" style="color: var(--text-primary);">Personalización Total</h3>
+       <p class="text-gray-600">Combina a tu gusto. Nuestras recetas propias son la base para que crees la comida que amas.</p>
+      </div><!-- Diferencial 3 -->
+      <div class="text-center p-8 rounded-xl hover:bg-gray-50 transition-colors">
+       <div class="service-icon mx-auto mb-4"><i data-lucide="zap" style="width: 28px; height: 28px;"></i>
+       </div>
+       <h3 class="font-bold text-xl mb-3" style="color: var(--text-primary);">Precisión y Sabor</h3>
+       <p class="text-gray-600">Nos enfocamos en la calidad de cada detalle. Tu pedido es hecho con precisión y amor.</p>
+      </div>
+     </div><!-- Servicios de Entrega -->
+     <div class="mt-16 grid md:grid-cols-2 gap-8">
+      <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-8 rounded-xl border-l-4" style="border-color: var(--primary-color);">
+       <div class="flex items-start gap-4">
+        <div class="service-icon flex-shrink-0" style="background: var(--primary-color);"><i data-lucide="truck" style="width: 28px; height: 28px;"></i>
+        </div>
+        <div>
+         <h3 class="font-bold text-lg mb-2" style="color: var(--text-primary);">Delivery Rápido</h3>
+         <p class="text-gray-700">Entrega en tu puerta en 30 minutos en promedio. Seguimiento en tiempo real de tu pedido.</p>
+        </div>
+       </div>
+      </div>
+      <div class="bg-gradient-to-br from-green-50 to-green-100 p-8 rounded-xl border-l-4" style="border-color: var(--secondary-color);">
+       <div class="flex items-start gap-4">
+        <div class="service-icon flex-shrink-0" style="background: var(--secondary-color);"><i data-lucide="shopping-bag" style="width: 28px; height: 28px;"></i>
+        </div>
+        <div>
+         <h3 class="font-bold text-lg mb-2" style="color: var(--text-primary);">Pick Up</h3>
+         <p class="text-gray-700">Retira tu pedido en 15 minutos. Perfecto para los que pasan por el barrio.</p>
+        </div>
+       </div>
+      </div>
+     </div><!-- Formas de Pago -->
+     <div class="mt-12 p-8 bg-gray-50 rounded-xl">
+      <h3 class="font-bold text-xl mb-6" style="color: var(--text-primary);">Múltiples formas de pago</h3>
+      <div class="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
+       <div class="flex items-center gap-2 text-gray-700"><i data-lucide="credit-card" style="width: 20px; height: 20px; color: var(--accent-color);"></i> <span>Tarjeta de crédito</span>
+       </div>
+       <div class="flex items-center gap-2 text-gray-700"><i data-lucide="credit-card" style="width: 20px; height: 20px; color: var(--accent-color);"></i> <span>Tarjeta de débito</span>
+       </div>
+       <div class="flex items-center gap-2 text-gray-700"><i data-lucide="wallet" style="width: 20px; height: 20px; color: var(--accent-color);"></i> <span>Billetera digital</span>
+       </div>
+       <div class="flex items-center gap-2 text-gray-700"><i data-lucide="banknote" style="width: 20px; height: 20px; color: var(--accent-color);"></i> <span>Efectivo</span>
+       </div>
+      </div>
+     </div>
+    </div>
+   </section>
+   
+   <!-- Reseñas y Testimonios -->
+   <section id="resenas" class="py-16 sm:py-24 bg-gradient-to-br from-gray-900 to-gray-800 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+     <div class="text-center mb-12 fade-in">
+      <h2 class="text-3xl sm:text-4xl font-bold mb-4">Lo que nuestros clientes dicen</h2>
+      <p class="text-gray-300 text-lg">Miles de satisfechos nos recomiendan</p>
+     </div>
+     <div class="grid md:grid-cols-3 gap-6">
+      <div class="testimonial-card p-6 rounded-xl">
+       <div class="flex gap-1 mb-3"><span class="review-star">★</span> <span class="review-star">★</span> <span class="review-star">★</span> <span class="review-star">★</span> <span class="review-star">★</span>
+       </div>
+       <p class="mb-4 text-gray-800">"La mejor hamburgresa que he probado en años. Los ingredientes frescos se notan, cada bocado es diferente."</p>
+       <p class="font-semibold text-gray-900">María García</p>
+       <p class="text-gray-600 text-sm">Cliente desde 2023</p>
+      </div>
+      <div class="testimonial-card p-6 rounded-xl">
+       <div class="flex gap-1 mb-3"><span class="review-star">★</span> <span class="review-star">★</span> <span class="review-star">★</span> <span class="review-star">★</span> <span class="review-star">★</span>
+       </div>
+       <p class="mb-4 text-gray-800">"Delivery rapidísimo y siempre llega caliente. Me encanta poder personalizar todo a mi gusto. ¡Recomendado!"</p>
+       <p class="font-semibold text-gray-900">Juan López</p>
+       <p class="text-gray-600 text-sm">Cliente desde 2024</p>
+      </div>
+      <div class="testimonial-card p-6 rounded-xl">
+       <div class="flex gap-1 mb-3"><span class="review-star">★</span> <span class="review-star">★</span> <span class="review-star">★</span> <span class="review-star">★</span> <span class="review-star">★</span>
+       </div>
+       <p class="mb-4 text-gray-800">"Las empanadas caseras son increíbles. El sabor diferenciado en cada producto lo hace especial. Mi favorito es el local ahora."</p>
+       <p class="font-semibold text-gray-900">Ana Martínez</p>
+       <p class="text-gray-600 text-sm">Cliente frecuente</p>
+      </div>
+     </div>
+     <div class="mt-12 text-center">
+      <p class="text-gray-300 mb-4">Calificación promedio: <span class="text-2xl font-bold text-yellow-400">4.8★</span></p>
+      <p class="text-gray-400">Basado en +500 reseñas verificadas</p>
+     </div>
+    </div>
+   </section>
+   
+   <!-- CTA Final -->
+   <section id="pedido" class="py-16 sm:py-24 bg-white">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+     <h2 class="text-3xl sm:text-4xl font-bold mb-4" style="color: var(--text-primary);">¿Tienes hambre?</h2>
+     <p class="text-gray-600 text-lg mb-8">Realiza tu pedido ahora y disfruta de comida hecha con precisión y sabor diferenciado.</p>
+     <div class="flex flex-col sm:flex-row gap-4 justify-center"><button class="px-8 py-4 font-semibold rounded-lg text-white text-lg transition-all cta-button" style="background: var(--primary-color);" onclick="handleOrderClick()"> Hacer pedido ahora </button> <button class="px-8 py-4 font-semibold rounded-lg text-lg transition-colors" style="color: var(--primary-color); border: 2px solid var(--primary-color);" onclick="scrollToSection('contacto')"> Más información </button>
+     </div>
+    </div>
+   </section>
+   
+   <!-- Contacto y Footer -->
+   <section id="contacto" class="py-16 sm:py-24 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+     <div class="grid md:grid-cols-3 gap-8 mb-12">
+      <div class="text-center">
+       <div class="service-icon mx-auto mb-4"><i data-lucide="map-pin" style="width: 28px; height: 28px;"></i>
+       </div>
+       <h3 class="font-bold mb-2" style="color: var(--text-primary);">Ubicación</h3>
+       <p class="text-gray-600">Barrio Centro<br>
+        Tu ciudad</p>
+      </div>
+      <div class="text-center">
+       <div class="service-icon mx-auto mb-4"><i data-lucide="phone" style="width: 28px; height: 28px;"></i>
+       </div>
+       <h3 class="font-bold mb-2" style="color: var(--text-primary);">Teléfono</h3>
+       <p class="text-gray-600">+54 9 11 2345 6789</p>
+      </div>
+      <div class="text-center">
+       <div class="service-icon mx-auto mb-4"><i data-lucide="clock" style="width: 28px; height: 28px;"></i>
+       </div>
+       <h3 class="font-bold mb-2" style="color: var(--text-primary);">Horarios</h3>
+       <p class="text-gray-600">Mar-Dom: 11:00 - 23:00<br>
+        Lun: Cerrado</p>
+      </div>
+     </div>
+     <div class="text-center pt-8 border-t border-gray-200">
+      <p class="text-gray-600 mb-4">Síguenos en redes sociales</p>
+      <div class="flex justify-center gap-4"><button class="w-10 h-10 rounded-full flex items-center justify-center transition-all" style="background: var(--primary-color);" onclick="window.open('#', '_blank')"> <i data-lucide="facebook" style="width: 20px; height: 20px; color: white;"></i> </button> <button class="w-10 h-10 rounded-full flex items-center justify-center transition-all" style="background: var(--primary-color);" onclick="window.open('#', '_blank')"> <i data-lucide="instagram" style="width: 20px; height: 20px; color: white;"></i> </button> <button class="w-10 h-10 rounded-full flex items-center justify-center transition-all" style="background: var(--primary-color);" onclick="window.open('#', '_blank')"> <i data-lucide="twitter" style="width: 20px; height: 20px; color: white;"></i> </button>
+      </div>
+     </div>
+    </div>
+   </section>
+   
+   <!-- Footer -->
+   <footer class="bg-gray-900 text-gray-300 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+     <p id="footer-text">© 2024 FastFood Co. Todos los derechos reservados.</p>
+     <p class="text-sm mt-2">Hecho con ❤️ para los amantes de la buena comida</p>
+    </div>
+   </footer>
+  </div>
+
+
+  <script>
+    // Configuración dinámica
+    const defaultConfig = {
+      business_name: "FastFood Co",
+      tagline: "Comida con precisión y sabor",
+      hero_title: "Comida que conecta",
+      hero_subtitle: "Recetas propias, ingredientes frescos cada día",
+      primary_color: "#da3a00", <!--#af9e4b #ff885c #FF6B35 -->
+      secondary_color: "#004E89",
+      accent_color: "#F7B801",
+      text_primary: "#1F2937"
+    };
+
+    let config = { ...defaultConfig };
+
+    // Aplicar configuración inicial
+    applyConfig();
+
+    function applyConfig() {
+      // Colores
+      document.documentElement.style.setProperty('--primary-color', config.primary_color);
+      document.documentElement.style.setProperty('--primary-dark', adjustBrightness(config.primary_color, -20));
+      document.documentElement.style.setProperty('--secondary-color', config.secondary_color);
+      document.documentElement.style.setProperty('--accent-color', config.accent_color);
+      document.documentElement.style.setProperty('--text-primary', config.text_primary);
+
+      // Textos
+      document.getElementById('nav-name').textContent = config.business_name;
+      document.getElementById('hero-title').textContent = config.hero_title;
+      document.getElementById('hero-subtitle').textContent = config.hero_subtitle;
+      document.getElementById('footer-text').textContent = `© 2024 ${config.business_name}. Todos los derechos reservados.`;
+    }
+
+    function adjustBrightness(color, percent) {
+      let R = parseInt(color.substring(1, 3), 16);
+      let G = parseInt(color.substring(3, 5), 16);
+      let B = parseInt(color.substring(5, 7), 16);
+
+      R = Math.floor(Math.max(0, Math.min(255, R + (R * percent) / 100)));
+      G = Math.floor(Math.max(0, Math.min(255, G + (G * percent) / 100)));
+      B = Math.floor(Math.max(0, Math.min(255, B + (B * percent) / 100)));
+
+      return "#" + [R, G, B].map(x => x.toString(16).padStart(2, '0')).join('').toUpperCase();
+    }
+
+    function scrollToSection(id) {
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    function handleOrderClick() {
+      scrollToSection('pedido');
+      alert('Redirigiéndote al menú para realizar tu pedido...');
+    }
+
+    // Inicializar iconos de Lucide
+    lucide.createIcons();
+
+    // Element SDK Integration
+    const elementSdk = window.elementSdk;
+    if (elementSdk) {
+      elementSdk.init({
+        defaultConfig,
+        onConfigChange: async (newConfig) => {
+          config = { ...config, ...newConfig };
+          applyConfig();
+        },
+        mapToCapabilities: (cfg) => ({
+          recolorables: [
+            {
+              get: () => cfg.primary_color || defaultConfig.primary_color,
+              set: (value) => {
+                config.primary_color = value;
+                elementSdk.setConfig({ primary_color: value });
+              }
+            },
+            {
+              get: () => cfg.secondary_color || defaultConfig.secondary_color,
+              set: (value) => {
+                config.secondary_color = value;
+                elementSdk.setConfig({ secondary_color: value });
+              }
+            },
+            {
+              get: () => cfg.accent_color || defaultConfig.accent_color,
+              set: (value) => {
+                config.accent_color = value;
+                elementSdk.setConfig({ accent_color: value });
+              }
+            }
+          ],
+          borderables: [],
+          fontEditable: undefined,
+          fontSizeable: undefined
+        }),
+        mapToEditPanelValues: (cfg) => new Map([
+          ['business_name', cfg.business_name || defaultConfig.business_name],
+          ['tagline', cfg.tagline || defaultConfig.tagline],
+          ['hero_title', cfg.hero_title || defaultConfig.hero_title],
+          ['hero_subtitle', cfg.hero_subtitle || defaultConfig.hero_subtitle],
+          ['primary_color', cfg.primary_color || defaultConfig.primary_color],
+          ['secondary_color', cfg.secondary_color || defaultConfig.secondary_color],
+          ['accent_color', cfg.accent_color || defaultConfig.accent_color]
+        ])
+      });
+    }
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9f835f0e82a878ba',t:'MTc3ODE4OTkwMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

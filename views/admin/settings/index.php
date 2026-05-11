@@ -32,7 +32,9 @@
                             <button type="submit" class="btn btn-primary px-4">
                                 <i class="fas fa-save me-2"></i>Guardar Configuración
                             </button>
-                            <a href="?route=settings_reset" class="btn btn-link text-muted" onclick="return confirm('¿Restaurar valores por defecto?')">Restaurar</a>
+                            <button type="button" class="btn btn-link text-muted" onclick="confirmResetSettings()">
+                                Restaurar
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -59,3 +61,23 @@
         </div>
     </div>
 </div>
+
+<script>
+function confirmResetSettings() {
+    Swal.fire({
+        title: '¿Restaurar valores?',
+        text: "Esta acción restablecerá el nombre y el logotipo a los valores originales del sistema.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#2d3436',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, restaurar',
+        cancelButtonText: 'Cancelar',
+        focusConfirm: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = '?route=settings_reset';
+        }
+    });
+}
+</script>

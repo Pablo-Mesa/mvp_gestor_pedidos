@@ -23,7 +23,7 @@ body {
     width: 100%;
     overflow-x: hidden; /* Evita el pequeño gap por desbordamiento de hijos */
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: #fbfbfb;
+    background-color: #fbfbfb; /* Color de respaldo mientras carga la imagen */    
     margin: 0;
     padding-top: 130px; 
     transition: padding-top 0.3s ease;

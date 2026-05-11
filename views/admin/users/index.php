@@ -83,6 +83,7 @@
     .role-admin { background-color: #e3f2fd; color: #0984e3; }
     .role-delivery { background-color: #e8f5e9; color: #28a745; }
     .role-cajero { background-color: #fff3cd; color: #856404; }
+    .role-mozo { background-color: #f3e5f5; color: #8e24aa; }
 
     /* Status Badges */
     .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
@@ -172,6 +173,7 @@
                             $roleIcon = 'fa-motorcycle';
                             if ($user['role'] === 'admin') { $roleClass = 'role-admin'; $roleIcon = 'fa-user-shield'; }
                             elseif ($user['role'] === 'cajero') { $roleClass = 'role-cajero'; $roleIcon = 'fa-cash-register'; }
+                            elseif ($user['role'] === 'mozo') { $roleClass = 'role-mozo'; $roleIcon = 'fa-concierge-bell'; }
                         ?>
                         <span class="role-badge <?php echo $roleClass; ?>">
                             <i class="fas <?php echo $roleIcon; ?>"></i>

@@ -16,14 +16,14 @@ class OrderController {
     // --- Métodos de ADMINISTRADOR ---
 
     /**
-     * Valida que el usuario sea Admin. 
-     * Si es repartidor, lo manda a su panel. Si no hay sesión, al login.
+     * Valida el acceso según el rol.
+     * @param array $allowedRoles Roles que tienen permiso para esta acción.
      */
-    private function checkAdminAccess() {
+    private function checkAccess($allowedRoles = ['admin', 'cajero']) {
         if (isset($_SESSION['client_id'])) { header('Location: ?route=home'); exit; }
         if (!isset($_SESSION['user_role'])) { header('Location: ?route=login'); exit; }
 
-        if (!in_array($_SESSION['user_role'], ['admin', 'cajero'])) {
+        if (!in_array($_SESSION['user_role'], $allowedRoles)) {
             if ($_SESSION['user_role'] === 'delivery') {
                 header('Location: ?route=delivery');
             } else {
@@ -31,6 +31,48 @@ class OrderController {
             }
             exit;
         }
+    }
+
+    private function checkAdminAccess() {
+        $this->checkAccess(['admin', 'cajero']);
+    }
+
+    /**
+     * Vista de Monitoreo de Mesas para el Administrador
+     */
+    public function waiterPos() {
+        $this->checkAccess(['admin', 'cajero']);
+
+        $orderModel = new Order();
+        
+        // Obtener pedidos de hoy filtrados por canal de mozos/mesas
+        $stmt = $orderModel->readAll(['date' => date('Y-m-d')]);
+        $allOrders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Filtramos solo aquellos que tienen un número de mesa asignado
+        $tableOrders = array_filter($allOrders, function($o) {
+            return !empty($o['table_number']);
+        });
+
+        $content_view = '../views/admin/mozo/index.php';
+        require_once '../views/layouts/admin_layout.php';
+    }
+
+    /**
+     * Interfaz operativa para el Mozo (Toma de pedidos real)
+     */
+    public function mozoInterface() {
+        $this->checkAccess(['admin', 'mozo']);
+
+        require_once '../models/Category.php';
+        require_once '../models/Product.php';
+
+        $catModel = new Category();
+        $categories = $catModel->readAll()->fetchAll(PDO::FETCH_ASSOC);
+        $products = (new Product())->readAllActive(null)->fetchAll(PDO::FETCH_ASSOC);
+
+        $content_view = '../views/mozo/index.php';
+        require_once '../views/layouts/waiter_layout.php';
     }
 
     public function index() {
@@ -812,7 +854,7 @@ class OrderController {
     public function posStore() {
         header('Content-Type: application/json');
         
-        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+        if (!isset($_SESSION['user_role']) || !in_array($_SESSION['user_role'], ['admin', 'cajero', 'mozo'])) {
             echo json_encode(['success' => false, 'message' => 'No autorizado']);
             exit;
         }

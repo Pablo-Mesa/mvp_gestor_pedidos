@@ -62,7 +62,7 @@
 <div class="container-fluid" style="max-width: 800px;">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="?route=hero_promos">Hero Promo</a></li>
+            <li class="breadcrumb-item"><a href="?route=hero_promos">Horarios</a></li>
             <li class="breadcrumb-item active">Configuración Dinámica</li>
         </ol>
     </nav>
@@ -71,33 +71,25 @@
         <div class="card-body p-4">
             <form action="?route=hero_promos_update" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="id" value="<?php echo $promo['id']; ?>">
-                <input type="hidden" name="current_image" value="<?php echo $promo['image']; ?>">
+                <input type="hidden" name="current_image" value="<?php echo $promo['image'] ?? ''; ?>">
+                <input type="hidden" name="css_class" value="info-card">
+                <input type="hidden" name="type" value="hours">
 
                 <div class="scrollable-card-body">
                 <div class="row mb-4">
-                    <div class="col-md-8">
-                        <label class="form-label fw-bold">Título de la Tarjeta</label>
+                    <div class="col-md-12">
+                        <label class="form-label fw-bold">Título del Banner</label>
                         <input type="text" name="title" class="form-control form-control-lg" value="<?php echo htmlspecialchars($promo['title']); ?>" required>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">Tipo</label>
-                        <select id="typeSelect" class="form-select form-control-lg" disabled>
-                            <option value="offer" <?php echo $promo['type'] == 'offer' ? 'selected' : ''; ?>>🏷️ Oferta / General</option>
-                            <option value="hours" <?php echo $promo['type'] == 'hours' ? 'selected' : ''; ?>>⏰ Horarios</option>
-                            <option value="location" <?php echo $promo['type'] == 'location' ? 'selected' : ''; ?>>📍 Ubicación</option>
-                            <option value="highlights" <?php echo $promo['type'] == 'highlights' ? 'selected' : ''; ?>>⭐ Destacados</option>
-                            <option value="reviews" <?php echo $promo['type'] == 'reviews' ? 'selected' : ''; ?>>💬 Reseñas</option>
-                        </select>
-                        <input type="hidden" name="type" value="<?php echo $promo['type']; ?>">
+                        <small class="text-muted">Ej: "Horarios de Atención" o "¡Estamos Abiertos!"</small>
                     </div>
                 </div>
 
                 <!-- Editor de Contenido Dinámico -->
                 <div class="mb-4">
-                    <label class="form-label fw-bold" id="contentLabel">Contenido / Descripción</label>
+                    <label class="form-label fw-bold" id="contentLabel">Configuración de Horarios Semanales</label>
                     
                     <!-- Vista para Horarios -->
-                    <div id="hoursEditor" class="border rounded p-3 bg-white d-none" style="overflow-x: hidden;">
+                    <div id="hoursEditor" class="border rounded p-3 bg-white" style="overflow-x: hidden;">
                         <p class="text-muted small mb-3"><i class="fas fa-info-circle"></i> Define los horarios para que el sistema muestre "Abierto" o "Cerrado" automáticamente.</p>
                         <?php 
                             $days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
@@ -185,42 +177,6 @@
 </div>
 
 <script>
-function toggleContentField() {
-    const type = document.getElementById('typeSelect').value;
-    const contentGroup = document.getElementById('contentTextarea');
-    const hoursEditor = document.getElementById('hoursEditor');
-    const notice = document.getElementById('reviewNotice');
-    const help = document.getElementById('contentHelp');
-    const label = document.getElementById('contentLabel');
-
-    if (type === 'reviews') {
-        contentGroup.readOnly = true;
-        contentGroup.classList.add('bg-light');
-        contentGroup.classList.remove('d-none');
-        hoursEditor.classList.add('d-none');
-        notice.classList.remove('d-none');
-        help.classList.add('d-none');
-    } else if (type === 'hours') {
-        contentGroup.classList.add('d-none');
-        hoursEditor.classList.remove('d-none');
-        notice.classList.add('d-none');
-        help.classList.add('d-none');
-        label.innerText = "Configuración de Horarios Semanales";
-        serializeHours(); // Asegurar que el JSON esté listo
-    } else {
-        contentGroup.readOnly = false;
-        contentGroup.classList.remove('bg-light');
-        contentGroup.classList.remove('d-none');
-        hoursEditor.classList.add('d-none');
-        notice.classList.add('d-none');
-        help.classList.remove('d-none');
-        label.innerText = "Contenido / Descripción";
-    }
-}
-
-/**
- * Convierte la tabla de horarios en un JSON para el campo 'content'
- */
 function serializeHours() {
     const schedule = {};
     document.querySelectorAll('.day-row').forEach(row => {
@@ -246,28 +202,5 @@ document.getElementById('scheduleGrid').addEventListener('change', (e) => {
     serializeHours();
 });
 
-window.addEventListener('load', toggleContentField);
-
-function previewHeroImage(input) {
-    if (input.files && input.files[0]) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('imgPreview').src = e.target.result;
-            document.getElementById('imageName').innerText = input.files[0].name;
-        }
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
-/**
- * Restablece la imagen a su estado default (vacío)
- */
-function resetHeroImage() {
-    document.getElementById('imageInput').value = ""; // Limpia el input file
-    document.querySelector('input[name="current_image"]').value = ""; // Limpia el nombre de la imagen actual
-    const placeholder = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22400%22%20height%3D%22200%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20400%20200%22%20preserveAspectRatio%3D%22none%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23eeeeee%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%23aaaaaa%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20dy%3D%22.3em%22%20text-anchor%3D%22middle%22%3ESin%20Imagen%20Configurada%3C%2Ftext%3E%3C%2Fsvg%3E";
-    document.getElementById('imgPreview').src = placeholder;
-    document.getElementById('imageName').innerText = 'Sin imagen';
-    Toast.fire("Imagen marcada para eliminar", "info");
-}
+window.addEventListener('load', serializeHours);
 </script>

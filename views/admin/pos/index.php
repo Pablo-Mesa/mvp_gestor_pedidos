@@ -1165,10 +1165,7 @@
                     // Relanzamos el modal de finalizar inyectando el nuevo cliente y preservando lo escrito
                     openFinalizeModal({
                         clientId: res.id,
-                        clientName: `${res.name} (${formValues.phone})`,
-                        observation: currentObs,
-                        deliveryType: currentDelivery,
-                        paymentMethod: currentPayment
+                        clientName: `${res.name} (${formValues.phone})`
                     });
                 } else {
                     Swal.fire("Error", res.message, "error");
@@ -1176,11 +1173,7 @@
             } catch(e) { console.error(e); }
         } else {
             // Si se cancela o presiona Esc, volvemos al modal de Finalizar preservando los datos
-            openFinalizeModal({
-                observation: currentObs,
-                deliveryType: currentDelivery,
-                paymentMethod: currentPayment
-            });
+            openFinalizeModal();
         }
     }
 

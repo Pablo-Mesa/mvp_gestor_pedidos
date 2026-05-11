@@ -13,6 +13,7 @@ class Order {
     public $client_id;
     public $channel_id;
     public $total;
+    public $table_number; // Identificador de mesa para mozos
     public $status;
     public $delivery_user_id; // ID del repartidor asignado
     public $observation; // Nueva propiedad
@@ -53,8 +54,8 @@ class Order {
 
             // 1. Insertar Cabecera (Order)
             $query = "INSERT INTO " . $this->table . " 
-                      (user_id, client_id, channel_id, total, status, observation, billing_name, billing_ruc, payment_method, delivery_type) 
-                      VALUES (:user_id, :client_id, :channel_id, :total, :status, :observation, :billing_name, :billing_ruc, :payment_method, :delivery_type)";
+                      (user_id, client_id, channel_id, total, table_number, status, observation, billing_name, billing_ruc, payment_method, delivery_type) 
+                      VALUES (:user_id, :client_id, :channel_id, :total, :table_number, :status, :observation, :billing_name, :billing_ruc, :payment_method, :delivery_type)";
             
             $stmt = $this->conn->prepare($query);
             
@@ -63,6 +64,7 @@ class Order {
             $stmt->bindParam(':client_id', $this->client_id);
             $stmt->bindParam(':channel_id', $this->channel_id);
             $stmt->bindParam(':total', $this->total);
+            $stmt->bindParam(':table_number', $this->table_number);
             $stmt->bindParam(':status', $this->status);
             $stmt->bindParam(':observation', $this->observation);
             $stmt->bindParam(':billing_name', $this->billing_name);
@@ -552,7 +554,9 @@ class Order {
             'local_income' => 0,
             'waiter_income' => 0,
             'web_orders_count' => 0,
-            'local_orders_count' => 0
+            'local_orders_count' => 0,
+            'delivery_income' => 0,
+            'delivery_orders_count' => 0
         ];
 
         // Pedidos Pendientes totales (no solo de hoy)
@@ -562,11 +566,10 @@ class Order {
         $stats['pending_orders'] = $stmt1->fetchColumn();
 
         // Ingresos desglosados por Canal (Solo ventas con factura activa y pago registrado)
-        $q2 = "SELECT o.channel_id, SUM(o.total) as income, COUNT(o.id) as qty 
+        $q2 = "SELECT o.channel_id, SUM(o.total) as income, COUNT(DISTINCT o.id) as qty 
                FROM " . $this->table . " o
                INNER JOIN pos_ventas_cabecera v ON o.id = v.order_id
-               INNER JOIN pagos p ON v.id = p.venta_id
-               WHERE DATE(o.created_at) = :date AND o.status NOT IN ('cancelled', 'rejected') AND v.estado = 1
+               WHERE DATE(o.created_at) = :date AND o.status NOT IN ('cancelled', 'rejected') AND v.estado = 1 AND EXISTS (SELECT 1 FROM pagos p WHERE p.venta_id = v.id)
                GROUP BY o.channel_id";
         $stmt2 = $this->conn->prepare($q2);
         $stmt2->execute([':date' => $target_date]);
@@ -583,6 +586,20 @@ class Order {
                 $stats['waiter_income'] = $row['income'];
             }
         }
+
+        // Estadísticas de Delivery (Contador de envíos realizados, facturados y pagados hoy)
+        $q4 = "SELECT COUNT(DISTINCT o.id) as qty, SUM(o.total) as income 
+               FROM " . $this->table . " o
+               INNER JOIN pos_ventas_cabecera v ON o.id = v.order_id
+               WHERE DATE(o.created_at) = :date 
+                 AND (LOWER(o.delivery_type) = 'delivery' OR o.delivery_type = 'envio') 
+                 AND EXISTS (SELECT 1 FROM pagos p WHERE p.venta_id = v.id)
+                 AND o.status NOT IN ('cancelled', 'rejected') AND v.estado = 1";
+        $stmt4 = $this->conn->prepare($q4);
+        $stmt4->execute([':date' => $target_date]);
+        $res4 = $stmt4->fetch(PDO::FETCH_ASSOC);
+        $stats['delivery_orders_count'] = isset($res4['qty']) ? (int)$res4['qty'] : 0;
+        $stats['delivery_income'] = isset($res4['income']) ? (float)$res4['income'] : 0.0;
 
         // Platos/Items vendidos hoy (excluyendo anulados)
         $q3 = "SELECT SUM(quantity) FROM orders_items oi 
@@ -606,16 +623,17 @@ class Order {
             'web_income' => 0,
             'local_income' => 0,
             'waiter_income' => 0,
-            'chart' => []
+            'chart' => [],
+            'delivery_income' => 0,
+            'delivery_orders_count' => 0
         ];
 
         // Ingresos y pedidos mensuales desglosados por canal (Solo ventas con factura activa y pago registrado)
-        $q = "SELECT o.channel_id, SUM(o.total) as income, COUNT(o.id) as qty
+        $q = "SELECT o.channel_id, SUM(o.total) as income, COUNT(DISTINCT o.id) as qty
               FROM " . $this->table . " o
               INNER JOIN pos_ventas_cabecera v ON o.id = v.order_id
-              INNER JOIN pagos p ON v.id = p.venta_id
-              WHERE o.status NOT IN ('cancelled', 'rejected') AND v.estado = 1 
-              AND YEAR(o.created_at) = :y AND MONTH(o.created_at) = :m
+              WHERE o.status NOT IN ('cancelled', 'rejected') AND v.estado = 1 AND EXISTS (SELECT 1 FROM pagos p WHERE p.venta_id = v.id)
+              AND YEAR(o.created_at) = :y AND MONTH(o.created_at) = :m 
               GROUP BY o.channel_id";
         $stmt = $this->conn->prepare($q);
         $stmt->execute([':y' => $year, ':m' => $month]);
@@ -627,6 +645,19 @@ class Order {
             elseif ($row['channel_id'] == 2) $stats['local_income'] = $row['income'];
             elseif ($row['channel_id'] == 3) $stats['waiter_income'] = $row['income'];
         }
+
+        // Estadísticas de Delivery Mensual (Contador de envíos realizados, facturados y pagados en el mes)
+        $qM = "SELECT COUNT(DISTINCT o.id) as qty, SUM(o.total) as income
+               FROM " . $this->table . " o
+               INNER JOIN pos_ventas_cabecera v ON o.id = v.order_id
+               WHERE (LOWER(o.delivery_type) = 'delivery' OR o.delivery_type = 'envio') 
+                 AND o.status NOT IN ('cancelled', 'rejected') AND v.estado = 1 AND EXISTS (SELECT 1 FROM pagos p WHERE p.venta_id = v.id)
+                 AND YEAR(o.created_at) = :y AND MONTH(o.created_at) = :m";
+        $stmtM = $this->conn->prepare($qM);
+        $stmtM->execute([':y' => $year, ':m' => $month]);
+        $resM = $stmtM->fetch(PDO::FETCH_ASSOC);
+        $stats['delivery_orders_count'] = isset($resM['qty']) ? (int)$resM['qty'] : 0;
+        $stats['delivery_income'] = isset($resM['income']) ? (float)$resM['income'] : 0.0;
 
         // Total de platos
         $qD = "SELECT SUM(quantity) FROM orders_items oi 
@@ -640,8 +671,7 @@ class Order {
         $qChart = "SELECT DAY(o.created_at) as day, SUM(o.total) as income 
                    FROM " . $this->table . " o
                    INNER JOIN pos_ventas_cabecera v ON o.id = v.order_id
-                   INNER JOIN pagos p ON v.id = p.venta_id
-                   WHERE o.status NOT IN ('cancelled', 'rejected') AND v.estado = 1 
+                   WHERE o.status NOT IN ('cancelled', 'rejected') AND v.estado = 1 AND EXISTS (SELECT 1 FROM pagos p WHERE p.venta_id = v.id)
                    AND YEAR(o.created_at) = :y AND MONTH(o.created_at) = :m
                    GROUP BY DAY(o.created_at)
                    ORDER BY DAY(o.created_at) ASC";

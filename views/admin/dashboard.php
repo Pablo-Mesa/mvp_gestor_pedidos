@@ -90,7 +90,9 @@
     }
 
     .stats-grid.channels {
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 15px;
     }
 
     .section-area-title {
@@ -109,6 +111,8 @@
         padding: 20px;
         display: flex;
         align-items: center;
+        flex: 1;
+        min-width: 0; /* Permite que el flex-item se encoja por debajo de su contenido */
         gap: 20px;
         box-shadow: 0 10px 15px -3px rgba(0,0,0,0.04);
         transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -118,7 +122,7 @@
     .stat-card:hover {
         transform: translateY(-3px);
         box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05);
-    }
+    }               
 
     .stats-grid.summary .stat-card {
         flex: 1;
@@ -142,6 +146,7 @@
     .stat-card.web { border-bottom: 4px solid #0984e3; }
     .stat-card.local { border-bottom: 4px solid #00b894; }
     .stat-card.waiter { border-bottom: 4px solid #6c5ce7; }
+    .stat-card.delivery { border-bottom: 4px solid #901009; }
 
     .stat-icon {
         width: 48px;
@@ -166,6 +171,7 @@
     .web .stat-icon { color: #0984e3; background: #e3f2fd; }
     .local .stat-icon { color: #00b894; background: #ebfbee; }
     .waiter .stat-icon { color: #6c5ce7; background: #f3f0ff; }
+    .delivery .stat-icon { color: #6c5ce7; background: #f3f0ff; }
 
     .stat-info h3 {
         font-size: 0.9rem;
@@ -176,8 +182,9 @@
     }
 
     .stat-value {
-        font-size: 1.3rem;
+        font-size: 1.15rem;
         font-weight: 700;
+        white-space: nowrap;
         color: #2d3436;
         margin: 0;
     }
@@ -253,8 +260,66 @@
         box-shadow: inset 0 -1px 0 #dee2e6;
     }
 
+    /* Resumen de Ganancia Solver */
+    .solver-summary-bar {
+        display: flex;
+        align-items: center;
+        background: #fdfbff;
+        border: 1px solid #e0d7ff;
+        border-radius: 12px;
+        padding: 12px 25px;
+        margin-bottom: 30px;
+        gap: 40px;
+    }
+
+    .solver-summary-bar .summary-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .solver-summary-bar .label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #636e72;
+    }
+
+    .solver-summary-bar .value {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #2d3436;
+    }
+
+    .solver-summary-bar .summary-item.total {
+        margin-left: auto;
+        background: #7950f2;
+        padding: 8px 20px;
+        border-radius: 8px;
+    }
+
+    .solver-summary-bar .summary-item.total .label { color: rgba(255,255,255,0.9); }
+    .solver-summary-bar .summary-item.total .value { color: #fff; font-size: 1.1rem; }
+
     @media (max-width: 768px) {
-        .stats-grid { grid-template-columns: 1fr; }
+        .stats-grid:not(.channels) { grid-template-columns: 1fr; }
+        .stats-grid.channels { 
+            flex-wrap: nowrap; 
+            overflow-x: auto; /* En móviles muy pequeños permite scroll lateral para no perder info */
+            padding-bottom: 10px;
+            gap: 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .solver-summary-bar {
+            flex-direction: column;
+            gap: 10px;
+            align-items: stretch;
+            padding: 15px;
+        }
+        .solver-summary-bar .summary-item.total {
+            margin-left: 0;
+            text-align: center;
+            justify-content: center;
+        }
         .actions-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
          .quick-actions h2 {
             text-align: center;
@@ -265,6 +330,7 @@
 
 <!-- Contenido específico del Dashboard -->
 <div class="dashboard-container">
+
     <!-- Encabezado del Dashboard -->
     <header class="dashboard-header">
         <div>
@@ -342,6 +408,36 @@
                     <i class="fas fa-check-circle"></i> Comisión Solver (0%).<br />No genera costos al local.
                 </small>                
             </div>
+        </div>
+
+        <!-- delivery -->
+        <div class="stat-card delivery">
+            <div class="stat-icon"><i class="fas fa-motorcycle"></i></div>
+            <div class="stat-info">
+                <h3>Servicios de Envío</h3>
+                <p class="stat-value"><?php echo $data['delivery_orders_count'] ?? 0; ?> Pedidos</p>
+                <small style="color: #901009; font-weight: bold; font-size: 0.85rem;">
+                    Comisión Solver (G. 1.000 c/u):<br />
+                    Gs. <?php echo number_format(($data['delivery_orders_count'] ?? 0) * 1000, 0, ',', '.'); ?>
+                </small>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- suma de comisiones y costos que genera la plataforma "Solver" -->
+    <div class="solver-summary-bar">
+        <div class="summary-item">
+            <span class="label">Comisión Web (10%):</span>
+            <span class="value">Gs. <?php echo number_format(($data['web_income'] ?? 0) * 0.10, 0, ',', '.'); ?></span>
+        </div>
+        <div class="summary-item">
+            <span class="label">Cargos Delivery (G. 1.000 x Pedido):</span>
+            <span class="value">Gs. <?php echo number_format(($data['delivery_orders_count'] ?? 0) * 1000, 0, ',', '.'); ?></span>
+        </div>
+        <div class="summary-item total">
+            <span class="label">Total Solver:</span>
+            <span class="value">Gs. <?php echo number_format((($data['web_income'] ?? 0) * 0.10) + (($data['delivery_orders_count'] ?? 0) * 1000), 0, ',', '.'); ?></span>
         </div>
     </div>
 

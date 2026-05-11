@@ -32,6 +32,10 @@ class HomeController {
                 header('Location: ?route=delivery');
             } elseif ($role === 'admin') {
                 header('Location: ?route=admin');
+            } elseif ($role === 'cajero') {
+                header('Location: ?route=pos');
+            } elseif ($role === 'mozo') {
+                header('Location: ?route=mozo_pos');
             } else {
                 header('Location: ?route=login');
             }

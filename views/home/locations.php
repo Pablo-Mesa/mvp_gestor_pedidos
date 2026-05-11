@@ -177,7 +177,7 @@ async function saveLocation() {
     }
 
     try {
-        const route = editId ? 'update_location' : 'save_location';
+        const route = editId ? 'update_location_api' : 'save_location_api';
         const response = await fetch(`?route=${route}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -211,7 +211,7 @@ async function confirmDelete(id, title) {
 
     if (isConfirmed) {
         try {
-            const response = await fetch('?route=delete_location', {
+            const response = await fetch('?route=delete_location_api', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: id })

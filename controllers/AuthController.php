@@ -7,11 +7,17 @@ class AuthController {
     public function login() {
         // Redirección automática si ya existe una sesión activa
         if (isset($_SESSION['user_role'])) {
-            if ($_SESSION['user_role'] === 'admin' || $_SESSION['user_role'] === 'cajero') {
+            if ($_SESSION['user_role'] === 'admin') {
                 header('Location: ?route=admin');
+                exit;
+            } elseif ($_SESSION['user_role'] === 'cajero') {
+                header('Location: ?route=pos');
                 exit;
             } elseif ($_SESSION['user_role'] === 'delivery') {
                 header('Location: ?route=delivery');
+                exit;
+            } elseif ($_SESSION['user_role'] === 'mozo') {
+                header('Location: ?route=mozo_pos');
                 exit;
             }
         } elseif (isset($_SESSION['client_id'])) {
@@ -34,10 +40,14 @@ class AuthController {
                 $_SESSION['user_role'] = $user->role;
                 
                 // Redireccionar según el rol específico
-                if ($user->role === 'admin' || $user->role === 'cajero') {
+                if ($user->role === 'admin') {
                     header('Location: ?route=admin');
+                } elseif ($user->role === 'cajero') {
+                    header('Location: ?route=pos');
                 } elseif ($user->role === 'delivery') {
                     header('Location: ?route=delivery');
+                } elseif ($user->role === 'mozo') {
+                    header('Location: ?route=mozo_pos');
                 } else {
                     header('Location: ?route=home');
                 }

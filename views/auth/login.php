@@ -22,12 +22,12 @@
     <script src="<?php echo $baseUrl; ?>js/tool-kit-v002.js"></script>
     
 </head>
-<body class="bg-slate-50 min-h-screen flex flex-col justify-center items-center p-4">
+<body class="bg-slate-50 h-screen overflow-hidden flex flex-col justify-center items-center p-4">
 
-    <div class="w-full max-w-[400px] space-y-8">
+    <div class="w-full max-w-[400px] space-y-4">
         <!-- Logo y Branding -->
-        <div class="text-center space-y-4">            
-            <div id="here_cube" class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-white shadow-xl shadow-blue-100/50 mb-2">
+        <div class="text-center space-y-2">            
+            <div id="here_cube" class="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-white shadow-xl shadow-blue-100/50 mb-2">
             </div>
             <div>
                 <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Solver</h1>
@@ -36,17 +36,17 @@
         </div>
 
         <!-- Card de Login -->
-        <div class="glass-card p-8 rounded-[2rem] shadow-2xl shadow-slate-200/50">
-            <h2 class="text-xl font-bold text-slate-800 mb-6">Iniciar Sesión</h2>
+        <div class="glass-card p-6 rounded-[2rem] shadow-2xl shadow-slate-200/50">
+            <h2 class="text-xl font-bold text-slate-800 mb-4">Iniciar Sesión</h2>
             
             <?php if (isset($error)): ?>
-                <div class="mb-6 p-4 rounded-2xl bg-red-50 border border-red-100 flex items-center gap-3 text-red-600 text-sm animate-pulse">
+                <div class="mb-4 p-3 rounded-2xl bg-red-50 border border-red-100 flex items-center gap-3 text-red-600 text-sm animate-pulse">
                     <i class="fas fa-exclamation-circle"></i>
                     <span class="font-semibold"><?php echo htmlspecialchars($error); ?></span>
                 </div>
             <?php endif; ?>
 
-            <form action="?route=login" method="POST" class="space-y-5">
+            <form action="?route=login" method="POST" class="space-y-4">
                 <!-- Token de seguridad CSRF -->
                 <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
 
@@ -78,7 +78,7 @@
                 </div>
                 
                 <button type="submit" 
-                    class="w-full bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-2xl shadow-lg shadow-slate-200 transition-all transform active:scale-[0.98] mt-4">
+                    class="w-full bg-slate-900 hover:bg-black text-white font-bold py-3 rounded-2xl shadow-lg shadow-slate-200 transition-all transform active:scale-[0.98] mt-2">
                     Ingresar al Panel
                 </button>
             </form>

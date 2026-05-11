@@ -175,7 +175,10 @@ class User {
      * Obtiene todos los usuarios con rol de repartidor
      */
     public function getDeliveryUsers() {
-        $query = "SELECT id, name FROM " . $this->table . " WHERE role = 'delivery'";
+        $query = "SELECT u.id, u.name 
+                  FROM " . $this->table . " u
+                  JOIN roles r ON u.role_id = r.id 
+                  WHERE r.slug = 'delivery' AND u.is_active = 1";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

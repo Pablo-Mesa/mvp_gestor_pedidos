@@ -278,7 +278,7 @@ const statusLabels = {
  */
 async function checkStatusUpdates() {
     try {
-        const response = await fetch('?route=my_orders_status');
+        const response = await fetch('?route=my_orders_status_api');
         const result = await response.json();
 
         if (result.success) {
@@ -333,7 +333,7 @@ async function showDetails(orderId, deliveryCost = 0) {
     modal.style.display = 'flex';
 
     try {
-        const response = await fetch(`?route=my_order_details&id=${orderId}`);
+        const response = await fetch(`?route=order_details_api&id=${orderId}`);
         const result = await response.json();
 
         if (result.success) {

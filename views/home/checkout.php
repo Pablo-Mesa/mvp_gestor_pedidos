@@ -578,7 +578,7 @@
         }
 
         try {
-            const route = editId ? 'update_location' : 'save_location';
+        const route = editId ? 'update_location_api' : 'save_location_api';
             const resp = await fetch(`?route=${route}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -795,7 +795,7 @@
             btn.innerText = "Procesando...";
 
             // Enviamos los datos al controlador
-            const response = await fetch('?route=order_store', {
+            const response = await fetch('?route=checkout_store', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)

@@ -22,6 +22,8 @@ class AdminController {
         if (!in_array($_SESSION['user_role'], ['admin', 'cajero'])) {
             if ($_SESSION['user_role'] === 'delivery') {
                 header('Location: ?route=delivery');
+            } elseif ($_SESSION['user_role'] === 'mozo') {
+                header('Location: ?route=mozo_pos');
             } else {
                 header('Location: ?route=login');
             }
@@ -60,6 +62,8 @@ class AdminController {
                 'web_income' => $mStats['web_income'] ?? 0,
                 'local_income' => $mStats['local_income'] ?? 0,
                 'waiter_income' => $mStats['waiter_income'] ?? 0,
+                'delivery_orders_count' => $mStats['delivery_orders_count'] ?? 0,
+                'delivery_income' => $mStats['delivery_income'] ?? 0,
                 'chart_data' => $mStats['chart'],
                 'cash_status' => $cash_status,
                 'active_session' => null,
@@ -80,6 +84,8 @@ class AdminController {
                 'waiter_income' => $stats['waiter_income'] ?? 0,
                 'web_orders_count' => $stats['web_orders_count'] ?? 0,
                 'local_orders_count' => $stats['local_orders_count'] ?? 0,
+                'delivery_orders_count' => $stats['delivery_orders_count'] ?? 0,
+                'delivery_income' => $stats['delivery_income'] ?? 0,
                 'cash_status' => $cash_status,
                 'active_session' => $activeSession,
                 'recent_movements' => []

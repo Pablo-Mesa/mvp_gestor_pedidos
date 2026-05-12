@@ -254,7 +254,7 @@
         position: sticky;
         top: 0;
         z-index: 10;
-        background-color: #f8f9fa !important; /* Color table-light */
+        background-color: #f8f9fa !important;/* Color table-light */
         padding-top: 8px !important;
         padding-bottom: 8px !important;
         box-shadow: inset 0 -1px 0 #dee2e6;

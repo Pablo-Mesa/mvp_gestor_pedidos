@@ -219,15 +219,6 @@
         .pos-grid { grid-template-columns: 1fr 1fr; }
     }
 
-    /* Estilos para el mapa en el modal */
-    #swal-pos-map {
-        height: 180px;
-        width: 100%;
-        border-radius: 8px;
-        margin-top: 10px;
-        border: 1px solid #ddd;
-    }
-
     /* Estilos para cuadrícula de ubicaciones (Igual al Checkout) */
     .pos-locations-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 1rem; }
     .pos-location-card { 
@@ -342,25 +333,159 @@
     
 </div>
 
+<!-- MODAL 1: FINALIZAR VENTA -->
+<div class="modal fade" id="modalFinalize" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold text-dark"><i class="fas fa-check-circle me-2 text-success"></i>Finalizar Venta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold small"><i class="fas fa-user me-1"></i> Cliente</label>
+                    <div class="input-group shadow-sm">
+                        <input type="hidden" id="f-client-id" value="1">
+                        <input type="text" id="f-client-name" class="form-control bg-light border-end-0" value="Cliente Ocasional" readonly>
+                        <button id="btn-search-client"
+                                class="btn btn-outline-secondary"
+                                type="button"
+                                onclick="openSearchClient()">
+                            <i class="fas fa-search"></i> <small>[F3]</small>
+                        </button>
+                        <button class="btn btn-success" type="button" onclick="openCreateClient()">
+                            <i class="fas fa-user-plus"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-bold small"><i class="fas fa-truck me-1"></i> Entrega</label>
+                        <select id="f-delivery-type" class="form-select" onchange="toggleDeliveryFields(this.value)">
+                            <option value="local">Consumo Local</option>
+                            <option value="pickup">Para Retirar</option>
+                            <option value="delivery">Envio / Delivery</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-bold small"><i class="fas fa-wallet me-1"></i> Pago</label>
+                        <select id="f-payment-method" class="form-select">
+                            <option value="efectivo">Efectivo</option>
+                            <option value="pos">POS / Tarjeta</option>
+                            <option value="transferencia">Transferencia</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="f-delivery-extra" style="display: none;">
+                    <label class="form-label fw-bold small text-success"><i class="fas fa-link me-1"></i> Ubicación (Link)</label>
+                    <div class="input-group mb-3 shadow-sm">
+                        <input type="text" id="f-location-url" class="form-control" placeholder="Pegue el link de WhatsApp o Maps..." oninput="window.processLocationUrl(this.value)">
+                        <button id="btn-map-indicator" class="btn btn-outline-primary" type="button" style="display:none;">
+                            <i class="fas fa-map-marked-alt"></i>
+                        </button>
+                    </div>
+                    <input type="hidden" id="f-lat"><input type="hidden" id="f-lng">
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold small">Notas adicionales</label>
+                    <textarea id="f-observation" class="form-control" rows="2" placeholder="Ej: Sin cebolla, llamar al llegar..."></textarea>
+                </div>
+
+                <div class="alert alert-success d-flex justify-content-between align-items-center p-3 border-0 shadow-sm mb-0">
+                    <span class="fw-bold h6 mb-0">TOTAL:</span>
+                    <span class="h4 fw-bold mb-0 text-dark" id="f-total-display">Gs. 0</span>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Seguir cargando</button>
+                <button type="button" class="btn btn-success px-5 fw-bold" onclick="confirmPOS()">CONFIRMAR VENTA</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 2: BUSCAR CLIENTE -->
+<div class="modal fade" id="modalSearchClient" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="fas fa-search me-2"></i>Buscar Cliente</h5>
+                <button type="button" class="btn-close" onclick="closeSearchAndReturn()"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="text" id="s-client-term" class="form-control form-control-lg mb-3 shadow-sm" placeholder="Nombre, RUC o Teléfono..." oninput="debounceSearchClient()">
+                <div class="table-responsive rounded border" style="max-height: 350px;">
+                    <table class="pos-client-table mb-0">
+                        <thead class="sticky-top bg-white">
+                            <tr><th>Nombre</th><th>RUC/CI</th><th>Teléfono</th></tr>
+                        </thead>
+                        <tbody id="s-client-results">
+                            <!-- Resultados AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 3: REGISTRO RÁPIDO -->
+<div class="modal fade" id="modalCreateClient" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="fas fa-user-plus me-2 text-primary"></i>Nuevo Cliente</h5>
+                <button type="button" class="btn-close" onclick="closeCreateAndReturn()"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label small fw-bold">Nombre Completo</label>
+                        <input id="c-name" class="form-control" placeholder="Juan Pérez">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-bold">Teléfono / WhatsApp</label>
+                        <input id="c-phone" class="form-control" placeholder="0981..." maxlength="15" oninput="checkPhoneExistence(this.value)">
+                        <div id="c-phone-feedback" class="small mt-1" style="display:none;"></div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-bold">Email (Opcional)</label>
+                        <input id="c-email" type="email" class="form-control" placeholder="cliente@correo.com">
+                    </div>
+                    <div class="col-12"><hr class="my-2"></div>
+                    <div class="col-7">
+                        <label class="form-label small fw-bold">Razón Social</label>
+                        <input id="c-billing-name" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-5">
+                        <label class="form-label small fw-bold">RUC / CI</label>
+                        <input id="c-billing-ruc" class="form-control form-control-sm">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary w-100 fw-bold" onclick="submitQuickClient()">REGISTRAR Y SELECCIONAR</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     let posCart = [];
     let selectedClientId = 1; // 1 = Cliente Ocasional por defecto
-    let posDeliveryLat = null;
-    let posDeliveryLng = null;
+    
     // Estado persistente para el modal de finalización
     let posFinalizeState = {
         clientId: 1,
         clientName: 'Cliente Ocasional',
         observation: '',
         deliveryType: 'local',
-        paymentMethod: 'efectivo',
-        deliveryMode: 'new',
-        lat: null,
-        lng: null,
-        locationUrl: '',
-        newTitle: '',
-        newAddress: ''
+        paymentMethod: 'efectivo'
     };
+
     const totalEl = document.getElementById('posTotal');
     const itemsEl = document.getElementById('ticketItems');
 
@@ -465,352 +590,225 @@
         totalEl.innerText = new Intl.NumberFormat('es-PY').format(total);
     }
 
+    // Declaración global de instancias de modales
+    let bsModalFinalize, bsModalSearch, bsModalCreate;
+
     /**
-     * Abre el modal de finalización con los campos requeridos
+     * Abre el modal principal y sincroniza los datos del ticket
      */
-    async function openFinalizeModal(preData = {}) {
+    window.openFinalizeModal = function() {
         if(posCart.length === 0) return Toast.fire("Agrega productos al ticket", "warning");
-
-        // Combinar datos entrantes (como cuando vienes de buscar cliente) con el estado persistente
-        if (preData.clientId) posFinalizeState.clientId = preData.clientId;
-        if (preData.clientName) posFinalizeState.clientName = preData.clientName;
-        if (preData.observation !== undefined) posFinalizeState.observation = preData.observation;
         
-        // Si el estado está vacío (primera vez), tomar nota del campo rápido del POS
-        if (!posFinalizeState.observation) {
-            posFinalizeState.observation = document.getElementById('posObservation').value;
+        document.getElementById('f-total-display').innerText = 'Gs. ' + totalEl.innerText;
+
+        // Restaurar estado visual basado en los campos del modal
+        const currentClientId = document.getElementById('f-client-id').value;
+        const currentDeliveryType = document.getElementById('f-delivery-type').value;
+        
+        // Si es delivery, verificar si el botón de ubicaciones debe mostrarse
+        if(currentDeliveryType === 'delivery') loadClientLocations(currentClientId);
+        
+        // Sincronizar observaciones rápidas
+        if(!posFinalizeState.observation) {
+            document.getElementById('f-observation').value = document.getElementById('posObservation').value;
         }
+                        
+        bsModalFinalize.show();
+    }
 
-        const { clientId, clientName, observation, deliveryType, paymentMethod, deliveryMode } = posFinalizeState;
+    window.openSearchClient = function() {
+        bsModalFinalize.hide();
+        bsModalSearch.show();
+        window.searchClientListApi();
+    }
 
-        const totalFormatted = totalEl.innerText;
+    window.closeSearchAndReturn = function() {
+        bsModalSearch.hide();
+        bsModalFinalize.show();
+    }
 
-        const { value: formValues } = await Swal.fire({
-            title: 'Finalizar Venta',
-            html: `
-                <div class="text-start" style="font-size: 0.9rem;">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold"><i class="fas fa-user"></i> Cliente</label>
-                        <div class="input-group">
-                            <input type="hidden" id="swal-client-id" value="${clientId}">
-                            <input type="text" id="swal-client-name-display" class="form-control form-control-sm bg-light" value="${clientName}" readonly>
-                            <button id="swal-btn-search" class="btn btn-dark btn-sm" type="button" onclick="searchClientListModal()" title="Buscar Cliente (F3)">
-                                <i class="fas fa-search"></i> <small style="font-size: 0.7rem;">[F3]</small>
-                            </button>
-                            <button class="btn btn-success btn-sm" type="button" onclick="quickCreateClient()" title="Nuevo Cliente (F4)">
-                                <i class="fas fa-user-plus"></i>
-                            </button>
-                        </div>
-                    </div>
+    window.openCreateClient = function() {
+        bsModalFinalize.hide();
+        bsModalCreate.show();
+    }
 
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <label class="form-label fw-bold"><i class="fas fa-truck"></i> Tipo de Entrega</label>
-                            <select id="swal-delivery-type" class="form-select form-select-sm" onchange="window.togglePosDeliveryFields(this.value)">
-                                <option value="local" ${posFinalizeState.deliveryType === 'local' ? 'selected' : ''}>Consumo Local</option>
-                                <option value="pickup" ${posFinalizeState.deliveryType === 'pickup' ? 'selected' : ''}>Para Retirar</option>
-                                <option value="delivery" ${posFinalizeState.deliveryType === 'delivery' ? 'selected' : ''}>Delivery / WhatsApp</option>
-                            </select>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label fw-bold"><i class="fas fa-wallet"></i> Pago</label>
-                            <select id="swal-payment-method" class="form-select form-select-sm">
-                                <option value="efectivo" ${posFinalizeState.paymentMethod === 'efectivo' ? 'selected' : ''}>Efectivo</option>
-                                <option value="pos" ${posFinalizeState.paymentMethod === 'pos' ? 'selected' : ''}>Tarjeta / POS</option>
-                                <option value="transferencia" ${posFinalizeState.paymentMethod === 'transferencia' ? 'selected' : ''}>Transferencia</option>
-                            </select>
-                        </div>
-                    </div>
+    window.closeCreateAndReturn = function() {
+        bsModalCreate.hide();
+        bsModalFinalize.show();
+    }
 
-                    <div id="pos-delivery-extra" style="display: ${posFinalizeState.deliveryType === 'delivery' ? 'block' : 'none'};">
-                        <div class="btn-group w-100 mb-3" role="group">
-                            <button type="button" id="btn-mode-saved" class="btn btn-outline-primary btn-sm btn-delivery-mode" style="display:none;" onclick="window.setDeliveryMode('saved')">
-                                <i class="fas fa-list"></i> Lista
-                            </button>
-                            <button type="button" id="btn-mode-new" class="btn btn-primary btn-sm btn-delivery-mode active" onclick="window.setDeliveryMode('new')">
-                                <i class="fas fa-plus"></i> Nuevo Lugar
-                            </button>
-                            <button type="button" id="btn-mode-link" class="btn btn-outline-primary btn-sm btn-delivery-mode" onclick="window.setDeliveryMode('link')">
-                                <i class="fab fa-whatsapp"></i> Enlace/Link
-                            </button>
-                        </div>
+    /**
+     * Registro rápido de cliente vía AJAX (Bootstrap Modal)
+     */
+    window.submitQuickClient = async function() {
+        const data = {
+            name: document.getElementById('c-name').value,
+            phone: document.getElementById('c-phone').value,
+            email: document.getElementById('c-email').value,
+            billing_name: document.getElementById('c-billing-name').value,
+            billing_ruc: document.getElementById('c-billing-ruc').value
+        };
 
-                        <div id="mode-saved" class="mb-2" style="display:none;">
-                            <label class="form-label fw-bold small text-muted mb-2"><i class="fas fa-bookmark"></i> Seleccionar Dirección Guardada</label>
-                            <div id="pos-locations-list" class="pos-locations-grid"></div>
-                        </div>
+        if(!data.name || !data.phone) return Toast.fire("Nombre y Teléfono requeridos", "error");
 
-                        <div id="mode-new" class="mb-2">
-                            <div class="row g-2 mb-2">
-                                <div class="col-5">
-                                    <input type="text" id="swal-new-loc-title" class="form-control form-control-sm" placeholder="Ej: Casa, Trabajo" value="${posFinalizeState.newTitle}">
-                                </div>
-                                <div class="col-7">
-                                    <input type="text" id="swal-new-loc-address" class="form-control form-control-sm" placeholder="Dirección escrita (Opcional)" value="${posFinalizeState.newAddress}">
-                                </div>
-                            </div>
-                            <p class="text-primary small mb-1" style="font-size: 0.7rem;"><i class="fas fa-mouse-pointer"></i> Haga clic en el mapa para marcar el punto.</p>
-                        </div>
+        try {
+            const resp = await fetch('?route=admin_clients_store_api', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const res = await resp.json();
+            if(res.success) {
+                selectClientFromList(res.id, data.name, data.phone);
+                Toast.fire("Cliente registrado", "success");
+                // Limpiar campos para la próxima
+                ['c-name', 'c-phone', 'c-email', 'c-billing-name', 'c-billing-ruc'].forEach(id => document.getElementById(id).value = '');
+            }
+        } catch(e) { console.error(e); }
+    }
 
-                        <div id="mode-link" class="mb-2" style="display:none;">
-                            <label class="form-label fw-bold small text-success"><i class="fas fa-link"></i> Link de WhatsApp o Google Maps</label>
-                            <input type="text" id="swal-location-url" class="form-control form-control-sm" placeholder="Pegue el link recibido aquí..." oninput="window.processLocationUrl(this.value)" value="${posFinalizeState.locationUrl}">
-                        </div>
+    /**
+     * Manejo de interfaz dinámica
+     */
+    document.addEventListener('DOMContentLoaded', function() {
+        const modalEl = document.getElementById('modalFinalize');
 
-                        <div id="swal-pos-map"></div>
-                        <input type="hidden" id="swal-lat">
-                        <input type="hidden" id="swal-lng">
-                    </div>
+        // Inicialización de modales ahora que el DOM y Bootstrap están listos
+        bsModalFinalize = new bootstrap.Modal(document.getElementById('modalFinalize'));
+        bsModalSearch = new bootstrap.Modal(document.getElementById('modalSearchClient'));
+        bsModalCreate = new bootstrap.Modal(document.getElementById('modalCreateClient'));
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small">Notas del pedido</label>
-                        <textarea id="swal-observation" class="form-control form-control-sm" rows="2">${posFinalizeState.observation}</textarea>
-                    </div>
+        modalEl.addEventListener('shown.bs.modal', function () {
+            const searchBtn = modalEl.querySelector('[onclick="openSearchClient()"]');
+            const delivery = document.getElementById('f-delivery-type');
+            const payment = document.getElementById('f-payment-method');
+            const observation = document.getElementById('f-observation');
+            const confirmBtn = modalEl.querySelector('[onclick="confirmPOS()"]');
 
-                    <div class="alert alert-success d-flex justify-content-between align-items-center p-2 mb-0">
-                        <span class="fw-bold">TOTAL A COBRAR:</span>
-                        <span class="fs-4 fw-bold">Gs. ${totalFormatted}</span>
-                    </div>
-                </div>
-            `,
-            showCancelButton: true,
-            confirmButtonText: 'Confirmar Venta <i class="fas fa-check"></i>',
-            cancelButtonText: 'Seguir cargando',
-            confirmButtonColor: '#00b894',
-            focusConfirm: false,
-            didOpen: () => {
-                const searchBtn = document.getElementById('swal-btn-search');
-                const delivery = document.getElementById('swal-delivery-type');
-                const payment = document.getElementById('swal-payment-method');
-                const observation = document.getElementById('swal-observation');
-                const confirmBtn = Swal.getConfirmButton();
-                const cancelBtn = Swal.getCancelButton();
+            // Colocar el foco explícitamente cuando el modal ya es visible
+            if (searchBtn) {
+                searchBtn.focus();
+            }
 
-                // Foco inicial
-                searchBtn?.focus();
-
-                // Manejo de Enter para recorrer campos
-                const focusPath = [searchBtn, delivery, payment, observation];
-                focusPath.forEach((el, index) => {
-                    el?.addEventListener('keydown', (e) => {
-                        if (e.key === 'Enter') {
-                            // Si es el botón buscar, el Enter nativo abriría el modal, 
-                            // aquí permitimos que el Enter lo mueva al siguiente campo.
+            const focusPath = [searchBtn, delivery, payment, observation, confirmBtn];
+            
+            focusPath.forEach((el, index) => {
+                if (el) {
+                    el.onkeydown = (e) => {
+                        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
                             e.preventDefault();
                             const next = focusPath[index + 1] || confirmBtn;
-                            next?.focus();
+                            if (next) next.focus();
                         }
-                    });
-                });
-
-                // Navegación entre botones de Confirmar/Cancelar con flechas
-                const handleButtonNav = (e) => {
-                    if (e.key === 'ArrowRight') {
-                        e.preventDefault();
-                        cancelBtn?.focus();
-                    } else if (e.key === 'ArrowLeft') {
-                        e.preventDefault();
-                        confirmBtn?.focus();
-                    }
-                };
-
-                confirmBtn?.addEventListener('keydown', handleButtonNav);
-                cancelBtn?.addEventListener('keydown', handleButtonNav);
-
-                // Cargar coordenadas previas si existen
-                if (posFinalizeState.lat && posFinalizeState.lng) {
-                    document.getElementById('swal-lat').value = posFinalizeState.lat;
-                    document.getElementById('swal-lng').value = posFinalizeState.lng;
+                    };
                 }
+            });
+        });
 
-                // Inicialización con un retraso de seguridad para que el DOM esté 100% listo
-                setTimeout(() => {
-                    window.initPosMap();
-                    // Si ya teníamos modo y coordenadas, restaurar marcador
-                    if (posFinalizeState.lat && posFinalizeState.lng) {
-                        window.updatePosMapMarker(posFinalizeState.lat, posFinalizeState.lng);
-                    }
-                    // Restaurar modo de delivery visualmente
-                    if (posFinalizeState.deliveryType === 'delivery') {
-                        window.setDeliveryMode(posFinalizeState.deliveryMode);
-                    }
-                }, 100);
+        // Foco automático para el buscador de clientes cuando termina la animación
+        document.getElementById('modalSearchClient').addEventListener('shown.bs.modal', function () {
+            document.getElementById('s-client-term').focus();
+        });
 
-                if (clientId != 1) {
-                    window.loadClientLocations(clientId);
-                }
-            },
-            willClose: () => {
-                // ESTA ES LA CLAVE: Capturar TODO antes de que el modal desaparezca (incluso si se cancela)
-                const mode = document.querySelector('.btn-delivery-mode.active')?.id.replace('btn-mode-', '') || 'new';
-                
-                posFinalizeState.deliveryType = document.getElementById('swal-delivery-type')?.value || posFinalizeState.deliveryType;
-                posFinalizeState.paymentMethod = document.getElementById('swal-payment-method')?.value || posFinalizeState.paymentMethod;
-                posFinalizeState.observation = document.getElementById('swal-observation')?.value || posFinalizeState.observation;
-                posFinalizeState.deliveryMode = mode;
-                posFinalizeState.lat = document.getElementById('swal-lat')?.value || posFinalizeState.lat;
-                posFinalizeState.lng = document.getElementById('swal-lng')?.value || posFinalizeState.lng;
-                posFinalizeState.newTitle = document.getElementById('swal-new-loc-title')?.value || '';
-                posFinalizeState.newAddress = document.getElementById('swal-new-loc-address')?.value || '';
-                posFinalizeState.locationUrl = document.getElementById('swal-location-url')?.value || '';
-            },
-            preConfirm: () => {
-                const mode = document.querySelector('.btn-delivery-mode.active')?.id.replace('btn-mode-', '') || 'saved';
-                return {
-                    clientId: document.getElementById('swal-client-id').value,
-                    deliveryType: document.getElementById('swal-delivery-type').value,
-                    paymentMethod: document.getElementById('swal-payment-method').value,
-                    observation: document.getElementById('swal-observation').value,
-                    
-                    deliveryMode: mode,
-                    locationId: mode === 'saved' ? document.querySelector('.pos-location-card.selected')?.dataset.id : null,
-                    newTitle: mode === 'new' ? document.getElementById('swal-new-loc-title').value : null,
-                    newAddress: mode === 'new' ? document.getElementById('swal-new-loc-address').value : document.getElementById('swal-location-url').value,
-                    lat: document.getElementById('swal-lat')?.value,
-                    lng: document.getElementById('swal-lng')?.value
+        // Lógica de navegación por teclado para el buscador de clientes
+        const clientSearchInput = document.getElementById('s-client-term');
+        const clientResultsBody = document.getElementById('s-client-results');
+
+        clientSearchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowDown') {
+                const firstRow = clientResultsBody.querySelector('.selectable-client');
+                if (firstRow) {
+                    e.preventDefault();
+                    firstRow.focus();
                 }
             }
         });
 
-        if (formValues) {
-            // Al confirmar, limpiar el estado persistente para la siguiente venta
-            submitPOS(formValues);
-            posFinalizeState = {
-                clientId: 1,
-                clientName: 'Cliente Ocasional',
-                observation: '',
-                deliveryType: 'local',
-                paymentMethod: 'efectivo',
-                deliveryMode: 'new',
-                lat: null,
-                lng: null
-            };
-        }
-    }
+        clientResultsBody.addEventListener('keydown', function(e) {
+            const currentFocused = document.activeElement;
+            if (!currentFocused || !currentFocused.classList.contains('selectable-client')) return;
 
-    /**
-     * Controla la visibilidad de los campos de ubicación y mapa
-     */
-    window.togglePosDeliveryFields = function(val) {
-        const container = document.getElementById('pos-delivery-extra');
+            if (e.key === 'ArrowDown') {
+                const nextRow = currentFocused.nextElementSibling;
+                if (nextRow && nextRow.classList.contains('selectable-client')) {
+                    e.preventDefault();
+                    nextRow.focus();
+                }
+            } else if (e.key === 'ArrowUp') {
+                const prevRow = currentFocused.previousElementSibling;
+                if (prevRow && prevRow.classList.contains('selectable-client')) {
+                    e.preventDefault();
+                    prevRow.focus();
+                } else {
+                    e.preventDefault();
+                    clientSearchInput.focus();
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                currentFocused.click();
+            }
+        });
+
+        // Foco automático para el registro de nuevo cliente
+        document.getElementById('modalCreateClient').addEventListener('shown.bs.modal', function () {
+            document.getElementById('c-name').focus();
+        });
+    });
+
+    window.toggleDeliveryFields = function(val) {
+        const container = document.getElementById('f-delivery-extra');
         if(container) {
             const isDelivery = (val === 'delivery');
             container.style.display = isDelivery ? 'block' : 'none';
-            if(isDelivery) {
-                // Forzar carga de ubicaciones al cambiar a delivery si hay un cliente seleccionado
-                const clientId = document.getElementById('swal-client-id')?.value;
-                if(clientId && clientId != "1") {
-                    window.loadClientLocations(clientId);
-                }
-
-                setTimeout(() => {
-                    if(!window.posMap) window.initPosMap();
-                    if(window.posMap && typeof window.posMap.invalidateSize === 'function') window.posMap.invalidateSize();
-                }, 300);
-            }
+            if(isDelivery) loadClientLocations(document.getElementById('f-client-id').value);
         }
     }
 
     /**
-     * Alterna entre los 3 métodos de entrada de ubicación
+     * Recolección de datos y envío final
      */
-    window.setDeliveryMode = function(mode) {
-        // Ocultar todos los contenedores
-        ['saved', 'new', 'link'].forEach(m => {
-            const div = document.getElementById('mode-' + m);
-            if(div) div.style.display = 'none';
-            const btn = document.getElementById('btn-mode-' + m);
-            if(btn) btn.classList.replace('btn-primary', 'btn-outline-primary');
-            if(btn) btn.classList.remove('active');
-        });
+    window.confirmPOS = function() {
+        const formValues = {
+            clientId: document.getElementById('f-client-id').value,
+            deliveryType: document.getElementById('f-delivery-type').value,
+            paymentMethod: document.getElementById('f-payment-method').value,
+            observation: document.getElementById('f-observation').value,
+            locationUrl: document.getElementById('f-location-url').value,
+            lat: document.getElementById('f-lat').value,
+            lng: document.getElementById('f-lng').value
+        };
 
-        // Mostrar el seleccionado
-        const activeDiv = document.getElementById('mode-' + mode);
-        if(activeDiv) activeDiv.style.display = 'block';
-        const activeBtn = document.getElementById('btn-mode-' + mode);
-        if(activeBtn) {
-            activeBtn.classList.replace('btn-outline-primary', 'btn-primary');
-            activeBtn.classList.add('active');
+        if(formValues.deliveryType === 'delivery' && !formValues.lat) {
+            return Toast.fire("Debe pegar un link de ubicación válido", "warning");
         }
 
-        // Refrescar mapa si es necesario
-        if(window.posMap) {
-            setTimeout(() => window.posMap.invalidateSize(), 100);
-        }
+        submitPOS(formValues);
     }
 
     /**
      * Carga las ubicaciones del cliente seleccionado en el POS
      */
     window.loadClientLocations = async function(clientId) {
-        const btnSaved = document.getElementById('btn-mode-saved');
-        const listContainer = document.getElementById('pos-locations-list');
-        const feedback = document.getElementById('swal-search-feedback');
-        if(!listContainer || !btnSaved) return;
+        const btnMapMini = document.getElementById('btn-map-indicator');
+        if(!btnMapMini) return;
 
         // Resetear estado visual antes de la consulta
-        btnSaved.style.display = 'none';
-        listContainer.innerHTML = '';
-        if(feedback) feedback.innerHTML = '';
+        btnMapMini.style.display = 'none';
 
         if(clientId == 1 || !clientId) {
-            window.setDeliveryMode('new');
             return;
         }
 
         try {
             const resp = await fetch(`?route=admin_client_locations&id=${clientId}`);
-            if (!resp.ok) throw new Error("Error en la respuesta de la API");
-            
             const locations = await resp.json();
 
             if(Array.isArray(locations) && locations.length > 0) {
-                locations.forEach(loc => {
-                    const card = document.createElement('div');
-                    card.className = 'pos-location-card';
-                    card.dataset.id = loc.id;
-                    card.dataset.lat = loc.lat;
-                    card.dataset.lng = loc.lng;
-                    card.dataset.address = loc.address;
-                    card.innerHTML = `<i class="fas fa-home"></i><strong>${loc.title}</strong><small>${loc.address}</small>`;
-                    card.addEventListener('click', function() { window.handlePosLocationSelect(this); });
-                    listContainer.appendChild(card);
-                });
-
-                // Si hay ubicaciones, mostrar botón con prioridad y activar modo lista
-                btnSaved.style.setProperty('display', 'inline-flex', 'important');
-                if(feedback) feedback.innerHTML = `<span class="text-success fw-bold small"><i class="fas fa-check-circle"></i> Cliente con ${locations.length} direcciones guardadas.</span>`;
-                
-                // Seleccionar la primera por defecto
-                const firstCard = listContainer.querySelector('.pos-location-card');
-                if(firstCard) window.handlePosLocationSelect(firstCard);
-                window.setDeliveryMode('saved');
-            } else {
-                if(feedback) feedback.innerHTML = `<span class="text-muted small"><i class="fas fa-info-circle"></i> Cliente sin direcciones registradas.</span>`;
-                window.setDeliveryMode('new');
+                btnMapMini.style.display = 'inline-flex';
+                btnMapMini.title = `El cliente tiene ${locations.length} direcciones guardadas`;
             }
         } catch (e) { 
-            console.error("Error cargando ubicaciones:", e);
-            window.setDeliveryMode('new');
-        }
-    }
-
-    /**
-     * Maneja la selección visual de las tarjetas de ubicación
-     */
-    window.handlePosLocationSelect = function(card) {
-        if(!card) return;
-        document.querySelectorAll('.pos-location-card').forEach(c => c.classList.remove('selected'));
-        card.classList.add('selected');
-
-        if(card.dataset.id) {
-            window.updatePosMapMarker(parseFloat(card.dataset.lat), parseFloat(card.dataset.lng));
-            const linkInput = document.getElementById('swal-location-url');
-            if(linkInput) linkInput.value = card.dataset.address;
-        } else {
-            document.getElementById('swal-lat').value = '';
-            document.getElementById('swal-lng').value = '';
-            if (window.posMarker) window.posMap.removeLayer(window.posMarker);
+            btnMapMini.style.display = 'none';
         }
     }
 
@@ -819,32 +817,7 @@
      */
     window.posMap = null;
     window.posMarker = null;
-
-    window.initPosMap = function() {
-        const mapContainer = document.getElementById('swal-pos-map');
-        if (!mapContainer || mapContainer.offsetHeight === 0) return;
-
-        if (window.posMap) {
-            try {
-                window.posMap.off();
-                window.posMap.remove();
-            } catch(e) { console.error("Error al limpiar mapa:", e); }
-        }
-
-        window.posMap = L.map(mapContainer).setView([-25.3006, -57.6359], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window.posMap);
-
-        // Permitir marcar punto manualmente si el modo es "Nuevo"
-        window.posMap.on('click', function(e) {
-            const mode = document.querySelector('.btn-delivery-mode.active')?.id.replace('btn-mode-', '');
-            if(mode === 'new') {
-                window.updatePosMapMarker(e.latlng.lat, e.latlng.lng);
-            }
-        });
-
-        // Forzamos el renderizado de los cuadros (tiles)
-        setTimeout(() => { if(window.posMap) window.posMap.invalidateSize(); }, 400);
-    }
+    window.initPosMap = function() { /* Mapa suprimido de la vista principal */ }
 
     /**
      * Extrae coordenadas de una URL de Google Maps y actualiza el mapa
@@ -860,14 +833,10 @@
             window.updatePosMapMarker(parseFloat(match[1]), parseFloat(match[2]));
         } else if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
             // Resolver link corto vía backend
-            try {
-                const feedback = document.getElementById('swal-search-feedback');
-                if(feedback) feedback.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resolviendo ubicación...';
-                
+            try {                
                 const resp = await fetch(`?route=admin_resolve_map_url&url=${encodeURIComponent(url)}`);
                 const res = await resp.json();
                 if (res.success) {
-                    console.log("Servidor resolvió coordenadas:", res.lat, res.lng);
                     window.updatePosMapMarker(parseFloat(res.lat), parseFloat(res.lng));
                 } else {
                     console.error("Servidor no pudo resolver el link:", res.message);
@@ -886,125 +855,27 @@
         if (latInput) latInput.value = lat;
         if (lngInput) lngInput.value = lng;
 
-        if (window.posMap && !isNaN(lat) && !isNaN(lng)) {
-            // Asegurar que el contenedor es visible antes de centrar
-            const container = document.getElementById('pos-delivery-extra');
-            if(container) container.style.display = 'block';
-            
-            if(typeof window.posMap.invalidateSize === 'function') window.posMap.invalidateSize();
-            window.posMap.setView([lat, lng], 16);
-            if (window.posMarker) window.posMap.removeLayer(window.posMarker);
-            window.posMarker = L.marker([lat, lng]).addTo(window.posMap);
+        if (!isNaN(lat) && !isNaN(lng)) {
             Toast.fire("Ubicación extraída correctamente", "success");
         }
+        
+        if (latInputF) latInputF.value = lat;
+        const lngInputF = document.getElementById('f-lng');
+        if (lngInputF) lngInputF.value = lng;
     }
 
     /**
-     * Abre modal de búsqueda de clientes en formato lista/tabla
+     * Buscador de Clientes AJAX
      */
-    window.searchClientListModal = async function() {
-        // Persistir estado actual de los inputs antes de que el modal se cierre
-        posFinalizeState.observation = document.getElementById('swal-observation')?.value || posFinalizeState.observation;
-        posFinalizeState.deliveryType = document.getElementById('swal-delivery-type')?.value || posFinalizeState.deliveryType;
-        posFinalizeState.paymentMethod = document.getElementById('swal-payment-method')?.value || posFinalizeState.paymentMethod;
-
-        window.clientSelectedInList = false;
-
-        await Swal.fire({
-            title: 'Buscar Cliente',
-            width: '650px',
-            html: `
-                <div class="text-start">
-                    <input type="text" id="swal-client-list-search" class="form-control mb-3" placeholder="Nombre, RUC o Teléfono..." oninput="window.debounceSearchClientList()">
-                    <div style="max-height: 350px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px;">
-                        <table class="pos-client-table">
-                            <thead>
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>RUC/CI</th>
-                                    <th>Teléfono</th>
-                                </tr>
-                            </thead>
-                            <tbody id="swal-client-list-results">
-                                <tr onclick="window.selectClientFromList(1, 'Cliente Ocasional', '')">
-                                    <td colspan="3" class="text-center py-3 text-primary fw-bold italic">-- Seleccionar Cliente Ocasional --</td>
-                                </tr>
-                                <tr><td colspan="3" class="text-center py-4 text-muted small">Escriba para buscar en la base de datos...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            `,
-            showCancelButton: true,
-            cancelButtonText: 'Volver',
-            showConfirmButton: false,
-            didOpen: () => {
-                const searchInput = document.getElementById('swal-client-list-search');
-                const resultsBody = document.getElementById('swal-client-list-results');
-                
-                searchInput?.focus();
-
-                // Navegación desde el campo de búsqueda
-                searchInput?.addEventListener('keydown', (e) => {
-                    const rows = resultsBody.querySelectorAll('tr.selectable-client');
-                    if (e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        if (rows.length > 0) rows[0].focus();
-                    } else if (e.key === 'Enter') {
-                        e.preventDefault();
-                        if (rows.length === 1) {
-                            rows[0].click(); // Seleccionar si es el único
-                        } else if (rows.length > 1) {
-                            rows[0].focus(); // Bajar a la tabla si hay varios
-                        }
-                    }
-                });
-
-                // Navegación dentro de la tabla (Delegación de eventos)
-                resultsBody?.addEventListener('keydown', (e) => {
-                    const currentRow = e.target.closest('tr.selectable-client');
-                    if (!currentRow) return;
-
-                    if (e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        const next = currentRow.nextElementSibling;
-                        if (next && next.classList.contains('selectable-client')) next.focus();
-                    } else if (e.key === 'ArrowUp') {
-                        e.preventDefault();
-                        const prev = currentRow.previousElementSibling;
-                        if (prev && prev.classList.contains('selectable-client')) {
-                            prev.focus();
-                        } else {
-                            searchInput.focus(); // Volver al buscador desde la primera fila
-                        }
-                    } else if (e.key === 'Enter') {
-                        currentRow.click();
-                    }
-                });
-
-                // Carga inicial de los 10 primeros clientes
-                window.searchClientListApi();
-            },
-            willClose: () => {
-                // Si se cierra sin seleccionar (clic fuera o cancelar), reabrir el principal con los datos preservados
-                if (!window.clientSelectedInList) {
-                    openFinalizeModal(posFinalizeState);
-                }
-            }
-        });
+    let searchTimeout;
+    window.debounceSearchClient = () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => searchClientListApi(), 350);
     }
 
-    let searchListTimeout;
-    window.debounceSearchClientList = function() {
-        clearTimeout(searchListTimeout);
-        searchListTimeout = setTimeout(() => {
-            searchClientListApi();
-        }, 350);
-    };
-
     window.searchClientListApi = async function() {
-        const term = document.getElementById('swal-client-list-search').value.trim();
-        const tbody = document.getElementById('swal-client-list-results');
+        const term = document.getElementById('s-client-term').value.trim();
+        const tbody = document.getElementById('s-client-results');
 
         // Si el término tiene un solo caracter, no buscamos (esperamos al segundo)
         // Si está vacío, traemos los primeros 10 por defecto
@@ -1024,8 +895,10 @@
                 html += '<tr><td colspan="3" class="text-center py-4">Sin resultados</td></tr>';
             } else {
                 clients.forEach(c => {
+                    // Escapar nombres para evitar que comillas rompan el atributo HTML
+                    const safeName = c.name.replace(/'/g, "\\'").replace(/"/g, "&quot;");
                     html += `
-                        <tr class="selectable-client" tabindex="0" onclick="window.selectClientFromList(${c.id}, '${c.name.replace(/'/g, "\\'")}', '${c.phone || ''}')">
+                        <tr class="selectable-client" tabindex="0" onclick="window.selectClientFromList(${c.id}, '${safeName}', '${c.phone || ''}')">
                             <td><strong>${c.name}</strong></td>
                             <td>${c.billing_ruc || '---'}</td>
                             <td>${c.phone || '---'}</td>
@@ -1040,161 +913,67 @@
     }
 
     window.selectClientFromList = function(id, name, phone) {
-        window.clientSelectedInList = true;
-        posFinalizeState.clientId = id;
-        posFinalizeState.clientName = id == 1 ? 'Cliente Ocasional' : `${name} (${phone || 'S/T'})`;
+        document.getElementById('f-client-id').value = id;
+        document.getElementById('f-client-name').value = id == 1 ? 'Cliente Ocasional' : `${name} (${phone || 'S/T'})`;
         
-        Swal.close();
-        openFinalizeModal(posFinalizeState);
+        bsModalSearch.hide();
+        bsModalCreate.hide();
+        bsModalFinalize.show();
+        
+        if(document.getElementById('f-delivery-type').value === 'delivery') loadClientLocations(id);
     }
 
     /**
-     * Abre un sub-modal para registrar un cliente sin perder el progreso del POS
+     * Valida el formato del teléfono y verifica su existencia en la DB
      */
-    window.quickCreateClient = async function() {
-        // Capturar estado actual de los inputs antes de que el modal se cierre
-        posFinalizeState.observation = document.getElementById('swal-observation')?.value || posFinalizeState.observation;
-        posFinalizeState.deliveryType = document.getElementById('swal-delivery-type')?.value || posFinalizeState.deliveryType;
-        posFinalizeState.paymentMethod = document.getElementById('swal-payment-method')?.value || posFinalizeState.paymentMethod;
+    window.checkPhoneExistence = async (phone) => {
+        const feedback = document.getElementById('c-phone-feedback');
+        if(!phone || phone.trim().length < 6) { feedback.style.display = 'none'; return; }
 
-        const result = await Swal.fire({
-            title: 'Nuevo Cliente',
-            html: `
-                <div class="text-start">
-                    <label class="form-label small fw-bold">Nombre Completo</label>
-                    <input id="q-name" class="form-control mb-2" placeholder="Ej: Juan Pérez">
-                    
-                    <label class="form-label small fw-bold">Teléfono / WhatsApp</label>
-                    <input id="q-phone" class="form-control mb-1" placeholder="Ej: 0981222333">
-                    <div id="phone-feedback" class="small mb-2" style="display:none;"></div>
+        // Normalizar: Solo números para validación y envío
+        const cleanPhone = phone.replace(/\D/g, '');
 
-                    <label class="form-label small fw-bold">Email (Opcional)</label>
-                    <input id="q-email" class="form-control" placeholder="cliente@correo.com">
+        /**
+         * Validación para Paraguay (Mobile):
+         * ^(?:595)?      -> Prefijo país opcional
+         * (?:0)?         -> Cero inicial opcional
+         * (9[6-9][1-6])  -> Operadora (971-976, 981-986, 991-995, 961-962)
+         * (\d{6})$       -> Número de 6 dígitos
+         */
+        const pyMobileRegex = /^(?:595)?(?:0)?(9[6-9][1-6])(\d{6})$/;
+        const isValid = pyMobileRegex.test(cleanPhone);
 
-                    <hr class="my-3 opacity-10">
-                    <label class="form-label small fw-bold text-primary"><i class="fas fa-file-invoice"></i> Datos de Facturación (Opcional)</label>
-                    <div class="row g-2">
-                        <div class="col-7">
-                            <input id="q-billing-name" class="form-control form-control-sm" placeholder="Razón Social / Nombre">
-                        </div>
-                        <div class="col-5">
-                            <input id="q-billing-ruc" class="form-control form-control-sm" placeholder="RUC / CI">
-                        </div>
-                    </div>
-                </div>
-            `,
-            focusConfirm: false,
-            didOpen: () => {
-                const nameInput = document.getElementById('q-name');
-                const phoneInput = document.getElementById('q-phone');
-                const emailInput = document.getElementById('q-email');
-                const billingNameInput = document.getElementById('q-billing-name');
-                const billingRucInput = document.getElementById('q-billing-ruc');
-                const feedback = document.getElementById('phone-feedback');
-
-                nameInput?.focus();
-
-                // Flujo de navegación con Enter
-                nameInput?.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') { e.preventDefault(); phoneInput?.focus(); }
-                });
-
-                phoneInput?.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') { e.preventDefault(); emailInput?.focus(); }
-                });
-
-                emailInput?.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') { e.preventDefault(); billingNameInput?.focus(); }
-                });
-
-                billingNameInput?.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') { e.preventDefault(); billingRucInput?.focus(); }
-                });
-
-                billingRucInput?.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') { e.preventDefault(); Swal.clickConfirm(); }
-                });
-                
-                phoneInput?.addEventListener('input', async (e) => {
-                    const phone = e.target.value;
-                    if (phone.length >= 6) {
-                        const resp = await fetch(`?route=admin_clients_check_phone&phone=${phone}`);
-                        const res = await resp.json();
-                        
-                        if (res.exists) {
-                            phoneInput.classList.add('is-invalid');
-                            phoneInput.classList.remove('is-valid');
-                            feedback.style.display = 'block';
-                            feedback.style.color = '#dc3545';
-                            feedback.innerText = '⚠️ Este teléfono ya está registrado';
-                        } else {
-                            phoneInput.classList.remove('is-invalid');
-                            phoneInput.classList.add('is-valid');
-                            feedback.style.display = 'block';
-                            feedback.style.color = '#198754';
-                            feedback.innerText = '✅ Teléfono disponible';
-                        }
-                    }
-                });
-            },
-            showCancelButton: true,
-            confirmButtonText: 'Registrar y Seleccionar',
-            preConfirm: () => {
-                return {
-                    name: document.getElementById('q-name').value,
-                    phone: document.getElementById('q-phone').value,
-                    email: document.getElementById('q-email').value,
-                    billing_name: document.getElementById('q-billing-name').value,
-                    billing_ruc: document.getElementById('q-billing-ruc').value
-                }
-            }
-        });
-
-        if (result.isConfirmed) {
-            const formValues = result.value;
-            try {
-                const resp = await fetch('?route=admin_clients_store_api', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formValues)
-                });
-                const res = await resp.json();
-                
-                if(res.success) {
-                    Toast.fire("Cliente registrado", "success");
-                    // Relanzamos el modal de finalizar inyectando el nuevo cliente y preservando lo escrito
-                    openFinalizeModal({
-                        clientId: res.id,
-                        clientName: `${res.name} (${formValues.phone})`
-                    });
-                } else {
-                    Swal.fire("Error", res.message, "error");
-                }
-            } catch(e) { console.error(e); }
-        } else {
-            // Si se cancela o presiona Esc, volvemos al modal de Finalizar preservando los datos
-            openFinalizeModal();
+        feedback.style.display = 'block';
+        if (!isValid) {
+            feedback.innerText = '❌ Formato inválido (ej: 0981 123456)';
+            feedback.style.color = '#dc3545';
+            return;
         }
+
+        const resp = await fetch(`?route=admin_clients_check_phone&phone=${cleanPhone}`);
+        const res = await resp.json();
+        feedback.innerText = res.exists ? '⚠️ Teléfono ya registrado' : '✅ Formato válido y disponible';
+        feedback.style.color = res.exists ? '#dc3545' : '#198754';
     }
 
+    /**
+     * Envío final del pedido (POS)
+     */
     async function submitPOS(data) {
+        // Cerramos el modal inmediatamente para evitar doble click
+        bsModalFinalize.hide();
+
         const response = await fetch('?route=pos_store', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 cart: posCart, 
                 client_id: data.clientId,
-                location_id: data.locationId,
                 delivery_type: data.deliveryType,
                 payment_method: data.paymentMethod,
                 observation: data.observation,
-                lat: data.lat,
-                lng: data.lng,
-                delivery_address: data.deliveryMode === 'saved' ? 
-                    document.querySelector('.pos-location-card.selected small')?.innerText : 
-                    data.newAddress,
-                save_new_location: (data.deliveryMode === 'new' && data.clientId != 1),
-                new_location_title: data.newTitle
+                lat: data.lat, lng: data.lng,
+                delivery_address: data.locationUrl
             })
         });
 
@@ -1206,6 +985,10 @@
             posCart = [];
             document.getElementById('posObservation').value = "";
             renderTicket();
+            
+            // Resetear inputs del modal
+            document.getElementById('f-client-id').value = 1;
+            document.getElementById('f-client-name').value = 'Cliente Ocasional';
 
             // Flujo de cobranza: Preguntar si desea registrar el pago ahora
             Swal.fire({
@@ -1234,20 +1017,20 @@
     document.addEventListener('keydown', function(e) {
         if (e.key === 'F2') {
             e.preventDefault();
-            openFinalizeModal();
+            openFinalizeModal();            
         }
         // F3 para Buscar Cliente en lista
         if (e.key === 'F3' || e.code === 'F3') {
             e.preventDefault();
-            searchClientListModal();
+            openSearchClient();
         }
         // F4 para Registrar Nuevo Cliente
         if (e.key === 'F4' || e.code === 'F4') {
             e.preventDefault();
-            quickCreateClient();
+            openCreateClient();
         }
     }, true); // Usamos capture para asegurar que el evento se detecte antes de que el modal lo bloquee
 
     // Autofocus en el buscador al cargar la vista
-    document.getElementById('posSearch').focus();
+    //document.getElementById('posSearch').focus();
 </script>

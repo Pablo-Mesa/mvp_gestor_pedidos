@@ -118,8 +118,7 @@
     <meta name="theme-color" content="#2d3436">
     <link rel="manifest" href="<?php echo htmlspecialchars($baseUrl); ?>manifest.json">
     <link rel="apple-touch-icon" href="<?php echo htmlspecialchars($siteLogo); ?>">
-
-    <link rel="icon" type="image/png" href="<?php echo $baseUrl; ?>assets/icono_solver_nobg.png">  
+    <link rel="icon" type="image/png" href="<?php echo htmlspecialchars($siteLogo); ?>">  
 
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/css_cubo.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/client_layout.css">   

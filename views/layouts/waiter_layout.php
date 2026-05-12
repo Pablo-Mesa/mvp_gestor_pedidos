@@ -1,4 +1,7 @@
-<?php $baseUrl = str_replace('index.php', '', $_SERVER['SCRIPT_NAME']); ?>
+<?php 
+    $baseUrl = str_replace('index.php', '', $_SERVER['SCRIPT_NAME']); 
+    $siteLogo = $baseUrl . 'assets/icono_solver_nobg.png';
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -8,7 +11,8 @@
     
     <!-- Configuración para App Web (PWA/Mobile) -->
     <meta name="theme-color" content="#3498db">
-    <link rel="icon" type="image/png" href="<?php echo $baseUrl; ?>assets/icono_solver_nobg.png">
+    <link rel="icon" type="image/png" href="<?php echo $siteLogo; ?>">
+    <link rel="apple-touch-icon" href="<?php echo $siteLogo; ?>">
     
     <!-- Bootstrap 5 & FontAwesome -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -119,7 +123,7 @@
 
     <header class="waiter-header">
         <div class="header-brand">
-            <div id="here_cube"></div>
+            <img src="<?php echo $siteLogo; ?>" alt="Logo Solver" style="height: 24px; width: auto; margin-right: 8px;">
             <h1>Solver Mozo</h1>
         </div>
         <button class="btn btn-link text-dark p-0" onclick="toggleMenu()">
@@ -189,9 +193,6 @@
     <script src="<?php echo $baseUrl; ?>js/tool-kit-v002.js"></script>
     
     <script>
-        // Inicializar el logo animado
-        drawCube("here_cube", false, "22px");
-
         // Control del menú lateral
         function toggleMenu() {
             document.getElementById('sideMenu').classList.toggle('open');

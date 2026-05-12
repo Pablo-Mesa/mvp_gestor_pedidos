@@ -22,26 +22,29 @@ Este documento establece el norte estratégico del ecosistema **Solver**, dividi
 ### 3. Ámbito: Logística (App de Delivery)
 *   **Panel de Repartidor:** Interfaz optimizada para móviles para usuarios con rol `delivery`.
 *   **Gestión de Entregas:** 
-    *   Mapa de ruta basado en coordenadas guardadas.
+    *   Mapa de ruta con integración directa a Google Maps/Waze.
     *   Estados logísticos: `Listo para Despacho`, `En camino`, `Entregado`.
 *   **Liquidación de Delivery:** Control de cobros realizados por el repartidor en efectivo.
-
+*   **Notificaciones:** Alertas push o WhatsApp al cliente cuando su pedido sale a despacho.
 ---
 
 ## 🚀 Fases de Implementación (Objetivos)
 
 ### Fase 1: Consolidación Administrativa (Prioridad Alta)
 *   [x] Gestión Dinámica de Hero Promo (Banner de Cliente).
-*   [ ] Implementar el formulario de pedido local en el panel Admin.
-*   [ ] Crear tablas y lógica para el control de caja y arqueo.
-*   [ ] Vincular pedidos online y locales en un solo flujo de caja.
+*   [x] Módulo POS con navegación por teclado.
+*   [x] Lógica de Caja (Apertura/Cierre).
+*   [ ] **Reporte de Arqueo:** Vista comparativa de saldo sistema vs físico.
+*   [ ] **Validación de Stock:** Impedir ventas en POS de productos agotados en el menú diario.
 
 ### Fase 2: Módulo de Logística y Delivery
+*   [ ] **Vista Mobile Repartidor:** Listado simplificado de entregas pendientes.
 *   [ ] Crear acceso y vistas para el rol de Repartidor.
 *   [ ] Implementar el cambio de estados logísticos.
 *   [ ] Integrar botón de "Abrir en Google Maps" usando `delivery_lat` y `delivery_lng`.
 
 ### Fase 3: UX y Optimización del Home
+*   [ ] **KDS (Kitchen Display System):** Monitor de pedidos para cocina.
 *   [ ] Refactorización estética profunda del frontend cliente.
 *   [ ] Implementar WebSockets o Polling optimizado para el estatus del pedido del cliente.
 *   [ ] Optimización de rendimiento y SEO básico.
@@ -60,4 +63,3 @@ Este documento establece el norte estratégico del ecosistema **Solver**, dividi
 Nota sobre Clientes: Si deseas aplicar esta misma política a los Clientes (Comensales), deberás ejecutar un script similar para agregar la columna is_active a la tabla clients y actualizar el método login en models/Client.php. Por ahora, siguiendo tu solicitud previa, nos hemos enfocado en el control del Staff.
 
 ¿Deseas que repliquemos esta lógica de "bloqueo" para el registro de clientes o pasamos directamente al diseño de las tablas para el Arqueo de Caja?
-

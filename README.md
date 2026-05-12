@@ -21,6 +21,25 @@ Este proyecto permite a los administradores planificar el menú diario y gestion
 *   **Gestión de Disponibilidad:** Opción rápida para marcar platos como "Agotados" o "Disponibles" en tiempo real.
 *   **Gestión de Pedidos:** Visualización de detalles y actualización de estados de los pedidos.
 
+## 🏁 Guía de Primer Uso (Onboarding)
+
+Para poner en marcha el sistema por primera vez, el Administrador debe seguir estos pasos en orden:
+
+1.  **Paso 0: Pre-configuración (Ajustes Globales):** 
+    *   Ingresar a `Configuraciones`.
+    *   Definir el nombre del local, dirección física y, lo más importante, **marcar la ubicación en el mapa**. Esto es vital para que el sistema calcule los costos de delivery por distancia.
+    *   Configurar los parámetros de facturación (IVA, habilitar facturas legales).
+
+2.  **Paso 1: Estructura del Catálogo:**
+    *   Crear las **Categorías** (ej: Minutas, Bebidas, Postres).
+    *   Cargar los **Productos** con sus precios e imágenes.
+
+3.  **Paso 2: Planificación Operativa:**
+    *   En `Gestión de Menús`, seleccionar qué platos del catálogo se ofrecerán **hoy**.
+    *   Abrir la **Caja** del día con el monto inicial (fondo de sencillo). El sistema bloqueará el POS si la caja no está abierta.
+
+4.  **Paso 3: Venta Real:** ¡Listo para recibir pedidos por la Web o registrar ventas en el POS!
+
 ## 🛠️ Tecnologías Utilizadas
 
 *   **Backend:** PHP (Sin frameworks, arquitectura MVC personalizada).

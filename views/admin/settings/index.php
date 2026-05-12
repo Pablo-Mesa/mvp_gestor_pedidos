@@ -7,31 +7,35 @@
     <div class="row">
         <div class="col-lg-8">
             <div class="card shadow mb-4">
-                <div class="card-header py-3">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center bg-white">
                     <h6 class="m-0 font-weight-bold text-primary">Información General</h6>
+                    <button type="button" id="btn-enable-edit" class="btn btn-sm btn-primary shadow-sm">
+                        <i class="fas fa-edit fa-sm me-1"></i> Modificar Ajustes
+                    </button>
                 </div>
                 <div class="card-body">
-                    <form action="?route=settings_update" method="POST" enctype="multipart/form-data">
+                    <form id="form-settings" action="?route=settings_update" method="POST" enctype="multipart/form-data">
                         <div class="mb-4">
                             <label class="form-label fw-bold">Nombre del Establecimiento</label>
-                            <input type="text" name="site_name" class="form-control" 
-                                   value="<?= htmlspecialchars($settings['site_name'] ?? 'Solver') ?>" required>
+                            <input type="text" id="site_name" name="site_name" class="form-control" 
+                                   value="<?= htmlspecialchars($settings['site_name'] ?? 'Solver') ?>" required disabled>
                         </div>
 
                         <div class="mb-4">
                             <label class="form-label fw-bold">Logotipo de la Marca</label>
                             <div class="d-flex align-items-center gap-3">
                                 <?php if (!empty($settings['site_logo'])): ?>
-                                    <img src="uploads/<?= $settings['site_logo'] ?>" alt="Logo" class="img-thumbnail" style="height: 60px;">
+                                    <img src="uploads/<?= $settings['site_logo'] ?>" id="current-logo" alt="Logo" class="img-thumbnail" style="height: 60px;">
                                 <?php endif; ?>
-                                <input type="file" name="site_logo" class="form-control" accept="image/*">
+                                <input type="file" name="site_logo" class="form-control" accept="image/*" disabled>
                             </div>
                         </div>
 
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary px-4">
-                                <i class="fas fa-save me-2"></i>Guardar Configuración
+                        <div id="actions-area" class="d-none pt-3 border-top">
+                            <button type="submit" class="btn btn-success px-4">
+                                <i class="fas fa-save me-2"></i>Guardar Cambios
                             </button>
+                            <button type="button" id="btn-cancel-edit" class="btn btn-outline-secondary ms-2">Cancelar</button>
                             <button type="button" class="btn btn-link text-muted" onclick="confirmResetSettings()">
                                 Restaurar
                             </button>
@@ -63,6 +67,44 @@
 </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('form-settings');
+    const btnEnable = document.getElementById('btn-enable-edit');
+    const btnCancel = document.getElementById('btn-cancel-edit');
+    const actionsArea = document.getElementById('actions-area');
+    const inputs = form.querySelectorAll('input');
+
+    if (btnEnable) {
+        btnEnable.addEventListener('click', () => {
+            inputs.forEach(input => input.disabled = false);
+            actionsArea.classList.remove('d-none');
+            btnEnable.classList.add('d-none');
+            document.getElementById('site_name').focus();
+        });
+    }
+
+    if (btnCancel) {
+        btnCancel.addEventListener('click', () => window.location.reload());
+    }
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        Swal.fire({
+            title: '¿Confirmar cambios?',
+            text: "Se actualizará la identidad visual del portal.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#198754',
+            confirmButtonText: 'Sí, guardar',
+            cancelButtonText: 'Revisar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    });
+});
+
 function confirmResetSettings() {
     Swal.fire({
         title: '¿Restaurar valores?',

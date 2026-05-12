@@ -1,13 +1,17 @@
-<?php $baseUrl = str_replace('index.php', '', $_SERVER['SCRIPT_NAME']); ?>
+<?php 
+    $baseUrl = str_replace('index.php', '', $_SERVER['SCRIPT_NAME']);
+    $siteName = 'Solver';
+    $siteLogo = $baseUrl . 'assets/icono_solver_nobg.png';
+?>
 <!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solver - Panel de Control</title>
-    <link rel="icon" type="image/png" href="<?php echo $baseUrl; ?>assets/icono_solver_nobg.png">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/css_cubo.css">
+    <title><?php echo htmlspecialchars($siteName); ?> - Panel de Control</title>
+    <link rel="apple-touch-icon" href="<?php echo htmlspecialchars($siteLogo); ?>">
+    <link rel="icon" type="image/png" href="<?php echo htmlspecialchars($siteLogo); ?>">
     <!-- Bootstrap 5 para la interfaz administrativa -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -150,7 +154,7 @@
 
         /* Área de Contenido */
         .content-wrapper {
-            height: calc(100vh - 70px); /* Altura total menos la altura del topbar */
+            height: calc(100vh - 65px); /* Altura total menos la altura del topbar */
             padding: 1rem;            
             overflow-y: auto;  
         }
@@ -244,7 +248,10 @@
     <!-- 1. Menú Lateral -->
     <nav class="sidebar" id="adminSidebar">
         <div class="sidebar-header">
-            <div id="here_cube" class="h1-cf-dark"></div>
+            <a href="?route=admin" class="text-decoration-none d-flex align-items-center">
+                <img src="<?php echo $siteLogo; ?>" alt="Logo Solver" style="height: 30px; width: auto; margin-right: 10px;">
+                <span class="text-white fw-bold">SOLVER</span>
+            </a>
         </div>
         <?php
         // Definición de la estructura del menú (Escalable)
@@ -254,7 +261,7 @@
         $menu_structure = [
             ['route' => 'admin',       'label' => 'Dashboard',        'icon' => 'fas fa-chart-pie', 'roles' => ['admin']],
             ['route' => 'pos',         'label' => 'Recepción',        'icon' => 'fas fa-concierge-bell', 'roles' => ['admin', 'cajero']],            
-            ['route' => 'admin_mozo_monitor', 'label' => 'Monitoreo de Salón', 'icon' => 'fas fa-desktop', 'roles' => ['admin', 'cajero']],
+            ['route' => 'admin_mozo_monitor', 'label' => 'Monitoreo de Salón', 'icon' => 'fas fa-desktop', 'roles' => ['admin']],
             [
                 'label' => 'Pedidos',
                 'icon' => 'fas fa-box',
@@ -331,7 +338,8 @@
                 ?>
                     <li>
                         <a class="menu-header-link <?php echo $is_child_active ? 'active-link' : ''; ?>" 
-                           data-bs-toggle="collapse" href="#sub_<?php echo $item['id']; ?>">
+                           data-bs-toggle="collapse" data-bs-target="#sub_<?php echo $item['id']; ?>"
+                           href="javascript:void(0)">
                             <i class="<?php echo $item['icon']; ?> me-2"></i> <?php echo $item['label']; ?>
                             <i class="fas fa-chevron-down float-end mt-1 ms-2" style="font-size: 0.7rem;"></i>
 
@@ -480,9 +488,21 @@
             }
         }, true);
 
-        if(document.getElementById('here_cube')) {
-            // En el admin, si no hay logo, dibujamos el cubo un poco más pequeño para el sidebar
-            drawCube("here_cube", true, "24px");
+        /**
+         * Persistencia del scroll en la Sidebar
+         * Evita que el menú se desplace hacia arriba al cargar nuevas vistas
+         */
+        const sidebar = document.getElementById('adminSidebar');
+        if (sidebar) {
+            // 1. Restaurar posición guardada al cargar la página
+            const savedScroll = sessionStorage.getItem('sidebar_scroll');
+            if (savedScroll) {
+                sidebar.scrollTop = savedScroll;
+            }
+            // 2. Guardar posición actual cada vez que el usuario hace scroll
+            sidebar.addEventListener('scroll', () => {
+                sessionStorage.setItem('sidebar_scroll', sidebar.scrollTop);
+            });
         }
 
         function toggleSidebar() {
@@ -653,7 +673,7 @@
             else if (e.key === 'ArrowRight') {
                 // Si es un desplegable y está cerrado, lo abrimos
                 if (activeElement.classList.contains('menu-header-link')) {
-                    const targetId = activeElement.getAttribute('href');
+                    const targetId = activeElement.getAttribute('data-bs-target') || activeElement.getAttribute('href');
                     const target = document.querySelector(targetId);
                     if (target && !target.classList.contains('show')) {
                         activeElement.click();
@@ -663,7 +683,7 @@
             else if (e.key === 'ArrowLeft') {
                 // Si es un desplegable y está abierto, lo cerramos
                 if (activeElement.classList.contains('menu-header-link')) {
-                    const targetId = activeElement.getAttribute('href');
+                    const targetId = activeElement.getAttribute('data-bs-target') || activeElement.getAttribute('href');
                     const target = document.querySelector(targetId);
                     if (target && target.classList.contains('show')) {
                         activeElement.click();

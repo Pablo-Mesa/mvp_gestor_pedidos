@@ -1,4 +1,7 @@
-<?php $baseUrl = str_replace('index.php', '', $_SERVER['SCRIPT_NAME']); ?>
+<?php 
+    $baseUrl = str_replace('index.php', '', $_SERVER['SCRIPT_NAME']); 
+    $siteLogo = $baseUrl . 'assets/icono_solver_nobg.png';
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -8,7 +11,8 @@
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#00c853">
     <link rel="manifest" href="<?php echo $baseUrl; ?>manifest.json">
-    <link rel="icon" type="image/png" href="<?php echo $baseUrl; ?>assets/icono_solver_nobg.png">
+    <link rel="icon" type="image/png" href="<?php echo $siteLogo; ?>">
+    <link rel="apple-touch-icon" href="<?php echo $siteLogo; ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/css_cubo.css" />
@@ -220,7 +224,7 @@
     <header class="delivery-header">
     
         <div class="header-brand">
-            <div id="here_cube"></div>   
+            <img src="<?php echo $siteLogo; ?>" alt="Logo Solver" style="height: 24px; width: auto; margin-right: 8px;">
             <h1>SOLVER LOGÍSTICA</h1>
             <!--<i class="fas fa-route"></i>-->
         </div>
@@ -324,7 +328,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="<?php echo $baseUrl; ?>js/toast.js"></script>    
-    <script> drawCube("here_cube", false, "28px"); </script>
     
     <script>
         let deferredPrompt;

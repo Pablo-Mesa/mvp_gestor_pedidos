@@ -859,6 +859,14 @@ class OrderController {
             exit;
         }
 
+        // --- VALIDACIÓN DE SEGURIDAD MUNDO REAL ---
+        // No permitir registrar pedidos en el POS si no hay una caja abierta
+        $cashModel = new CashRegister();
+        if (!$cashModel->getActiveSession($_SESSION['user_id'])) {
+            echo json_encode(['success' => false, 'message' => 'ERROR: Debe abrir caja antes de realizar ventas.']);
+            exit;
+        }
+
         $input = json_decode(file_get_contents('php://input'), true);
         
         if (!$input || empty($input['cart'])) {

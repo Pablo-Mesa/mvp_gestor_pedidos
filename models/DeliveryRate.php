@@ -62,17 +62,30 @@ class DeliveryRate {
     public function setActive($id) {
         try {
             $this->conn->beginTransaction();
-            // Desactivar todas
+            
+            // 1. Desactivar todas de forma global
             $this->conn->exec("UPDATE " . $this->table . " SET is_active = 0");
-            // Activar la seleccionada
+            
+            // 2. Activar la seleccionada. 
             $query = "UPDATE " . $this->table . " SET is_active = 1 WHERE id = ?";
             $stmt = $this->conn->prepare($query);
-            $stmt->execute([$id]);
+            $executed = $stmt->execute([$id]);
+
+            // 3. Validar existencia. 
+            // Usamos una consulta de verificación porque rowCount() puede ser 0 
+            // si la base de datos detecta que no hay cambios reales (aunque hayamos puesto 0 antes).
+            $check = $this->conn->prepare("SELECT id FROM " . $this->table . " WHERE id = ?");
+            $check->execute([$id]);
+            if (!$check->fetch()) {
+                $this->conn->rollBack();
+                throw new InvalidArgumentException("La versión de tarifa con ID {$id} no existe o no pudo ser activada.");
+            }
+
             $this->conn->commit();
             return true;
         } catch (Exception $e) {
             $this->conn->rollBack();
-            return false;
+            throw $e; // Re-lanzar la excepción para que el controlador la capture
         }
     }
 
@@ -100,6 +113,35 @@ class DeliveryRate {
             $rateId = $this->conn->lastInsertId();
 
             // 3. Insertar Detalles
+            $queryDetail = "INSERT INTO delivery_rate_details (delivery_rate_id, km_from, km_to, price) VALUES (?, ?, ?, ?)";
+            $stmtDetail = $this->conn->prepare($queryDetail);
+
+            foreach ($rows as $row) {
+                $stmtDetail->execute([$rateId, $row['start'], $row['end'], $row['price']]);
+            }
+
+            $this->conn->commit();
+            return $rateId;
+        } catch (Exception $e) {
+            $this->conn->rollBack();
+            return false;
+        }
+    }
+
+    /**
+     * Añade nuevos rangos a una versión existente
+     */
+    public function addRanges($rateId, $rows) {
+        try {
+            $this->conn->beginTransaction();
+
+            // Validar existencia
+            $check = $this->conn->prepare("SELECT id FROM " . $this->table . " WHERE id = ?");
+            $check->execute([$rateId]);
+            if (!$check->fetch()) {
+                throw new Exception("La versión de tarifa no existe.");
+            }
+
             $queryDetail = "INSERT INTO delivery_rate_details (delivery_rate_id, km_from, km_to, price) VALUES (?, ?, ?, ?)";
             $stmtDetail = $this->conn->prepare($queryDetail);
 

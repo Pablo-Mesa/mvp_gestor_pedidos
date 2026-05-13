@@ -1,4 +1,10 @@
-<!doctype html>
+<?php
+/**
+ * Adaptación de Landing para compatibilidad con Sistema Solver
+ * Se requiere que este archivo sea procesado por el controlador HomeController
+ */
+$isLoggedIn = isset($_SESSION['client_id']);
+?>
 <html lang="es">
  <head>
   <meta charset="UTF-8">
@@ -188,11 +194,17 @@
    <nav class="sticky-nav shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
      <div class="flex items-center gap-2">
-      <div class="w-10 h-10 rounded-lg" style="background: var(--primary-color);"></div><span class="font-bold text-lg hidden sm:inline" style="color: var(--text-primary);" id="nav-name">FastFood Co</span>
+      <div class="w-10 h-10 rounded-lg" style="background: var(--primary-color);"></div><span class="font-bold text-lg hidden sm:inline" style="color: var(--text-primary);" id="nav-name"><?= htmlspecialchars($siteName ?? 'FastFood Co') ?></span>
      </div>
      <div class="hidden md:flex gap-8"><a href="#productos" class="menu-link">Productos</a> <a href="#servicios" class="menu-link">Servicios</a> <a href="#resenas" class="menu-link">Reseñas</a> <a href="#contacto" class="menu-link">Contacto</a>
      </div>
-     <div class="flex gap-2"><button class="px-4 py-2 text-sm font-medium rounded-lg transition-colors" style="color: var(--primary-color); border: 1px solid var(--primary-color);" onclick="scrollToSection('login')"> Ingresar </button> <button class="px-4 py-2 text-sm font-medium rounded-lg text-white transition-all cta-button" style="background: var(--primary-color);" onclick="scrollToSection('pedido')"> Hacer pedido </button>
+     <div class="flex gap-2">
+      <?php if (!$isLoggedIn): ?>
+        <button class="px-4 py-2 text-sm font-medium rounded-lg transition-colors" style="color: var(--primary-color); border: 1px solid var(--primary-color);" onclick="openAuthModal()"> Ingresar </button> 
+      <?php else: ?>
+        <a href="?route=my_orders" class="px-4 py-2 text-sm font-medium rounded-lg transition-colors" style="color: var(--primary-color); border: 1px solid var(--primary-color);"> Mis Pedidos </a>
+      <?php endif; ?>
+      <button class="px-4 py-2 text-sm font-medium rounded-lg text-white transition-all cta-button" style="background: var(--primary-color);" onclick="scrollToSection('productos')"> Hacer pedido </button>
      </div>
     </div>
    </nav>
@@ -256,52 +268,32 @@
       <p class="text-gray-600 text-lg max-w-2xl mx-auto">Cada producto es cuidadosamente preparado con ingredientes seleccionados del día</p>
      </div>
      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6"><!-- Product Card Template -->
-      <div class="product-card bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg">
-       <div class="h-48 bg-gradient-to-br from-orange-200 to-orange-300 flex items-center justify-center text-5xl">
-        🍔
-       </div>
-       <div class="p-5">
-        <h3 class="font-bold text-lg mb-2" style="color: var(--text-primary);">Hamburguesa</h3>
-        <p class="text-gray-600 text-sm mb-4">Carne premium, pan artesanal, adaptable a tu gusto</p>
-        <div class="flex items-center gap-2"><span class="text-yellow-400">★★★★★</span> <span class="text-gray-500 text-sm">(128)</span>
+      <?php if (!empty($menu_items)): ?>
+        <?php foreach(array_slice($menu_items, 0, 4) as $item): ?>
+          <div class="product-card bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg">
+           <div class="h-48 overflow-hidden">
+            <img src="<?= !empty($item['image']) ? 'uploads/'.rawurlencode($item['image']) : $localPlaceholder ?>" class="w-full h-full object-cover">
+           </div>
+           <div class="p-5">
+            <h3 class="font-bold text-lg mb-2" style="color: var(--text-primary);"><?= htmlspecialchars($item['product_name']) ?></h3>
+            <p class="text-gray-600 text-sm mb-4">Gs. <?= number_format($item['product_price'], 0, ',', '.') ?></p>
+            <button 
+              class="w-full py-2 rounded-lg text-white text-sm font-bold transition-all" 
+              style="background: var(--primary-color);"
+              onclick="handleAddToCart(this, '<?= $item['product_id'] ?>', '<?= addslashes($item['product_name']) ?>', <?= $item['product_price'] ?>, '<?= $item['image'] ?>', 1)"
+            >
+              Agregar al carrito
+            </button>
+           </div>
+          </div>
+        <?php endforeach; ?>
+      <?php else: ?>
+        <div class="col-span-full text-center py-10">
+          <p class="text-gray-500">No hay productos destacados disponibles en este momento.</p>
         </div>
-       </div>
-      </div>
-      <div class="product-card bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg">
-       <div class="h-48 bg-gradient-to-br from-amber-200 to-amber-300 flex items-center justify-center text-5xl">
-        🥪
-       </div>
-       <div class="p-5">
-        <h3 class="font-bold text-lg mb-2" style="color: var(--text-primary);">Sándwich</h3>
-        <p class="text-gray-600 text-sm mb-4">Combinaciones gourmet, ingredientes frescos</p>
-        <div class="flex items-center gap-2"><span class="text-yellow-400">★★★★★</span> <span class="text-gray-500 text-sm">(96)</span>
-        </div>
-       </div>
-      </div>
-      <div class="product-card bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg">
-       <div class="h-48 bg-gradient-to-br from-yellow-200 to-yellow-300 flex items-center justify-center text-5xl">
-        🥟
-       </div>
-       <div class="p-5">
-        <h3 class="font-bold text-lg mb-2" style="color: var(--text-primary);">Empanadas</h3>
-        <p class="text-gray-600 text-sm mb-4">Masa casera, rellenos variados y deliciosos</p>
-        <div class="flex items-center gap-2"><span class="text-yellow-400">★★★★★</span> <span class="text-gray-500 text-sm">(142)</span>
-        </div>
-       </div>
-      </div>
-      <div class="product-card bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg">
-       <div class="h-48 bg-gradient-to-br from-red-200 to-red-300 flex items-center justify-center text-5xl">
-        🍗
-       </div>
-       <div class="p-5">
-        <h3 class="font-bold text-lg mb-2" style="color: var(--text-primary);">Lomito</h3>
-        <p class="text-gray-600 text-sm mb-4">Corte premium, marinado con especias propias</p>
-        <div class="flex items-center gap-2"><span class="text-yellow-400">★★★★★</span> <span class="text-gray-500 text-sm">(87)</span>
-        </div>
-       </div>
-      </div>
+      <?php endif; ?>
      </div>
-     <div class="text-center mt-12"><button class="px-8 py-3 font-semibold rounded-lg text-white transition-all cta-button" style="background: var(--primary-color);" onclick="scrollToSection('pedido')"> Ver todo el menú </button>
+     <div class="text-center mt-12"><a href="?route=home" class="px-8 py-3 font-semibold rounded-lg text-white transition-all cta-button" style="background: var(--primary-color);"> Ver todo el menú </a>
      </div>
     </div>
    </section>
@@ -412,8 +404,8 @@
    <section id="pedido" class="py-16 sm:py-24 bg-white">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
      <h2 class="text-3xl sm:text-4xl font-bold mb-4" style="color: var(--text-primary);">¿Tienes hambre?</h2>
-     <p class="text-gray-600 text-lg mb-8">Realiza tu pedido ahora y disfruta de comida hecha con precisión y sabor diferenciado.</p>
-     <div class="flex flex-col sm:flex-row gap-4 justify-center"><button class="px-8 py-4 font-semibold rounded-lg text-white text-lg transition-all cta-button" style="background: var(--primary-color);" onclick="handleOrderClick()"> Hacer pedido ahora </button> <button class="px-8 py-4 font-semibold rounded-lg text-lg transition-colors" style="color: var(--primary-color); border: 2px solid var(--primary-color);" onclick="scrollToSection('contacto')"> Más información </button>
+     <p class="text-gray-600 text-lg mb-8">Explora nuestro menú interactivo y personaliza tu pedido en segundos.</p>
+     <div class="flex flex-col sm:flex-row gap-4 justify-center"><a href="?route=home" class="px-8 py-4 font-semibold rounded-lg text-white text-lg transition-all cta-button" style="background: var(--primary-color);"> Ordenar Menú del Día </a> <button class="px-8 py-4 font-semibold rounded-lg text-lg transition-colors" style="color: var(--primary-color); border: 2px solid var(--primary-color);" onclick="scrollToSection('contacto')"> Más información </button>
      </div>
     </div>
    </section>
@@ -513,11 +505,6 @@
       }
     }
 
-    function handleOrderClick() {
-      scrollToSection('pedido');
-      alert('Redirigiéndote al menú para realizar tu pedido...');
-    }
-
     // Inicializar iconos de Lucide
     lucide.createIcons();
 
@@ -570,5 +557,5 @@
       });
     }
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9f835f0e82a878ba',t:'MTc3ODE4OTkwMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9f835f0e82a878ba',t:'MTc3ODE4OTkwMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

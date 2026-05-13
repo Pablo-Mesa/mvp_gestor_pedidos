@@ -60,21 +60,63 @@ class SettingController {
     }
 
     public function setDeliveryRateActive() {
-        $id = $_GET['id'] ?? null;
-        if ($id) {
+        while (ob_get_level()) ob_end_clean();
+        ob_start();
+        header('Content-Type: application/json');
+
+        // Asegurarse de que la solicitud sea POST
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405); // Method Not Allowed
+            echo json_encode(['success' => false, 'message' => 'Método no permitido.']);
+            exit;
+        }
+
+        // Obtener el ID de la versión a activar desde el cuerpo de la solicitud POST
+        $id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
+
+        if (!$id) {
+            http_response_code(400); // Bad Request
+            echo json_encode(['success' => false, 'message' => 'ID de versión no proporcionado o inválido.']);
+            exit;
+        }
+
+        try {
             $rateModel = new DeliveryRate();
             if ($rateModel->setActive($id)) {
-                header('Location: ?route=settings_delivery&id=' . $id . '&success=active_changed');
+                // Éxito: devolver JSON
+                echo json_encode(['success' => true, 'id' => $id, 'message' => 'Versión activada correctamente.']);
+                exit;
             } else {
-                header('Location: ?route=settings_delivery&error=update_failed');
+                // Fallo en el modelo (ej. ID no encontrado, error de DB)
+                http_response_code(500); // Internal Server Error
+                echo json_encode(['success' => false, 'message' => 'No se pudo activar la versión de tarifa.']);
+                exit;
             }
-        } else {
-            header('Location: ?route=settings_delivery');
+        } catch (InvalidArgumentException $e) {
+            // Captura la excepción específica si el ID no existe o no se pudo activar
+            http_response_code(404); // Not Found
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            exit;
+        } catch (PDOException $e) {
+            // Error de base de datos
+            error_log("Error PDO al activar tarifa de delivery: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error de base de datos al activar la tarifa.']);
+            exit;
+        } catch (Exception $e) {
+            // Otros errores inesperados
+            error_log("Error inesperado al activar tarifa de delivery: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Ocurrió un error inesperado.']);
+            exit;
         }
-        exit;
     }
 
     public function updateDeliveryRates() {
+        while (ob_get_level()) ob_end_clean();
+        ob_start();
+        header('Content-Type: application/json');
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $rateModel = new DeliveryRate();
             
@@ -95,13 +137,57 @@ class SettingController {
                 }
             }
 
-            if ($rateModel->createVersion($_SESSION['user_id'], $rates)) {
-                header('Location: ?route=settings_delivery&success=1');
+            $newId = $rateModel->createVersion($_SESSION['user_id'], $rates);
+            if ($newId) {
+                echo json_encode(['success' => true, 'id' => $newId]);
             } else {
-                header('Location: ?route=settings_delivery&error=update_failed');
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => 'No se pudo crear la nueva versión.']);
             }
-            exit;
         }
+        exit;
+    }
+
+    public function addDeliveryRanges() {
+        while (ob_get_level()) ob_end_clean();
+        ob_start();
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $rateId = filter_input(INPUT_POST, 'rate_id', FILTER_VALIDATE_INT);
+            if (!$rateId) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'ID de versión no válido.']);
+                exit;
+            }
+
+            $rateModel = new DeliveryRate();
+            $newRanges = [];
+            
+            if (isset($_POST['km_start'])) {
+                foreach ($_POST['km_start'] as $i => $start) {
+                    // Al estar los viejos disabled, solo recibiremos los nuevos enabled
+                    $end = $_POST['km_end'][$i];
+                    $price = $_POST['price'][$i];
+
+                    if ($start === '' || $end === '' || $price === '') continue;
+
+                    $newRanges[] = [
+                        'start' => (float)$start,
+                        'end'   => (float)$end,
+                        'price' => (float)$price
+                    ];
+                }
+            }
+
+            if ($rateModel->addRanges($rateId, $newRanges)) {
+                echo json_encode(['success' => true, 'id' => $rateId, 'message' => 'Nuevos rangos añadidos correctamente.']);
+            } else {
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => 'No se pudieron añadir los rangos.']);
+            }
+        }
+        exit;
     }
 
     public function updateLocation() {

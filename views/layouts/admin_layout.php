@@ -12,6 +12,8 @@
     <title><?php echo htmlspecialchars($siteName); ?> - Panel de Control</title>
     <link rel="apple-touch-icon" href="<?php echo htmlspecialchars($siteLogo); ?>">
     <link rel="icon" type="image/png" href="<?php echo htmlspecialchars($siteLogo); ?>">
+    <!-- Fuentes Modernas para aspecto profesional -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Bootstrap 5 para la interfaz administrativa -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -25,18 +27,18 @@
         }
         
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
             display: flex;
             min-height: 100vh;
-            background-color: #f4f6f9;
+            background-color: #f8fafc;
             overflow: hidden; /* Evita el pequeño gap por desbordamiento de hijos */
         }
 
         /* Sidebar (Menú Lateral) */
         .sidebar {
             width: 250px; 
-            background-color: #343a40;
-            color: #fff;
+            background-color: #334155; /* Slate 700: Más suave que el charcoal previo */
+            color: #f8fafc;
             display: flex;
             flex-direction: column;
             transition: all 0.3s ease;
@@ -50,15 +52,15 @@
             width: 6px;
         }
         .sidebar::-webkit-scrollbar-track {
-            background: #212529;
+            background: #1e293b;
         }
         .sidebar::-webkit-scrollbar-thumb {
-            background: #495057;
+            background: #475569;
             border-radius: 10px;
         }
         .sidebar {
             scrollbar-width: thin;
-            scrollbar-color: #495057 #212529;
+            scrollbar-color: #475569 #1e293b;
         }
 
         .sidebar-header {
@@ -67,28 +69,31 @@
             align-items: center;
             gap: 1rem;
             padding: 1.5rem;
-            background-color: #212529;
+            background-color: #1e293b; /* Slate 800: Menos oscuro que el casi-negro anterior */
             font-weight: bold;
             font-size: 1.2rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
         .sidebar-menu { list-style: none; padding: 0; margin-top: 1rem; }
         .sidebar-menu li a, .sidebar-menu li .menu-header-link { 
             display: block; 
             padding: 0.8rem 1.5rem; 
-            color: #c2c7d0; 
+            color: #cbd5e1; /* Texto más claro para fondo Slate */
             text-decoration: none; 
-            border-bottom: 1px solid rgba(255,255,255,0.05); 
+            border-bottom: none; 
             transition: 0.3s; 
             cursor: pointer;
+            font-weight: 500;
+            font-size: 0.92rem;
         }
-        .submenu { list-style: none; padding-left: 0; background: rgba(0,0,0,0.2); }
+        .submenu { list-style: none; padding-left: 0; background: rgba(0,0,0,0.15); }
         .submenu li a { padding: 0.6rem 1.5rem 0.6rem 2.5rem; font-size: 0.9rem; border-bottom: none; }
         
         .sidebar-menu li a:hover, .sidebar-menu li a:focus { 
-            background-color: #495057; 
-            color: #fff; 
-            padding-left: 2rem; 
+            background-color: rgba(255,255,255,0.05); 
+            color: #f8fafc; 
+            padding-left: 1.75rem; 
             outline: none;
         }
 
@@ -232,10 +237,11 @@
             to { opacity: 1; transform: translateY(0); }
         }
         .sidebar-menu li a.active-link {
-            background-color: #495057;
-            color: #fff;
-            border-left: 4px solid #007bff;
+            background-color: #3b82f6;
+            color: #ffffff;
+            border-left: 4px solid #60a5fa;
             padding-left: 1.25rem;
+            font-weight: 600;
         }
         
     </style>
@@ -250,7 +256,7 @@
         <div class="sidebar-header">
             <a href="?route=admin" class="text-decoration-none d-flex align-items-center">
                 <img src="<?php echo $siteLogo; ?>" alt="Logo Solver" style="height: 30px; width: auto; margin-right: 10px;">
-                <span class="text-white fw-bold">SOLVER</span>
+                <span class="fw-bold" style="color: #ffffff;">SOLVER</span>
             </a>
         </div>
         <?php

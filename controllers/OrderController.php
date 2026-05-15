@@ -190,7 +190,7 @@ class OrderController {
 
         // Formatear datos para el frontend (fechas, nombres seguros y moneda)
         foreach ($orders as &$order) {
-            $order['user_name'] = htmlspecialchars($order['user_name']);
+            $order['user_name'] = htmlspecialchars($order['user_name'] ?? 'Cliente Ocasional');
             $order['channel_name'] = htmlspecialchars($order['channel_name'] ?? 'Web');
             $order['channel_icon'] = htmlspecialchars($order['channel_icon'] ?? 'fas fa-globe');
             $order['formatted_date'] = date('d/m/Y H:i', strtotime($order['created_at']));

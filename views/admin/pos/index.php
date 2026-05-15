@@ -347,8 +347,8 @@
                     <?php 
                         // Como Juan Perez es ID 1, deberías crear un cliente llamado "OCASIONAL"
                         // y poner su ID aquí. Supongamos que el nuevo ID es 99.
-                        $defaultID = 1; // Cámbialo al ID real del cliente genérico en tu DB
-                        $defaultName = ($defaultID == 1 && $id1IsJuan) ? 'Juan Perez' : 'Cliente Ocasional';
+                        $defaultID = 1; // El ID 1 se usará para el cliente genérico "Cliente Ocasional"
+                        $defaultName = 'Cliente Ocasional';
                     ?>
                     <div class="input-group shadow-sm">
                         <input type="hidden" id="f-client-id" value="<?php echo $defaultID; ?>">
@@ -378,7 +378,7 @@
                         <label class="form-label fw-bold small"><i class="fas fa-wallet me-1"></i> Pago</label>
                         <select id="f-payment-method" class="form-select">
                             <option value="efectivo">Efectivo</option>
-                            <option value="pos">POS / Tarjeta</option>
+                            <option value="pos">POS (Tarjeta ó Qr)</option>
                             <option value="transferencia">Transferencia</option>
                         </select>
                     </div>
@@ -695,6 +695,8 @@
 
         modalEl.addEventListener('shown.bs.modal', function () {
             const searchBtn = modalEl.querySelector('[onclick="openSearchClient()"]');
+            const createBtn = modalEl.querySelector('[onclick="openCreateClient()"]');
+            
             const delivery = document.getElementById('f-delivery-type');
             const payment = document.getElementById('f-payment-method');
             const observation = document.getElementById('f-observation');
@@ -705,12 +707,12 @@
                 searchBtn.focus();
             }
 
-            const focusPath = [searchBtn, delivery, payment, observation, confirmBtn];
+            const focusPath = [searchBtn, createBtn, delivery, payment, observation, confirmBtn];
             
             focusPath.forEach((el, index) => {
                 if (el) {
                     el.onkeydown = (e) => {
-                        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                        if (e.key === 'Enter') { /*&& e.target.tagName !== 'TEXTAREA'*/
                             e.preventDefault();
                             const next = focusPath[index + 1] || confirmBtn;
                             if (next) next.focus();
@@ -821,8 +823,6 @@
         listEl.innerHTML = '';
 
         // El Cliente Ocasional (ID 1) no posee ubicaciones persistentes en el sistema
-        if(!clientId || clientId == 1) return;
-
         try {
             const resp = await fetch(`?route=admin_client_locations&id=${clientId}`);
             const locations = await resp.json();

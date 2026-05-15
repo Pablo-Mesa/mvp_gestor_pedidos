@@ -31,7 +31,8 @@ try {
         'cash_registers',
         'delivery_checkins',
         'delivery_rates',
-        'delivery_rate_details'
+        'delivery_rate_details',
+        'client_locations'
     ];
 
     foreach ($tables as $table) {

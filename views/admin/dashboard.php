@@ -566,7 +566,7 @@
     <!-- Sección de Acciones Rápidas -->
     <?php if ($data['view_mode'] === 'daily'): ?>
     <section class="quick-actions">
-        <h2>Acciones Rápidas</h2>
+        <h2 class="section-area-title"><i class="fas fa-bolt"></i> Acciones Rápidas</h2>
         <div class="actions-grid">
             <a href="?route=cash" class="action-btn">
                 <i class="fas fa-key"></i>

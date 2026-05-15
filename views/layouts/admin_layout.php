@@ -40,14 +40,15 @@
         /* Sidebar (Menú Lateral) */
         .sidebar {
             width: 250px; 
-            background-color: #334155; /* Slate 700: Más suave que el charcoal previo */
-            color: #f8fafc;
+            background-color: #ffffff; /* Fondo blanco minimalista */
+            color: #495057; /* Texto oscuro para contraste */
             display: flex;
             flex-direction: column;
             transition: all 0.3s ease;
             z-index: 1050;
             height: 100vh;
             overflow-y: auto;
+            border-right: 1px solid #e9ecef; /* Borde sutil a la derecha */
         }
 
         /* Personalización de la barra de desplazamiento para la Sidebar */
@@ -55,15 +56,14 @@
             width: 6px;
         }
         .sidebar::-webkit-scrollbar-track {
-            background: #1e293b;
+            background: #f1f3f5; /* Fondo claro para el track */
         }
         .sidebar::-webkit-scrollbar-thumb {
-            background: #475569;
+            background: #ced4da; /* Gris claro para el thumb */
             border-radius: 10px;
         }
         .sidebar {
-            scrollbar-width: thin;
-            scrollbar-color: #475569 #1e293b;
+            scrollbar-color: #ced4da #f1f3f5; /* Gris claro para el thumb y track */
         }
 
         .sidebar-header {
@@ -71,31 +71,38 @@
             justify-content: center;
             align-items: center;
             gap: 1rem;
-            padding: 1.5rem;
-            background-color: #1e293b; /* Slate 800: Menos oscuro que el casi-negro anterior */
+            padding: 1.2rem 1.5rem;
+            background-color: #f8fafc; /* Fondo muy claro para el header */
             font-weight: bold;
             font-size: 1.2rem;
             border-bottom: 1px solid rgba(255,255,255,0.1);
+            color: #212529; /* Texto oscuro para el header */
         }
 
-        .sidebar-menu { list-style: none; padding: 0; margin-top: 1rem; }
+        .sidebar-menu { 
+            list-style: none;
+            padding: 0; 
+            margin-top: 0.5rem; 
+        }
+
         .sidebar-menu li a, .sidebar-menu li .menu-header-link { 
             display: block; 
             padding: 0.8rem 1.5rem; 
-            color: #cbd5e1; /* Texto más claro para fondo Slate */
+            color: #495057; /* Texto oscuro para contraste */
             text-decoration: none; 
             border-bottom: none; 
             transition: 0.3s; 
             cursor: pointer;
             font-weight: 500;
             font-size: 0.92rem;
+            border-left: 4px solid transparent; /* Borde para el active-link */
         }
-        .submenu { list-style: none; padding-left: 0; background: rgba(0,0,0,0.15); }
+        .submenu { list-style: none; padding-left: 0; background: rgba(0,0,0,0.03); } /* Fondo muy sutil para submenú */
         .submenu li a { padding: 0.6rem 1.5rem 0.6rem 2.5rem; font-size: 0.9rem; border-bottom: none; }
         
         .sidebar-menu li a:hover, .sidebar-menu li a:focus { 
-            background-color: rgba(255,255,255,0.05); 
-            color: #f8fafc; 
+            background-color: #e9ecef; /* Gris claro en hover */
+            color: #212529; /* Texto más oscuro en hover */
             padding-left: 1.75rem; 
             outline: none;
         }
@@ -197,9 +204,9 @@
         .h1-cf-dark h1{
             color: #f4f6f9; /*#212529*/
         }
-
         /* Filtros de Categoría */
         .filter-container {
+            /* Existing styles */
             display: flex; 
             flex-direction: row;
             justify-content: center;
@@ -236,13 +243,13 @@
             animation: modalSlideUp 0.3s ease-out;
         }
         @keyframes modalSlideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(20px); } /* Existing styles */
+            to { opacity: 1; transform: translateY(0); } /* Existing styles */
         }
         .sidebar-menu li a.active-link {
-            background-color: #3b82f6;
-            color: #ffffff;
-            border-left: 4px solid #60a5fa;
+            background-color: #e0f2fe; /* Azul muy claro para activo */
+            color: #0984e3; /* Azul primario para texto activo */
+            border-left: 4px solid #0984e3; /* Borde azul primario */
             padding-left: 1.25rem;
             font-weight: 600;
         }
@@ -260,8 +267,8 @@
             <div id="here_cube">
             </div>
             <a href="?route=admin" class="text-decoration-none d-flex align-items-center">
-                <!-- <img src="<?php echo $siteLogo; ?>" alt="Logo Solver" style="height: 30px; width: auto; margin-right: 10px;"> -->                
-                <span class="fw-bold" style="color: #ffffff;">SOLVER</span>
+                <!-- <img src="<?php echo $siteLogo; ?>" alt="Logo Solver" style="height: 30px; width: auto; margin-right: 10px;"> -->
+                <span class="fw-bold" style="color: #212529;">SOLVER</span>
             </a>
         </div>
         <?php
@@ -397,6 +404,7 @@
 
     <!-- 2. Cuerpo Principal -->
     <div class="main-content">
+        
         <!-- Barra Superior -->
         <header class="topbar">
             <div class="topbar-left">
@@ -425,6 +433,7 @@
             }
             ?>
         </main>
+
     </div>
 
     <!-- Modal de Confirmación Global -->

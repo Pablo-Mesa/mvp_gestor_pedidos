@@ -876,8 +876,11 @@ class OrderController {
 
         $order = new Order();
         $order->user_id = $_SESSION['user_id']; // Quién está en el POS
-        // Si no se envía client_id, usamos 0 o un ID de sistema para "Cliente Ocasional"
-        $order->client_id = $input['client_id'] ?? 1; 
+
+        // PRIORIDAD: 1. ID enviado desde el POS, 2. ID configurado como default, 3. Fallback final (1)
+        // Lo ideal es que en Settings guardes cuál es tu ID de "Cliente Genérico"
+        $order->client_id = !empty($input['client_id']) ? $input['client_id'] : 1;
+
         $order->channel_id = 2; // 2 = Mostrador
         $order->payment_method = $input['payment_method'] ?? 'efectivo';
         $order->delivery_type = $input['delivery_type'] ?? 'local';

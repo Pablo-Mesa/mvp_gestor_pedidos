@@ -98,8 +98,8 @@ class AdminController {
                 $data['session_egress'] = $sessionTotals['egress'] ?? 0;
                 $data['session_expected'] = $activeSession['opening_amount'] + $data['session_ingress'] - $data['session_egress'];
                 
-                // Obtener 5 movimientos recientes para el dashboard
-                $data['recent_movements'] = array_slice($cashModel->getMovements($activeSession['id']), 0, 5);
+                // Obtener 10 movimientos recientes para el dashboard
+                $data['recent_movements'] = array_slice($cashModel->getMovements($activeSession['id']), 0, 10);
             }
         }
 

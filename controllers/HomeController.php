@@ -432,6 +432,12 @@ class HomeController {
             echo json_encode(['success' => false, 'message' => 'Sesión no válida']);
             exit;
         }
+        
+        // Restricción: No permitir actualizar el cliente con ID 1 (Cliente Ocasional)
+        if ($_SESSION['client_id'] == 1) {
+            echo json_encode(['success' => false, 'message' => 'No se pueden modificar los datos del Cliente Ocasional.']);
+            exit;
+        }
 
         $data = json_decode(file_get_contents('php://input'), true);
         

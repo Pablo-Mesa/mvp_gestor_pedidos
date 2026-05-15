@@ -15,8 +15,31 @@ class CashController {
         $model = new CashRegister();
         $userModel = new User();
 
+        $viewSessionId = $_GET['view_session'] ?? null;
         $activeSession = $model->getActiveSession($_SESSION['user_id']);
+        
+        $sessionToView = null;
+        $isHistory = false;
+
+        if ($viewSessionId) {
+            $sessionToView = $model->getSessionById($viewSessionId);
+            if ($sessionToView && (!$activeSession || $activeSession['id'] != $sessionToView['id'])) {
+                $isHistory = true;
+            }
+        } else {
+            $sessionToView = $activeSession;
+        }
+
         $movements = [];
+        $totals = ['ingress' => 0, 'egress' => 0];
+
+        if ($sessionToView) {
+            $movements = $model->getMovements($sessionToView['id']);
+            foreach ($movements as $m) {
+                $totals[$m['type']] += $m['amount'];
+            }
+        }
+
         $recentSessions = $model->getRecentSessions();
 
         // Recuperamos el staff. Usamos un fetch robusto para asegurar que los datos estén disponibles.
@@ -39,15 +62,6 @@ class CashController {
 
             return $isAuthorizedRole && $isActive === 1;
         }));
-
-        $totals = ['ingress' => 0, 'egress' => 0];
-
-        if ($activeSession) {
-            $movements = $model->getMovements($activeSession['id']);
-            foreach ($movements as $m) {
-                $totals[$m['type']] += $m['amount'];
-            }
-        }
 
         $content_view = '../views/admin/cash/index.php';
         require_once '../views/layouts/admin_layout.php';

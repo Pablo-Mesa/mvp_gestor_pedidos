@@ -23,25 +23,87 @@ if (isset($recentSessions)) {
                     <i class="fas fa-play me-2"></i>Nueva Apertura
                 </button>
             <?php endif; ?>
-
-            <?php if ($activeSession): ?>
-                <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalCloseCash"
-                        onclick="prepareCloseModal('<?php echo $activeSession['id']; ?>', '<?php echo $activeSession['cash_station']; ?>', '<?php echo $activeSession['opening_amount'] + $totals['ingress'] - $totals['egress']; ?>')">
-                    <i class="fas fa-stop me-2"></i>Cerrar Caja (Arqueo)
-                </button>
-            <?php endif; ?>
         </div>
     </div>
     <!-- /Cierre de d-flex header -->
 
-    <?php if ($activeSession): ?>
+    <!-- Historial de Sesiones (Arqueos Recientes) - AHORA ARRIBA -->
+    <?php if (isset($recentSessions) && !empty($recentSessions)): ?>
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-secondary"><i class="fas fa-history me-2"></i>Historial de Sesiones / Arqueos</h6>
+                <small class="text-muted">Seleccione una sesión para auditar movimientos</small>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered table-hover align-middle" style="font-size: 0.85rem;">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th>Cajero</th>
+                                <th>Apertura</th>
+                                <th>Estación</th>
+                                <th>Cierre</th>
+                                <th class="text-end">Monto Inicial</th>
+                                <th class="text-end">Esperado</th>
+                                <th class="text-end">Real (Arqueo)</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($recentSessions as $session): 
+                                $isViewingThis = ($sessionToView && $sessionToView['id'] == $session['id']);
+                            ?>
+                                <tr class="<?php echo $isViewingThis ? 'table-primary' : ''; ?>">
+                                    <td><strong><?php echo htmlspecialchars($session['user_name']); ?></strong></td>
+                                    <td><?php echo date('d/m H:i', strtotime($session['opened_at'])); ?></td>
+                                    <td><span class="badge bg-light text-dark"><?php echo htmlspecialchars($session['cash_station']); ?></span></td>
+                                    <td><?php echo $session['closed_at'] ? date('d/m H:i', strtotime($session['closed_at'])) : '<span class="text-primary">En curso...</span>'; ?></td>
+                                    <td class="text-end">Gs. <?php echo number_format($session['opening_amount'] ?? 0, 0, ',', '.'); ?></td>
+                                    <td class="text-end text-primary">Gs. <?php echo number_format($session['status'] === 'open' ? $session['current_expected'] : $session['expected_amount'], 0, ',', '.'); ?></td>
+                                    <td class="text-end">Gs. <?php echo number_format($session['closing_amount'] ?? 0, 0, ',', '.'); ?></td>
+                                    <td class="text-center">
+                                        <div class="btn-group">
+                                            <a href="?route=cash&view_session=<?php echo $session['id']; ?>" class="btn btn-sm <?php echo $isViewingThis ? 'btn-primary' : 'btn-outline-primary'; ?>" title="Cargar detalles">
+                                                <i class="fas fa-eye"></i> Ver
+                                            </a>
+                                            <?php if ($session['status'] === 'open' && ($session['user_id'] == $_SESSION['user_id'] || $_SESSION['user_role'] === 'admin')): ?>
+                                                <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#modalCloseCash"
+                                                        onclick="prepareCloseModal('<?php echo $session['id']; ?>', '<?php echo $session['cash_station']; ?>', '<?php echo $session['current_expected']; ?>')">
+                                                    Cerrar
+                                                </button>
+                                            <?php endif; ?>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <!-- Movimientos y resumen (Sección Dinámica) -->
+    <?php if ($sessionToView): ?>
+        <?php if ($isHistory): ?>
+            <div class="alert alert-info border-left-info shadow-sm d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <i class="fas fa-search me-2"></i> 
+                    Auditoría de Sesión: <strong><?php echo htmlspecialchars($sessionToView['cash_station']); ?></strong> 
+                    - Apertura el <strong><?php echo date('d/m/Y H:i', strtotime($sessionToView['opened_at'])); ?></strong>
+                </div>
+                <a href="?route=cash" class="btn btn-sm btn-outline-info">Volver a mi Caja Actual</a>
+            </div>
+        <?php endif; ?>
+
+        <!-- tarjeta de resumen -->
         <div class="row mb-4">
             <!-- apertura -->
             <div class="col-md-3">
                 <div class="card border-left-primary shadow h-100 py-2">
                     <div class="card-body">
                         <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Monto de Apertura</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">Gs. <?php echo number_format($activeSession['opening_amount'], 0, ',', '.'); ?></div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">Gs. <?php echo number_format($sessionToView['opening_amount'], 0, ',', '.'); ?></div>
                     </div>
                 </div>
             </div>            
@@ -68,7 +130,7 @@ if (isset($recentSessions)) {
                 <div class="card border-left-info shadow h-100 py-2">
                     <div class="card-body">
                         <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Saldo Esperado</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">Gs. <?php echo number_format($activeSession['opening_amount'] + $totals['ingress'] - $totals['egress'], 0, ',', '.'); ?></div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">Gs. <?php echo number_format($sessionToView['opening_amount'] + $totals['ingress'] - $totals['egress'], 0, ',', '.'); ?></div>
                     </div>
                 </div>
             </div>
@@ -76,7 +138,7 @@ if (isset($recentSessions)) {
         <!-- tabla movimientos de la sesion actual -->
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Movimientos de la Sesión Actual</h6>
+                <h6 class="m-0 font-weight-bold text-primary">Desglose de Movimientos</h6>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -125,56 +187,6 @@ if (isset($recentSessions)) {
         </div>
     <?php endif; ?>
 
-    <!-- Historial de Sesiones (Arqueos Recientes) -->
-    <?php if (isset($recentSessions) && !empty($recentSessions)): ?>
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 bg-light d-flex justify-content-between align-items-center">
-                <h6 class="m-0 font-weight-bold text-secondary"><i class="fas fa-history me-2"></i>Historial de Sesiones / Arqueos</h6>
-                <small class="text-muted">Últimas 10 sesiones</small>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-sm table-bordered table-hover align-middle" style="font-size: 0.85rem;">
-                        <thead class="bg-gray-100">
-                            <tr>
-                                <th>Cajero</th>
-                                <th>Apertura</th>
-                                <th>Estación</th>
-                                <th>Cierre</th>
-                                <th class="text-end">Monto Inicial</th>
-                                <th class="text-end">Esperado</th>
-                                <th class="text-end">Real (Arqueo)</th>
-                                <th class="text-center">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($recentSessions as $session): ?>
-                                <tr>
-                                    <td><strong><?php echo htmlspecialchars($session['user_name']); ?></strong></td>
-                                    <td><?php echo date('d/m H:i', strtotime($session['opened_at'])); ?></td>
-                                    <td><span class="badge bg-light text-dark"><?php echo htmlspecialchars($session['cash_station']); ?></span></td>
-                                    <td><?php echo $session['closed_at'] ? date('d/m H:i', strtotime($session['closed_at'])) : '<span class="text-primary">En curso...</span>'; ?></td>
-                                    <td class="text-end">Gs. <?php echo number_format($session['opening_amount'] ?? 0, 0, ',', '.'); ?></td>
-                                    <td class="text-end text-primary">Gs. <?php echo number_format($session['status'] === 'open' ? $session['current_expected'] : $session['expected_amount'], 0, ',', '.'); ?></td>
-                                    <td class="text-end">Gs. <?php echo number_format($session['closing_amount'] ?? 0, 0, ',', '.'); ?></td>
-                                    <td class="text-center">
-                                        <?php if ($session['status'] === 'open'): ?>
-                                            <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#modalCloseCash"
-                                                    onclick="prepareCloseModal('<?php echo $session['id']; ?>', '<?php echo $session['cash_station']; ?>', '<?php echo $session['current_expected']; ?>')">
-                                                Cerrar
-                                            </button>
-                                        <?php else: ?>
-                                            <span class="badge bg-secondary">CERRADA</span>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    <?php endif; ?>
 </div>
 
 <!-- Modal Abrir Caja -->

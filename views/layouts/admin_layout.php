@@ -18,6 +18,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/toast.css"> <!-- Estilos de Alertas -->
+    
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/css_cubo.css"> 
+    
     <style> 
         /* Reset y Estilos Base */
         * {
@@ -254,8 +257,10 @@
     <!-- 1. Menú Lateral -->
     <nav class="sidebar" id="adminSidebar">
         <div class="sidebar-header">
+            <div id="here_cube">
+            </div>
             <a href="?route=admin" class="text-decoration-none d-flex align-items-center">
-                <img src="<?php echo $siteLogo; ?>" alt="Logo Solver" style="height: 30px; width: auto; margin-right: 10px;">
+                <!-- <img src="<?php echo $siteLogo; ?>" alt="Logo Solver" style="height: 30px; width: auto; margin-right: 10px;"> -->                
                 <span class="fw-bold" style="color: #ffffff;">SOLVER</span>
             </a>
         </div>
@@ -701,6 +706,9 @@
                 }
             }
         });
+
+        drawCube('here_cube', false, "28px");                        
+
     </script>
 </body>
 </html>

@@ -318,7 +318,7 @@
 
         <div class="ticket-footer">
             <div style="margin-bottom: 10px;">
-                <label style="font-size: 0.75rem; color: #aaa;">Observaciones:</label>
+                <label style="font-size: 0.75rem; color: #aaa;">Yes:</label>
                 <input type="text" id="posObservation" style="width: 100%; background: rgba(255,255,255,0.1); border: 1px solid #444; color: white; padding: 5px; border-radius: 4px;">
             </div>
             <div class="ticket-total">
@@ -344,9 +344,15 @@
             <div class="modal-body">
                 <div class="mb-3">
                     <label class="form-label fw-bold small"><i class="fas fa-user me-1"></i> Cliente</label>
+                    <?php 
+                        // Como Juan Perez es ID 1, deberías crear un cliente llamado "OCASIONAL"
+                        // y poner su ID aquí. Supongamos que el nuevo ID es 99.
+                        $defaultID = 1; // Cámbialo al ID real del cliente genérico en tu DB
+                        $defaultName = ($defaultID == 1 && $id1IsJuan) ? 'Juan Perez' : 'Cliente Ocasional';
+                    ?>
                     <div class="input-group shadow-sm">
-                        <input type="hidden" id="f-client-id" value="1">
-                        <input type="text" id="f-client-name" class="form-control bg-light border-end-0" value="Cliente Ocasional" readonly>
+                        <input type="hidden" id="f-client-id" value="<?php echo $defaultID; ?>">
+                        <input type="text" id="f-client-name" class="form-control bg-light border-end-0" value="<?php echo $defaultName; ?>" readonly>
                         <button id="btn-search-client"
                                 class="btn btn-outline-secondary"
                                 type="button"
@@ -379,12 +385,21 @@
                 </div>
 
                 <div id="f-delivery-extra" style="display: none;">
+                    <!-- Contenedor para direcciones guardadas -->
+                    <div id="f-saved-locations-container" class="mb-3" style="display:none;">
+                        <label class="form-label fw-bold small text-primary"><i class="fas fa-history me-1"></i> Seleccionar dirección guardada</label>
+                        <div id="f-locations-list" class="pos-locations-grid">
+                            <!-- Se puebla vía JS -->
+                        </div>
+                    </div>
+
                     <label class="form-label fw-bold small text-success"><i class="fas fa-link me-1"></i> Ubicación (Link)</label>
                     <div class="input-group mb-3 shadow-sm">
                         <input type="text" id="f-location-url" class="form-control" placeholder="Pegue el link de WhatsApp o Maps..." oninput="window.processLocationUrl(this.value)">
                         <button id="btn-map-indicator" class="btn btn-outline-primary" type="button" style="display:none;">
                             <i class="fas fa-map-marked-alt"></i>
                         </button>
+                        <button type="button" onclick="ProcesarPedido()">Extraer Link</button>
                     </div>
                     <input type="hidden" id="f-lat"><input type="hidden" id="f-lng">
                 </div>
@@ -790,14 +805,23 @@
      */
     window.loadClientLocations = async function(clientId) {
         const btnMapMini = document.getElementById('btn-map-indicator');
-        if(!btnMapMini) return;
+        const container = document.getElementById('f-saved-locations-container');
+        const listEl = document.getElementById('f-locations-list');
 
-        // Resetear estado visual antes de la consulta
+        // Limpiar inputs de ubicación al cambiar de cliente para evitar arrastrar datos de la selección anterior
+        document.getElementById('f-location-url').value = '';
+        document.getElementById('f-lat').value = '';
+        document.getElementById('f-lng').value = '';
+
+        if(!btnMapMini || !container || !listEl) return;
+
+        // Resetear estado
         btnMapMini.style.display = 'none';
+        container.style.display = 'none';
+        listEl.innerHTML = '';
 
-        if(clientId == 1 || !clientId) {
-            return;
-        }
+        // El Cliente Ocasional (ID 1) no posee ubicaciones persistentes en el sistema
+        if(!clientId || clientId == 1) return;
 
         try {
             const resp = await fetch(`?route=admin_client_locations&id=${clientId}`);
@@ -805,10 +829,36 @@
 
             if(Array.isArray(locations) && locations.length > 0) {
                 btnMapMini.style.display = 'inline-flex';
-                btnMapMini.title = `El cliente tiene ${locations.length} direcciones guardadas`;
+                btnMapMini.title = `El cliente tiene ${locations.length} direcciones guardadas. Haga clic para verlas.`;
+                
+                btnMapMini.onclick = () => {
+                    container.style.display = container.style.display === 'none' ? 'block' : 'none';
+                };
+
+                locations.forEach(loc => {
+                    const card = document.createElement('div');
+                    card.className = 'pos-location-card';
+                    card.innerHTML = `
+                        <i class="fas fa-map-marker-alt"></i>
+                        <strong>${loc.title}</strong>
+                        <small>${loc.address}</small>
+                    `;
+                    card.onclick = () => {
+                        document.querySelectorAll('.pos-location-card').forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
+                        
+                        document.getElementById('f-location-url').value = loc.address;
+                        document.getElementById('f-lat').value = loc.lat;
+                        document.getElementById('f-lng').value = loc.lng;
+                        
+                        Toast.fire("Ubicación cargada", "success");
+                        container.style.display = 'none';
+                    };
+                    listEl.appendChild(card);
+                });
             }
         } catch (e) { 
-            btnMapMini.style.display = 'none';
+            console.error(e);
         }
     }
 
@@ -840,7 +890,7 @@
                     window.updatePosMapMarker(parseFloat(res.lat), parseFloat(res.lng));
                 } else {
                     console.error("Servidor no pudo resolver el link:", res.message);
-                    if(feedback) feedback.innerText = "⚠️ Link inválido";
+                    Toast.fire("El link de ubicación no pudo ser resuelto.", "error");
                 }
             } catch (e) {
                 console.error("Error al resolver URL:", e);
@@ -849,19 +899,15 @@
     }
 
     window.updatePosMapMarker = function(lat, lng) {
-        const latInput = document.getElementById('swal-lat');
-        const lngInput = document.getElementById('swal-lng');
-        
-        if (latInput) latInput.value = lat;
-        if (lngInput) lngInput.value = lng;
+        const latInputF = document.getElementById('f-lat');
+        const lngInputF = document.getElementById('f-lng');
+
+        if (latInputF) latInputF.value = lat;
+        if (lngInputF) lngInputF.value = lng;
 
         if (!isNaN(lat) && !isNaN(lng)) {
             Toast.fire("Ubicación extraída correctamente", "success");
         }
-        
-        if (latInputF) latInputF.value = lat;
-        const lngInputF = document.getElementById('f-lng');
-        if (lngInputF) lngInputF.value = lng;
     }
 
     /**
@@ -887,9 +933,9 @@
             const resp = await fetch(`?route=admin_clients_search&term=${encodeURIComponent(term)}&limit=10&order=name_asc`);
             const clients = await resp.json();
             
-            let html = `<tr class="selectable-client" tabindex="0" onclick="window.selectClientFromList(1, 'Cliente Ocasional', '')">
-                            <td colspan="3" class="text-center py-3 text-primary fw-bold">-- Seleccionar Cliente Ocasional --</td>
-                        </tr>`;
+            // El "Cliente Ocasional" ahora es simplemente una opción rápida que no sobreescribe 
+            // la identidad si el ID 1 ya tiene un nombre real en la tabla.
+            let html = '';
             
             if (clients.length === 0) {
                 html += '<tr><td colspan="3" class="text-center py-4">Sin resultados</td></tr>';
@@ -913,14 +959,28 @@
     }
 
     window.selectClientFromList = function(id, name, phone) {
-        document.getElementById('f-client-id').value = id;
-        document.getElementById('f-client-name').value = id == 1 ? 'Cliente Ocasional' : `${name} (${phone || 'S/T'})`;
+        // Forzamos el nombre de sistema para el ID 1, para los demás usamos el formato estándar
+        const displayName = (id == 1) ? 'Cliente Ocasional' : (phone ? `${name} (${phone})` : name);
         
+        document.getElementById('f-client-id').value = id;
+        document.getElementById('f-client-name').value = displayName;
+        
+        // Sincronizar el estado interno para mantener consistencia si se cierra y abre el modal
+        posFinalizeState.clientId = id;
+        posFinalizeState.clientName = displayName;
+
+        // Ocultar modales de búsqueda/creación
         bsModalSearch.hide();
         bsModalCreate.hide();
-        bsModalFinalize.show();
-        
-        if(document.getElementById('f-delivery-type').value === 'delivery') loadClientLocations(id);
+
+        // Usamos un pequeño delay (150ms) para permitir que Bootstrap limpie el backdrop del buscador
+        // antes de mostrar el modal de finalización. Esto resuelve el problema de carga de datos.
+        setTimeout(() => {
+            bsModalFinalize.show();
+            
+            // Si el modo de entrega es delivery, cargamos las ubicaciones específicas del nuevo cliente
+            if(document.getElementById('f-delivery-type').value === 'delivery') loadClientLocations(id);
+        }, 150);
     }
 
     /**
@@ -1031,6 +1091,29 @@
         }
     }, true); // Usamos capture para asegurar que el evento se detecte antes de que el modal lo bloquee
 
-    // Autofocus en el buscador al cargar la vista
-    //document.getElementById('posSearch').focus();
+    // Autofocus en el buscador al cargar la vista (descomentar si se desea)
+    // document.getElementById('posSearch').focus();
+
+    function ProcesarPedido(){ // Se corrigió el nombre de la función para que coincida con el onclick
+        const fullTextInput = document.getElementById('f-location-url').value;
+        if (!fullTextInput) {
+            Toast.fire("Pega el texto primero", "warning");
+            return;
+        }
+
+        // Regex para buscar URLs de Google Maps dentro del texto
+        const mapRegex = /https?:\/\/(?:www\.)?(?:maps\.app\.goo\.gl\/|goo\.gl\/maps\/|maps\.google\.com\/maps\?q=)\S+/g;
+        const linkMatch = fullTextInput.match(mapRegex);
+
+        if (linkMatch && linkMatch.length > 0) {
+            const extractedUrl = linkMatch[0];
+            // Llamar a la función existente que procesa la URL y actualiza el mapa/inputs
+            window.processLocationUrl(extractedUrl);
+            document.getElementById('f-location-url').value = ""; // Limpiar input después de procesar
+            Toast.fire("Enlace de ubicación procesado.", "success");
+        } else {
+            Toast.fire("No se detectó un enlace de ubicación válido en el texto. Asegúrate de que el mensaje lo incluya.", "error");
+        }
+    }                    
+
 </script>

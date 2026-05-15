@@ -510,7 +510,7 @@
                             <th class="text-end pe-4">Monto</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody>                        
                         <?php foreach($data['recent_movements'] as $mov): ?>
                             <tr>
                                 <td class="ps-4 py-3">

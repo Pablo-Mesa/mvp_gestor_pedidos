@@ -385,8 +385,9 @@ class OrderController {
         $order = $orderModel->readOne();
         $details = $orderModel->readDetails();
         
-        // Si tiene factura, verificamos si ya está pagada
-        if ($orderModel->hasInvoice($id)) {
+        // Si tiene factura, verificamos si ya está pagada (Omitir si es una re-impresión rápida)
+        $isQuick = (isset($_GET['quick']) && $_GET['quick'] == 1);
+        if (!$isQuick && $orderModel->hasInvoice($id)) {
             $db = (new Database())->getConnection();
             $check = $db->prepare("SELECT p.id FROM pagos p JOIN pos_ventas_cabecera v ON p.venta_id = v.id WHERE v.order_id = :id");
             $check->execute([':id' => $id]);
@@ -408,14 +409,17 @@ class OrderController {
             
             if ($ventaId) {
                 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                    if (ob_get_length()) ob_clean();
                     header('Content-Type: application/json');
                     echo json_encode(['success' => true, 'print_sale_id' => $ventaId]);
                     exit;
                 }
                 // AISLAMIENTO: Volvemos a la vista de pedidos con el flag de impresión
-                header('Location: ?route=orders&success=paid&print_sale_id=' . $ventaId);
+                $docParam = isset($docType) ? "&doc_type=$docType" : "";
+                header('Location: ?route=orders&success=paid&print_sale_id=' . $ventaId . $docParam);
             } else {
                 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                    if (ob_get_length()) ob_clean();
                     header('Content-Type: application/json');
                     echo json_encode(['success' => false, 'message' => $orderModel->error]);
                     exit;
@@ -736,7 +740,11 @@ class OrderController {
              cos(deg2rad($storeLat)) * cos(deg2rad($clientLat)) *
              sin($dLon/2) * sin($dLon/2);
         $c = 2 * atan2(sqrt($a), sqrt(1-$a));
-        $distance = $earthRadius * $c; // Distancia en KM
+        
+        // Aplicamos Factor de Circuidad (estimación de ruta real vs línea recta)
+        // Un factor de 1.3 es el estándar para zonas urbanas.
+        $circuityFactor = 1.3;
+        $distance = round(($earthRadius * $c) * $circuityFactor, 2); 
 
         $db = (new Database())->getConnection();
         $query = "SELECT d.id as delivery_rate_id, d.price FROM delivery_rate_details d
@@ -936,11 +944,53 @@ class OrderController {
             echo json_encode([
                 'success' => true, 
                 'order_id' => $order->id,
-                'message' => 'Pedido registrado correctamente'
+                'message' => 'Pedido registrado correctamente',
+                'total' => $order->total
             ]);
         } else {
             echo json_encode(['success' => false, 'message' => $order->error]);
         }
+    }
+
+    /**
+     * Endpoint AJAX para guardar una nueva ubicación de cliente desde el POS
+     */
+    public function posSaveClientLocation() {
+        if (ob_get_length()) ob_clean(); // Limpiar cualquier salida previa accidental
+        header('Content-Type: application/json');
+
+        // Validación manual de sesión para evitar redirecciones HTML en AJAX
+        if (!isset($_SESSION['user_role']) || !in_array($_SESSION['user_role'], ['admin', 'cajero'])) {
+            echo json_encode(['success' => false, 'message' => 'Sesión expirada o no autorizada.']);
+            exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (!$input) {
+            echo json_encode(['success' => false, 'message' => 'Cuerpo de la petición inválido.']);
+            exit;
+        }
+
+        if (empty($input['client_id']) || empty($input['title']) || empty($input['address']) || empty($input['lat']) || empty($input['lng'])) {
+            echo json_encode(['success' => false, 'message' => 'Datos incompletos para guardar ubicación.']);
+            exit;
+        }
+
+        $locationModel = new ClientLocation();
+        $data = [
+            'client_id' => $input['client_id'],
+            'title'     => $input['title'],
+            'address'   => $input['address'],
+            'lat'       => $input['lat'],
+            'lng'       => $input['lng']
+        ];
+
+        if ($locationModel->create($data)) {
+            echo json_encode(['success' => true, 'message' => 'Ubicación guardada correctamente.']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Error al guardar ubicación: ' . $locationModel->error]);
+        }
+        exit;
     }
 }
 ?>

@@ -154,6 +154,11 @@ switch ($route) {
         $controller = new OrderController();
         $controller->posStore();
         break;
+    case 'pos_save_client_location':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->posSaveClientLocation();
+        break;
     case 'admin_mozo_monitor':
         require_once '../controllers/OrderController.php';
         $controller = new OrderController();

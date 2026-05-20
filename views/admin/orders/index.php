@@ -717,6 +717,16 @@ if (empty($orders) && $hasFilter):
     // Huella digital de los datos para evitar re-renderizados (parpadeo) innecesarios
     let lastOrdersFingerprint = '';
     const notificationSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+    notificationSound.preload = 'auto';
+
+    // Desbloquear el audio en la primera interacción para cumplir con las políticas de Autoplay de los navegadores
+    document.addEventListener('click', function unlockAudio() {
+        notificationSound.play().then(() => {
+            notificationSound.pause();
+            notificationSound.currentTime = 0;
+        }).catch(e => {});
+        document.removeEventListener('click', unlockAudio);
+    }, { once: true });
 
     let payModal = null;
     let detailModal = null;
@@ -793,7 +803,7 @@ if (empty($orders) && $hasFilter):
                 Toast.fire(res.message || "Error al procesar", "error");
             }
         } catch (e) {
-            Toast.fire("Error de red", "error");
+            Toast.fire("Error de red (Yo soy!)", "error");
         }
     }
 
@@ -1717,12 +1727,17 @@ if (empty($orders) && $hasFilter):
             restoreFocusAfterRefresh();
             if (hasNewOrders) {
                 lastMaxId = currentMaxIdInResponse;
-                notificationSound.play().catch(e => {});
+                notificationSound.currentTime = 0; // Reiniciar para permitir múltiples alertas seguidas
+                notificationSound.play().catch(e => console.warn("Autoplay bloqueado:", e));
             }
             if (deliveryUpdateInfo) Toast.fire(`Pedido #${deliveryUpdateInfo.id}: ${deliveryUpdateInfo.label}`, "info");
         })
         .catch(err => console.error('Error:', err));
     }
 
-    setInterval(() => { if (!document.hidden) refreshOrders(); }, 10000);
+    // Pooling continuo: Eliminamos !document.hidden para que las notificaciones 
+    // funcionen incluso cuando el administrador tiene la pestaña en segundo plano.
+    setInterval(() => { 
+        refreshOrders(); 
+    }, 10000);
 </script>

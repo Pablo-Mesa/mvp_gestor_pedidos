@@ -4,7 +4,7 @@ require_once '../models/Client.php';
 class ClientController {
     
     public function __construct() {
-        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+        if (!isset($_SESSION['user_role']) || !in_array($_SESSION['user_role'], ['admin', 'cajero'])) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'No autorizado']);
             exit;
@@ -89,11 +89,17 @@ class ClientController {
      * Resuelve links cortos de Google Maps para extraer coordenadas
      */
     public function resolveMapUrl() {
+        if (ob_get_length()) ob_clean(); // Limpiar cualquier salida previa accidental
         header('Content-Type: application/json');
         $url = $_GET['url'] ?? '';
         
         if (empty($url)) {
             echo json_encode(['success' => false]);
+            exit;
+        }
+
+        if (!function_exists('curl_init')) {
+            echo json_encode(['success' => false, 'message' => 'La extensión CURL no está habilitada en el servidor.']);
             exit;
         }
 
@@ -113,14 +119,16 @@ class ClientController {
         if (preg_match($regex, $finalUrl, $matches)) {
             echo json_encode(['success' => true, 'lat' => $matches[1], 'lng' => $matches[2]]);
         } else {
-            echo json_encode(['success' => false, 'message' => 'No se encontraron coordenadas en el enlace']);
+            echo json_encode(['success' => false, 'message' => 'No se detectaron coordenadas en el enlace: ' . $finalUrl]);
         }
+        exit;
     }
 
     /**
      * Obtiene las ubicaciones guardadas de un cliente específico
      */
     public function getLocationsApi() {
+        if (ob_get_length()) ob_clean();
         header('Content-Type: application/json');
         $id = $_GET['id'] ?? null;
         if (!$id) { echo json_encode([]); exit; }
@@ -129,5 +137,6 @@ class ClientController {
         $locationModel = new ClientLocation();
         $locations = $locationModel->getAllByClient($id);
         echo json_encode($locations);
+        exit;
     }
 }

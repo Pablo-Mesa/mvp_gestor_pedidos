@@ -422,11 +422,14 @@ class Order {
                 }
 
                 // Validar si ya existe un pago para esta venta para evitar duplicidad
+            // SOLO si se intenta procesar un pago nuevo (cuando $payments no es nulo ni vacío)
+            if ($payments !== null && !empty($payments)) {
                 $qCheckPago = "SELECT id FROM pagos WHERE venta_id = :vid LIMIT 1";
                 $stCheckPago = $this->conn->prepare($qCheckPago);
                 $stCheckPago->execute([':vid' => $ventaId]);
                 if ($stCheckPago->fetch()) {
                     throw new Exception("Integridad: Esta venta ya tiene un pago registrado. No se puede duplicar.");
+                }
                 }
                 $order = $this->readOne();
             } else {
@@ -556,7 +559,8 @@ class Order {
             'web_orders_count' => 0,
             'local_orders_count' => 0,
             'delivery_income' => 0,
-            'delivery_orders_count' => 0
+            'delivery_orders_count' => 0,
+            'web_delivery_fees' => 0
         ];
 
         // Pedidos Pendientes totales (no solo de hoy)
@@ -566,9 +570,12 @@ class Order {
         $stats['pending_orders'] = $stmt1->fetchColumn();
 
         // Ingresos desglosados por Canal (Solo ventas con factura activa y pago registrado)
-        $q2 = "SELECT o.channel_id, SUM(o.total) as income, COUNT(DISTINCT o.id) as qty 
+        $q2 = "SELECT o.channel_id, SUM(o.total) as income, COUNT(DISTINCT o.id) as qty,
+                      SUM(IFNULL(drd.price, 0)) as delivery_fees
                FROM " . $this->table . " o
                INNER JOIN pos_ventas_cabecera v ON o.id = v.order_id
+               LEFT JOIN order_shipments os ON o.id = os.order_id
+               LEFT JOIN delivery_rate_details drd ON os.delivery_rate_id = drd.id
                WHERE DATE(o.created_at) = :date AND o.status NOT IN ('cancelled', 'rejected') AND v.estado = 1 AND EXISTS (SELECT 1 FROM pagos p WHERE p.venta_id = v.id)
                GROUP BY o.channel_id";
         $stmt2 = $this->conn->prepare($q2);
@@ -579,6 +586,7 @@ class Order {
             if ($row['channel_id'] == 1) {
                 $stats['web_income'] = $row['income'];
                 $stats['web_orders_count'] = $row['qty'];
+                $stats['web_delivery_fees'] = $row['delivery_fees'];
             } elseif ($row['channel_id'] == 2) {
                 $stats['local_income'] = $row['income'];
                 $stats['local_orders_count'] = $row['qty'];
@@ -625,13 +633,17 @@ class Order {
             'waiter_income' => 0,
             'chart' => [],
             'delivery_income' => 0,
-            'delivery_orders_count' => 0
+            'delivery_orders_count' => 0,
+            'web_delivery_fees' => 0
         ];
 
         // Ingresos y pedidos mensuales desglosados por canal (Solo ventas con factura activa y pago registrado)
-        $q = "SELECT o.channel_id, SUM(o.total) as income, COUNT(DISTINCT o.id) as qty
+        $q = "SELECT o.channel_id, SUM(o.total) as income, COUNT(DISTINCT o.id) as qty,
+                     SUM(IFNULL(drd.price, 0)) as delivery_fees
               FROM " . $this->table . " o
               INNER JOIN pos_ventas_cabecera v ON o.id = v.order_id
+              LEFT JOIN order_shipments os ON o.id = os.order_id
+              LEFT JOIN delivery_rate_details drd ON os.delivery_rate_id = drd.id
               WHERE o.status NOT IN ('cancelled', 'rejected') AND v.estado = 1 AND EXISTS (SELECT 1 FROM pagos p WHERE p.venta_id = v.id)
               AND YEAR(o.created_at) = :y AND MONTH(o.created_at) = :m 
               GROUP BY o.channel_id";
@@ -641,7 +653,10 @@ class Order {
         while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $stats['income'] += $row['income'];
             $stats['orders'] += $row['qty'];
-            if ($row['channel_id'] == 1) $stats['web_income'] = $row['income'];
+            if ($row['channel_id'] == 1) {
+                $stats['web_income'] = $row['income'];
+                $stats['web_delivery_fees'] = $row['delivery_fees'];
+            }
             elseif ($row['channel_id'] == 2) $stats['local_income'] = $row['income'];
             elseif ($row['channel_id'] == 3) $stats['waiter_income'] = $row['income'];
         }

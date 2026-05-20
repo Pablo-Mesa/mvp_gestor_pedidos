@@ -369,7 +369,7 @@
 
     <!-- Desempeño por Canal -->
     <h2 class="section-area-title">
-        <i class="fas fa-project-diagram"></i> Rendimiento por Fuente
+        <i class="fas fa-project-diagram"></i> Rendimiento por canales de Recepción de Pedidos
     </h2>
     
     <!-- Estadisticas Canales Recepcion Pedidos -->
@@ -378,10 +378,10 @@
         <div class="stat-card web">
             <div class="stat-icon"><i class="fas fa-globe"></i></div>
             <div class="stat-info">
-                <h3>Ingresos Canal Web</h3>
+                <h3>WEB</h3>
                 <p class="stat-value">Gs. <?php echo number_format($data['web_income'] ?? 0, 0, ',', '.'); ?></p>
                 <small style="color: #7950f2; font-weight: bold; font-size: 0.75rem;">
-                    Comisión Solver (10%): Gs. <?php echo number_format(($data['web_income'] ?? 0) * 0.10, 0, ',', '.'); ?><br />(Solo Pagados)
+                    Comisión Solver (10%): Gs. <?php echo number_format((($data['web_income'] ?? 0) - ($data['web_delivery_fees'] ?? 0)) * 0.10, 0, ',', '.'); ?><br />(Solo Pagados - No incluye cargos delivery)
                 </small>
             </div>
         </div>
@@ -390,7 +390,7 @@
         <div class="stat-card local">
             <div class="stat-icon"><i class="fas fa-cash-register"></i></div>
             <div class="stat-info">
-                <h3>Ingresos Mostrador</h3>
+                <h3>MOSTRADOR</h3>
                 <p class="stat-value">Gs. <?php echo number_format($data['local_income'] ?? 0, 0, ',', '.'); ?></p>
                 <small class="text-success" style="font-size: 0.7rem; font-weight: bold;">
                     <i class="fas fa-check-circle"></i> Comisión Solver (0%).<br />No genera costos al local.
@@ -402,7 +402,7 @@
         <div class="stat-card waiter">
             <div class="stat-icon"><i class="fas fa-user-tie"></i></div>
             <div class="stat-info">
-                <h3>Ingresos Mozos (Mesas)</h3>
+                <h3>MOZOS</h3>
                 <p class="stat-value">Gs. <?php echo number_format($data['waiter_income'] ?? 0, 0, ',', '.'); ?></p>
                 <small class="text-success" style="font-size: 0.7rem; font-weight: bold;">
                     <i class="fas fa-check-circle"></i> Comisión Solver (0%).<br />No genera costos al local.
@@ -414,7 +414,7 @@
         <div class="stat-card delivery">
             <div class="stat-icon"><i class="fas fa-motorcycle"></i></div>
             <div class="stat-info">
-                <h3>Servicios de Envío</h3>
+                <h3>LOGISTICA</h3>
                 <p class="stat-value"><?php echo $data['delivery_orders_count'] ?? 0; ?> Pedidos</p>
                 <small style="color: #901009; font-weight: bold; font-size: 0.85rem;">
                     Comisión Solver (G. 1.000 c/u):<br />
@@ -429,7 +429,7 @@
     <div class="solver-summary-bar">
         <div class="summary-item">
             <span class="label">Comisión Web (10%):</span>
-            <span class="value">Gs. <?php echo number_format(($data['web_income'] ?? 0) * 0.10, 0, ',', '.'); ?></span>
+            <span class="value">Gs. <?php echo number_format((($data['web_income'] ?? 0) - ($data['web_delivery_fees'] ?? 0)) * 0.10, 0, ',', '.'); ?></span>
         </div>
         <div class="summary-item">
             <span class="label">Cargos Delivery (G. 1.000 x Pedido):</span>
@@ -437,7 +437,7 @@
         </div>
         <div class="summary-item total">
             <span class="label">Total Solver:</span>
-            <span class="value">Gs. <?php echo number_format((($data['web_income'] ?? 0) * 0.10) + (($data['delivery_orders_count'] ?? 0) * 1000), 0, ',', '.'); ?></span>
+            <span class="value">Gs. <?php echo number_format(((($data['web_income'] ?? 0) - ($data['web_delivery_fees'] ?? 0)) * 0.10) + (($data['delivery_orders_count'] ?? 0) * 1000), 0, ',', '.'); ?></span>
         </div>
     </div>
 

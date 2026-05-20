@@ -39,7 +39,7 @@
 
         /* Sidebar (Menú Lateral) */
         .sidebar {
-            width: 250px; 
+            width: 280px; 
             background-color: #ffffff; /* Fondo blanco minimalista */
             color: #495057; /* Texto oscuro para contraste */
             display: flex;
@@ -96,6 +96,9 @@
             font-weight: 500;
             font-size: 0.92rem;
             border-left: 4px solid transparent; /* Borde para el active-link */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .submenu { list-style: none; padding-left: 0; background: rgba(0,0,0,0.03); } /* Fondo muy sutil para submenú */
         .submenu li a { padding: 0.6rem 1.5rem 0.6rem 2.5rem; font-size: 0.9rem; border-bottom: none; }
@@ -158,7 +161,7 @@
         @media (max-width: 992px) {
             .sidebar {
                 position: fixed;
-                left: -250px;
+                left: -280px;
                 height: 100vh;
             }
             .sidebar.active { left: 0; }

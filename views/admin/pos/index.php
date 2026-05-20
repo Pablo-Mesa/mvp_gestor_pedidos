@@ -1,3 +1,7 @@
+<?php
+    $cashModel = new CashRegister();
+    $isCashOpen = $cashModel->getActiveSession($_SESSION['user_id']) ? true : false;
+?>
 <!-- Leaflet para el mapa de entrega -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -230,12 +234,23 @@
     .pos-location-card strong { color: #2d3436; display: block; }
     .pos-location-card small { color: #636e72; font-size: 0.7rem; line-height: 1.2; }
 
+    #c-location-map { height: 220px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 15px; }
     /* Tabla de Clientes en Modal */
     .pos-client-table { width: 100%; font-size: 0.85rem; border-collapse: collapse; }
     .pos-client-table th { background: #f8fafc; padding: 10px; border-bottom: 2px solid #e2e8f0; text-align: left; color: #64748b; }
     .pos-client-table td { padding: 10px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
     .pos-client-table tr:hover td { background: #f0f7ff; color: #0984e3; }
     .pos-client-table tr:focus { background: #e0f2fe; outline: 2px solid #0984e3; outline-offset: -2px; }
+
+    /* Quitar flechas de los input de número (Spinner) en el cobro */
+    .pay-input::-webkit-outer-spin-button,
+    .pay-input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    .pay-input[type=number] {
+        -moz-appearance: textfield;
+    }
 </style>
 
 <!-- Vista para el Punto de Venta (POS) -->
@@ -337,12 +352,17 @@
 <div class="modal fade" id="modalFinalize" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
+            
+            <!-- encabezado del modal -->
             <div class="modal-header bg-light">
                 <h5 class="modal-title fw-bold text-dark"><i class="fas fa-check-circle me-2 text-success"></i>Finalizar Venta</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+
+            <!-- cuerpo modal (campos) --> 
             <div class="modal-body">
-                <div class="mb-3">
+                <!-- cliente -->
+                <div class="mb-3">                    
                     <label class="form-label fw-bold small"><i class="fas fa-user me-1"></i> Cliente</label>
                     <?php 
                         // Como Juan Perez es ID 1, deberías crear un cliente llamado "OCASIONAL"
@@ -364,7 +384,7 @@
                         </button>
                     </div>
                 </div>
-
+                <!-- tipo de entrega -->        
                 <div class="row g-2 mb-3">
                     <div class="col-6">
                         <label class="form-label fw-bold small"><i class="fas fa-truck me-1"></i> Entrega</label>
@@ -383,41 +403,37 @@
                         </select>
                     </div>
                 </div>
-
-                <div id="f-delivery-extra" style="display: none;">
-                    <!-- Contenedor para direcciones guardadas -->
-                    <div id="f-saved-locations-container" class="mb-3" style="display:none;">
-                        <label class="form-label fw-bold small text-primary"><i class="fas fa-history me-1"></i> Seleccionar dirección guardada</label>
-                        <div id="f-locations-list" class="pos-locations-grid">
-                            <!-- Se puebla vía JS -->
-                        </div>
-                    </div>
-
-                    <label class="form-label fw-bold small text-success"><i class="fas fa-link me-1"></i> Ubicación (Link)</label>
-                    <div class="input-group mb-3 shadow-sm">
-                        <input type="text" id="f-location-url" class="form-control" placeholder="Pegue el link de WhatsApp o Maps..." oninput="window.processLocationUrl(this.value)">
-                        <button id="btn-map-indicator" class="btn btn-outline-primary" type="button" style="display:none;">
-                            <i class="fas fa-map-marked-alt"></i>
-                        </button>
-                        <button type="button" onclick="ProcesarPedido()">Extraer Link</button>
-                    </div>
+                <!-- campos adicionales para entrega -->        
+                <div id="f-delivery-extra" style="display: none;" class="mb-3">
+                    <label class="form-label fw-bold small text-primary"><i class="fas fa-map-marker-alt me-1"></i> Lugar de Entrega</label>
+                    <button id="btn-select-location" class="btn btn-outline-primary w-100 py-2 d-flex align-items-center justify-content-between text-start shadow-sm" type="button" onclick="openSelectLocationModal()">
+                        <span class="text-truncate">
+                            <i class="fas fa-search-location me-2"></i>
+                            <span id="f-location-display">Seleccionar o agregar dirección...</span>
+                        </span>
+                        <i class="fas fa-chevron-right ms-2 small opacity-50"></i>
+                    </button>
+                    <input type="hidden" id="f-location-url">
                     <input type="hidden" id="f-lat"><input type="hidden" id="f-lng">
                 </div>
-
+                <!-- notas adicionales -->        
                 <div class="mb-4">
                     <label class="form-label fw-bold small">Notas adicionales</label>
                     <textarea id="f-observation" class="form-control" rows="2" placeholder="Ej: Sin cebolla, llamar al llegar..."></textarea>
                 </div>
-
+                <!-- total -->        
                 <div class="alert alert-success d-flex justify-content-between align-items-center p-3 border-0 shadow-sm mb-0">
                     <span class="fw-bold h6 mb-0">TOTAL:</span>
                     <span class="h4 fw-bold mb-0 text-dark" id="f-total-display">Gs. 0</span>
                 </div>
             </div>
+
+            <!-- pie de modal (botones) -->
             <div class="modal-footer border-0 pt-0">
                 <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Seguir cargando</button>
                 <button type="button" class="btn btn-success px-5 fw-bold" onclick="confirmPOS()">CONFIRMAR VENTA</button>
             </div>
+
         </div>
     </div>
 </div>
@@ -488,19 +504,118 @@
     </div>
 </div>
 
+<!-- MODAL: SELECCIONAR UBICACIÓN -->
+<div class="modal fade" id="modalSelectLocation" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold"><i class="fas fa-map-marked-alt me-2 text-primary"></i>Direcciones de <span id="select-location-client-name" class="text-primary"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="f-modal-locations-list" class="pos-locations-grid">
+                    <!-- Se puebla vía JS -->
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-primary w-100 fw-bold py-2" onclick="openAddLocationModal()">
+                    <i class="fas fa-plus me-2"></i>AGREGAR NUEVA DIRECCIÓN
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: AGREGAR UBICACIÓN -->
+<div class="modal fade" id="modalAddLocation" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Nueva Dirección para <span id="add-location-client-name"></span></h5>
+                <button type="button" class="btn-close" onclick="closeAddLocationAndReturn()"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="c-location-client-id">
+                <div class="mb-3"><label class="form-label small fw-bold">Título (Ej: Casa, Oficina)</label><input type="text" id="c-location-title" class="form-control" placeholder="Casa"></div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Link de Ubicación (WhatsApp/Maps)</label>
+                    <div class="input-group">
+                        <input type="text" id="c-location-url" class="form-control" placeholder="Pegue el link aquí...">
+                        <button class="btn btn-secondary" type="button" onclick="ProcesarPedidoAddLocation()">Extraer</button>
+                    </div>
+                </div>
+                <div id="c-location-map"></div>
+                <div class="mb-3"><label class="form-label small fw-bold">Dirección / Referencia</label><textarea id="c-location-address" class="form-control" rows="2" placeholder="Calle, número, color de portón..."></textarea></div>
+                <input type="hidden" id="c-location-lat"><input type="hidden" id="c-location-lng">
+            </div>
+            <div class="modal-footer border-0"><button type="button" class="btn btn-success w-100 fw-bold py-2" onclick="submitQuickLocation()">GUARDAR DIRECCIÓN</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 4: COBRO MIXTO (Integrado desde Orders) -->
+<div class="modal fade" id="modalPayOrder" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form id="form-pay-modal">
+                <div class="modal-header bg-success text-white py-2">
+                    <h6 class="modal-title"><i class="fas fa-cash-register me-2"></i>Cobrar Pedido #<span id="pay-modal-id">0</span></h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="order_id" id="pay-input-order-id">
+                    <div class="row">
+                        <div class="col-md-7">
+                            <table class="table table-sm table-borderless align-middle">
+                                <thead><tr class="text-muted small"><th>MÉTODO</th><th style="width:160px">MONTO</th><th>REF.</th></tr></thead>
+                                <tbody>
+                                    <?php 
+                                    $pMethods = ['efectivo' => '💵 Efectivo', 'pos' => '💳 Tarjeta', 'transferencia' => '🏦 Transf.', 'qr' => '📱 QR'];
+                                    $pi = 0; foreach($pMethods as $key => $label): ?>
+                                    <tr>
+                                        <td class="small fw-bold text-dark"><?php echo $label; ?></td>
+                                        <td>
+                                            <input type="hidden" name="payments[<?php echo $pi; ?>][metodo]" value="<?php echo $key; ?>">
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" name="payments[<?php echo $pi; ?>][monto]" class="form-control fw-bold pay-input" data-method="<?php echo $key; ?>" value="0" min="0">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="fillRemainingPay('<?php echo $key; ?>')"><i class="fas fa-magic"></i></button>
+                                            </div>
+                                        </td>
+                                        <td><input type="text" name="payments[<?php echo $pi; ?>][referencia]" class="form-control form-control-sm" placeholder="..."></td>
+                                    </tr>
+                                    <?php $pi++; endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="bg-light p-3 rounded border text-center">
+                                <p class="mb-0 text-muted small">TOTAL A COBRAR</p>
+                                <h3 class="fw-bold mb-3 text-dark" id="pay-modal-total">Gs. 0</h3>
+                                <div id="pay-balance-card" class="p-2 border rounded">
+                                    <p id="pay-balance-label" class="mb-0 small fw-bold text-muted">RESTA COBRAR</p>
+                                    <h4 id="pay-balance-display" class="mb-0">Gs. 0</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="submit" id="pay-btn-submit" class="btn btn-success w-100 py-2 fw-bold">FINALIZAR Y REGISTRAR VENTA</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
     let posCart = [];
     let selectedClientId = 1; // 1 = Cliente Ocasional por defecto
+    const isCashOpen = <?php echo ($isCashOpen ?? false) ? 'true' : 'false'; ?>;
     
-    // Estado persistente para el modal de finalización
-    let posFinalizeState = {
-        clientId: 1,
-        clientName: 'Cliente Ocasional',
-        observation: '',
-        deliveryType: 'local',
-        paymentMethod: 'efectivo'
-    };
-
+    // Instancias de Modales
+    let bsModalFinalize, bsModalSearch, bsModalCreate, payModal, bsModalSelectLocation, bsModalAddLocation;
+    let addLocationMap, addLocationMarker;
+    
     const totalEl = document.getElementById('posTotal');
     const itemsEl = document.getElementById('ticketItems');
 
@@ -605,9 +720,6 @@
         totalEl.innerText = new Intl.NumberFormat('es-PY').format(total);
     }
 
-    // Declaración global de instancias de modales
-    let bsModalFinalize, bsModalSearch, bsModalCreate;
-
     /**
      * Abre el modal principal y sincroniza los datos del ticket
      */
@@ -616,16 +728,8 @@
         
         document.getElementById('f-total-display').innerText = 'Gs. ' + totalEl.innerText;
 
-        // Restaurar estado visual basado en los campos del modal
-        const currentClientId = document.getElementById('f-client-id').value;
-        const currentDeliveryType = document.getElementById('f-delivery-type').value;
-        
-        // Si es delivery, verificar si el botón de ubicaciones debe mostrarse
-        if(currentDeliveryType === 'delivery') loadClientLocations(currentClientId);
-        
-        // Sincronizar observaciones rápidas
-        if(!posFinalizeState.observation) {
-            document.getElementById('f-observation').value = document.getElementById('posObservation').value;
+        if(!document.getElementById('f-observation').value) {
+             document.getElementById('f-observation').value = document.getElementById('posObservation').value;
         }
                         
         bsModalFinalize.show();
@@ -683,6 +787,155 @@
     }
 
     /**
+     * Extrae coordenadas de una URL de Google Maps y actualiza el mapa
+     */
+    window.processLocationUrl = async function(url) {
+        if (!url || url.trim().length < 10) return;
+        
+        // Regex flexible para capturar coordenadas
+        const regex = /(?:@|query=|!3d)(-?\d+\.\d+)(?:,|!4d)(-?\d+\.\d+)/;
+        const match = url.match(regex);
+
+        if (match) {
+            window.updatePosMapMarker(parseFloat(match[1]), parseFloat(match[2]));
+        } else if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
+            // Resolver link corto vía backend
+            try {                
+                const resp = await fetch(`?route=admin_resolve_map_url&url=${encodeURIComponent(url)}`); // Asumiendo que esta ruta existe
+                const res = await resp.json();
+                if (res.success) {
+                    window.updatePosMapMarker(parseFloat(res.lat), parseFloat(res.lng));
+                } else {
+                    console.error("Servidor no pudo resolver el link:", res.message);
+                    Toast.fire("El link de ubicación no pudo ser resuelto.", "error");
+                }
+            } catch (e) {
+                console.error("Error al resolver URL:", e);
+            }
+        }
+    }
+
+    window.updatePosMapMarker = function(lat, lng) {
+        // Esta función actualiza los campos de lat/lng en el modal de Finalizar Venta
+        const latInputF = document.getElementById('f-lat');
+        const lngInputF = document.getElementById('f-lng');
+
+        if (latInputF) latInputF.value = lat;
+        if (lngInputF) lngInputF.value = lng;
+
+        if (!isNaN(lat) && !isNaN(lng)) {
+            Toast.fire("Ubicación extraída correctamente", "success");
+        }
+    }
+
+    /**
+     * Funcionalidad de Cobro Mixto (Adaptada de Orders)
+     */
+    function openPaymentModal(order) {
+        document.getElementById('pay-modal-id').innerText = order.id;
+        document.getElementById('pay-input-order-id').value = order.id;
+        document.getElementById('pay-modal-total').innerText = 'Gs. ' + new Intl.NumberFormat('es-PY').format(order.total);
+        document.getElementById('pay-modal-total').dataset.total = order.total;
+        
+        document.querySelectorAll('.pay-input').forEach(inp => inp.value = 0);
+        const firstInput = document.querySelector(`.pay-input[data-method="${order.payment_method}"]`);
+        if (firstInput) firstInput.value = order.total;
+        
+        calculatePayBalance();
+        payModal.show();
+    }
+
+    function calculatePayBalance() {
+        const total = parseFloat(document.getElementById('pay-modal-total').dataset.total);
+        let paid = 0;
+        document.querySelectorAll('.pay-input').forEach(inp => paid += parseFloat(inp.value) || 0);
+        const remaining = total - paid;
+        const display = document.getElementById('pay-balance-display');
+        const card = document.getElementById('pay-balance-card');
+        const label = document.getElementById('pay-balance-label');
+        const submitBtn = document.getElementById('pay-btn-submit');
+        
+        card.style.backgroundColor = '#fff';
+        if (remaining > 0) {
+            label.innerText = 'RESTA COBRAR';
+            display.innerText = 'Gs. ' + new Intl.NumberFormat('es-PY').format(remaining);
+            display.className = 'mb-0 fw-bold text-danger';
+            if (submitBtn) submitBtn.disabled = true;
+        } else if (remaining < 0) {
+            label.innerText = 'VUELTO';
+            display.innerText = 'Gs. ' + new Intl.NumberFormat('es-PY').format(Math.abs(remaining));
+            display.className = 'mb-0 fw-bold text-primary';
+            if (submitBtn) submitBtn.disabled = false;
+        } else {
+            label.innerText = 'ESTADO';
+            display.innerText = 'MONTO EXACTO ✅';
+            display.className = 'mb-0 fw-bold text-success';
+            if (submitBtn) submitBtn.disabled = false;
+        }
+    }
+
+    window.fillRemainingPay = function(method) {
+        const total = parseFloat(document.getElementById('pay-modal-total').dataset.total);
+        let otherPaid = 0;
+        document.querySelectorAll('.pay-input').forEach(inp => {
+            if (inp.dataset.method !== method) otherPaid += parseFloat(inp.value) || 0;
+        });
+        document.querySelector(`.pay-input[data-method="${method}"]`).value = Math.max(0, total - otherPaid);
+        calculatePayBalance();
+    };
+
+    async function submitPayment(e) {
+        e.preventDefault();
+        
+        const total = parseFloat(document.getElementById('pay-modal-total').dataset.total);
+        let paid = 0;
+        document.querySelectorAll('.pay-input').forEach(inp => paid += parseFloat(inp.value) || 0);
+
+        if (paid < total) {
+            Toast.fire("El monto cobrado es insuficiente", "warning");
+            return;
+        }
+
+        const result = await Swal.fire({
+            title: '¿Confirmar cobro?',
+            text: `Se registrará el pago para el Pedido #${document.getElementById('pay-input-order-id').value}.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            confirmButtonText: 'Sí, registrar pago',
+            cancelButtonText: 'Revisar',
+            didOpen: () => { Swal.getConfirmButton().focus(); }
+        });
+
+        if (!result.isConfirmed) return;
+
+        const formData = new FormData(document.getElementById('form-pay-modal'));
+        const btn = document.getElementById('pay-btn-submit');
+        btn.disabled = true;
+        
+        try {
+            const resp = await fetch('?route=orders_process_finalize', {
+                method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const res = await resp.json();
+            if (res.success) {
+                payModal.hide();
+                setTimeout(() => {
+                    Swal.fire({ 
+                        title: "¡Éxito!", 
+                        text: "Venta registrada correctamente.", 
+                        icon: "success",
+                        didOpen: () => { Swal.getConfirmButton().focus(); }
+                    });
+                }, 400);
+            } else {
+                Toast.fire(res.message || "Error", "error");
+                btn.disabled = false;
+            }
+        } catch(e) { Toast.fire("Error de red", "error"); btn.disabled = false; }
+    }
+
+    /**
      * Manejo de interfaz dinámica
      */
     document.addEventListener('DOMContentLoaded', function() {
@@ -692,12 +945,58 @@
         bsModalFinalize = new bootstrap.Modal(document.getElementById('modalFinalize'));
         bsModalSearch = new bootstrap.Modal(document.getElementById('modalSearchClient'));
         bsModalCreate = new bootstrap.Modal(document.getElementById('modalCreateClient'));
+        payModal = new bootstrap.Modal(document.getElementById('modalPayOrder'));
+        bsModalSelectLocation = new bootstrap.Modal(document.getElementById('modalSelectLocation'));
+        bsModalAddLocation = new bootstrap.Modal(document.getElementById('modalAddLocation'));
+
+        const payInputs = Array.from(document.querySelectorAll('.pay-input'));
+        const paySubmitBtn = document.getElementById('pay-btn-submit');
+
+        document.getElementById('form-pay-modal').onsubmit = submitPayment;
+        payInputs.forEach((inp, index) => {
+            inp.addEventListener('input', calculatePayBalance);
+            inp.addEventListener('focus', function() { if(this.value == "0") this.value = ""; });
+            inp.addEventListener('blur', function() { if(this.value == "") this.value = "0"; });
+
+            // Navegación por teclado en campos de pago
+            inp.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === 'ArrowDown') {
+                    e.preventDefault(); // Evita que la flecha modifique el valor numérico
+                    const nextInput = payInputs[index + 1];
+                    if (nextInput) {
+                        nextInput.focus();
+                        nextInput.select();
+                    } else {
+                        // Es el último campo: si el botón está habilitado (monto cubierto), darle foco
+                        if (!paySubmitBtn.disabled) {
+                            paySubmitBtn.focus();
+                            // Si presionó Enter, ejecutar directamente la acción
+                            if (e.key === 'Enter') paySubmitBtn.click();
+                        }
+                    }
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const prevInput = payInputs[index - 1];
+                    if (prevInput) {
+                        prevInput.focus();
+                        prevInput.select();
+                    }
+                }
+            });
+        });
+
+        // Foco automático al abrir el modal de cobro
+        document.getElementById('modalPayOrder').addEventListener('shown.bs.modal', function () {
+            const firstInp = payInputs.find(i => parseFloat(i.value) > 0) || payInputs[0];
+            if (firstInp) { firstInp.focus(); firstInp.select(); }
+        });
 
         modalEl.addEventListener('shown.bs.modal', function () {
             const searchBtn = modalEl.querySelector('[onclick="openSearchClient()"]');
             const createBtn = modalEl.querySelector('[onclick="openCreateClient()"]');
             
             const delivery = document.getElementById('f-delivery-type');
+            const selectLocationBtn = document.getElementById('btn-select-location');
             const payment = document.getElementById('f-payment-method');
             const observation = document.getElementById('f-observation');
             const confirmBtn = modalEl.querySelector('[onclick="confirmPOS()"]');
@@ -707,15 +1006,29 @@
                 searchBtn.focus();
             }
 
-            const focusPath = [searchBtn, createBtn, delivery, payment, observation, confirmBtn];
+            const focusPath = [searchBtn, createBtn, delivery, payment, selectLocationBtn, observation, confirmBtn];
             
             focusPath.forEach((el, index) => {
                 if (el) {
                     el.onkeydown = (e) => {
                         if (e.key === 'Enter') { /*&& e.target.tagName !== 'TEXTAREA'*/
                             e.preventDefault();
-                            const next = focusPath[index + 1] || confirmBtn;
-                            if (next) next.focus();
+                            let nextFound = false;
+                            for (let i = index + 1; i < focusPath.length; i++) {
+                                // offsetParent es null si el elemento o sus padres tienen display:none
+                                if (focusPath[i] && focusPath[i].offsetParent !== null) {
+                                    focusPath[i].focus();
+                                    nextFound = true;
+                                    break;
+                                }
+                            }
+                            if (!nextFound) {
+                                if (el === confirmBtn) {
+                                    confirmBtn.click();
+                                } else {
+                                    confirmBtn.focus();
+                                }
+                            }
                         }
                     };
                 }
@@ -770,16 +1083,36 @@
         document.getElementById('modalCreateClient').addEventListener('shown.bs.modal', function () {
             document.getElementById('c-name').focus();
         });
+
+        // Leaflet para el modal de agregar ubicación
+        document.getElementById('modalAddLocation').addEventListener('shown.bs.modal', function () {
+            if (!addLocationMap) {
+                addLocationMap = L.map('c-location-map').setView([-25.3006, -57.6359], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(addLocationMap);
+                addLocationMarker = L.marker([-25.3006, -57.6359], {draggable: true}).addTo(addLocationMap);
+                
+                addLocationMarker.on('dragend', function(event) {
+                    const position = event.target.getLatLng();
+                    document.getElementById('c-location-lat').value = position.lat;
+                    document.getElementById('c-location-lng').value = position.lng;
+                });
+
+                addLocationMap.on('click', function(e) {
+                    addLocationMarker.setLatLng(e.latlng);
+                    document.getElementById('c-location-lat').value = e.latlng.lat;
+                    document.getElementById('c-location-lng').value = e.latlng.lng;
+                });
+            }
+            addLocationMap.invalidateSize();
+        });
     });
 
     window.toggleDeliveryFields = function(val) {
         const container = document.getElementById('f-delivery-extra');
-        if(container) {
             const isDelivery = (val === 'delivery');
             container.style.display = isDelivery ? 'block' : 'none';
             if(isDelivery) loadClientLocations(document.getElementById('f-client-id').value);
         }
-    }
 
     /**
      * Recolección de datos y envío final
@@ -802,112 +1135,190 @@
         submitPOS(formValues);
     }
 
-    /**
+    window.openSelectLocationModal = function() {
+        const clientId = document.getElementById('f-client-id').value;
+        const clientName = document.getElementById('f-client-name').value;
+        document.getElementById('select-location-client-name').innerText = clientName;
+        bsModalSelectLocation.show();
+    }
+
+    window.openAddLocationModal = function() {
+        const clientId = document.getElementById('f-client-id').value;
+        const clientName = document.getElementById('f-client-name').value;
+        document.getElementById('add-location-client-name').innerText = clientName;
+        document.getElementById('c-location-client-id').value = clientId;
+        
+        // Esperar a que el modal de selección se oculte para evitar errores de foco (aria-hidden)
+        const selectModalEl = document.getElementById('modalSelectLocation');
+        const onHidden = () => {
+            bsModalAddLocation.show();
+            selectModalEl.removeEventListener('hidden.bs.modal', onHidden);
+        };
+        selectModalEl.addEventListener('hidden.bs.modal', onHidden);
+        bsModalSelectLocation.hide();
+    }
+
+    window.closeAddLocationAndReturn = function() {
+        const addModalEl = document.getElementById('modalAddLocation');
+        const onHidden = () => {
+            bsModalSelectLocation.show();
+            addModalEl.removeEventListener('hidden.bs.modal', onHidden);
+        };
+        addModalEl.addEventListener('hidden.bs.modal', onHidden);
+        bsModalAddLocation.hide();
+    }
+/**
      * Carga las ubicaciones del cliente seleccionado en el POS
      */
     window.loadClientLocations = async function(clientId) {
-        const btnMapMini = document.getElementById('btn-map-indicator');
-        const container = document.getElementById('f-saved-locations-container');
-        const listEl = document.getElementById('f-locations-list');
+        const btnSelect = document.getElementById('btn-select-location');
+        const listEl = document.getElementById('f-modal-locations-list');
+        
+        if(!listEl) return;
+        listEl.innerHTML = '<div class="col-12 text-center py-3"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>';
 
-        // Limpiar inputs de ubicación al cambiar de cliente para evitar arrastrar datos de la selección anterior
-        document.getElementById('f-location-url').value = '';
-        document.getElementById('f-lat').value = '';
-        document.getElementById('f-lng').value = '';
-
-        if(!btnMapMini || !container || !listEl) return;
-
-        // Resetear estado
-        btnMapMini.style.display = 'none';
-        container.style.display = 'none';
-        listEl.innerHTML = '';
-
-        // El Cliente Ocasional (ID 1) no posee ubicaciones persistentes en el sistema
         try {
             const resp = await fetch(`?route=admin_client_locations&id=${clientId}`);
             const locations = await resp.json();
-
+            listEl.innerHTML = '';
+            
             if(Array.isArray(locations) && locations.length > 0) {
-                btnMapMini.style.display = 'inline-flex';
-                btnMapMini.title = `El cliente tiene ${locations.length} direcciones guardadas. Haga clic para verlas.`;
-                
-                btnMapMini.onclick = () => {
-                    container.style.display = container.style.display === 'none' ? 'block' : 'none';
-                };
+                if(btnSelect) btnSelect.classList.replace('btn-outline-primary', 'btn-primary');
 
                 locations.forEach(loc => {
                     const card = document.createElement('div');
                     card.className = 'pos-location-card';
-                    card.innerHTML = `
-                        <i class="fas fa-map-marker-alt"></i>
-                        <strong>${loc.title}</strong>
-                        <small>${loc.address}</small>
-                    `;
-                    card.onclick = () => {
-                        document.querySelectorAll('.pos-location-card').forEach(c => c.classList.remove('selected'));
-                        card.classList.add('selected');
-                        
-                        document.getElementById('f-location-url').value = loc.address;
-                        document.getElementById('f-lat').value = loc.lat;
-                        document.getElementById('f-lng').value = loc.lng;
-                        
-                        Toast.fire("Ubicación cargada", "success");
-                        container.style.display = 'none';
-                    };
+                    card.innerHTML = `<i class="fas fa-map-marker-alt"></i><strong>${loc.title}</strong><small>${loc.address}</small>`;
+                    card.onclick = () => window.selectClientLocation(loc);
                     listEl.appendChild(card);
                 });
+            } else {
+                if(btnSelect) btnSelect.classList.replace('btn-primary', 'btn-outline-primary');
+                listEl.innerHTML = '<div class="col-12 text-center text-muted py-3">No hay direcciones registradas.</div>';
             }
-        } catch (e) { 
-            console.error(e);
-        }
+        } catch (e) { console.error(e); }
     }
 
-    /**
-     * Inicializa el mapa de Leaflet dentro del modal
-     */
-    window.posMap = null;
-    window.posMarker = null;
-    window.initPosMap = function() { /* Mapa suprimido de la vista principal */ }
-
-    /**
-     * Extrae coordenadas de una URL de Google Maps y actualiza el mapa
-     */
-    window.processLocationUrl = async function(url) {
-        if (!url || url.trim().length < 10) return;
+    window.selectClientLocation = function(loc) {
+        document.getElementById('f-location-url').value = loc.address;
+        document.getElementById('f-lat').value = loc.lat;
+        document.getElementById('f-lng').value = loc.lng;
         
-        // Regex flexible para capturar coordenadas
-        const regex = /(?:@|query=|!3d)(-?\d+\.\d+)(?:,|!4d)(-?\d+\.\d+)/;
+        const display = document.getElementById('f-location-display');
+        if(display) display.innerText = loc.title + ': ' + loc.address;
+
+        Toast.fire("Dirección cargada", "success");
+        bsModalSelectLocation.hide();
+    }
+
+    window.processAddLocationUrl = async function(url) {
+        if (!url || url.trim().length < 10) {
+            return Toast.fire("Pegue un link de ubicación primero", "warning");
+        }
+        
+        // Regex robusto para extraer coordenadas de links de Maps o WhatsApp (@lat,lng / q=lat,lng / !3dlat!4dlng)
+        const regex = /https?:\/\/(maps\..+?|goo\.gl\/maps\/|maps\.app\.goo\.gl\/)\/\S+/g; ///(?:@|query=|q=|!3d|search\/)(-?\d+\.\d+)[,%2C\s!4d]+([-+]?\d+\.\d+)/
         const match = url.match(regex);
 
         if (match) {
-            window.updatePosMapMarker(parseFloat(match[1]), parseFloat(match[2]));
+            console.log("Coordenadas extraídas: " + match[1] + ", " + match[2] + ", " + match);
+        }
+            
+        if (match) {
+            window.updateAddLocationMarker(parseFloat(match[1]), parseFloat(match[2]));
+            Toast.fire("Ubicación extraída correctamente", "success");
         } else if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
-            // Resolver link corto vía backend
             try {                
-                const resp = await fetch(`?route=admin_resolve_map_url&url=${encodeURIComponent(url)}`);
+                const resp = await fetch(`?route=admin_resolve_map_url&url=${encodeURIComponent(url.trim())}`);
                 const res = await resp.json();
                 if (res.success) {
-                    window.updatePosMapMarker(parseFloat(res.lat), parseFloat(res.lng));
+                    window.updateAddLocationMarker(parseFloat(res.lat), parseFloat(res.lng));
+                    Toast.fire("Ubicación resuelta con éxito", "success");
                 } else {
-                    console.error("Servidor no pudo resolver el link:", res.message);
-                    Toast.fire("El link de ubicación no pudo ser resuelto.", "error");
+                    Toast.fire(res.message || "No se detectaron coordenadas en el link", "error");
                 }
-            } catch (e) {
-                console.error("Error al resolver URL:", e);
-            }
+            } catch (e) { console.error(e); }
+        } else {
+            Toast.fire("No se encontraron coordenadas en el texto/enlace proporcionado", "warning");
         }
     }
 
-    window.updatePosMapMarker = function(lat, lng) {
-        const latInputF = document.getElementById('f-lat');
-        const lngInputF = document.getElementById('f-lng');
+    window.updateAddLocationMarker = function(lat, lng) {
+        const latInp = document.getElementById('c-location-lat');
+        const lngInp = document.getElementById('c-location-lng');
+        if (latInp) latInp.value = lat;
+        if (lngInp) lngInp.value = lng;
 
-        if (latInputF) latInputF.value = lat;
-        if (lngInputF) lngInputF.value = lng;
-
-        if (!isNaN(lat) && !isNaN(lng)) {
-            Toast.fire("Ubicación extraída correctamente", "success");
+        if (addLocationMap) {
+            const newPos = [lat, lng];
+            addLocationMarker.setLatLng(newPos);
+            addLocationMap.setView(newPos, 16);
+            // Pequeño delay para asegurar que Leaflet procese el cambio de vista
+            setTimeout(() => addLocationMap.invalidateSize(), 200);
         }
+    }
+
+    window.ProcesarPedidoAddLocation = function() {
+        const fullTextInput = document.getElementById('c-location-url').value;
+        if (!fullTextInput || fullTextInput.trim() === '') {
+            Toast.fire("Pegue el texto o link de ubicación primero", "warning");
+            return;
+        }
+
+        const mapRegex = /https?:\/\/(maps\..+?|goo\.gl\/maps\/|maps\.app\.goo\.gl\/)\/\S+/g;
+        const linkMatch = fullTextInput.match(mapRegex);
+
+        if (linkMatch && linkMatch.length > 0) {
+            const extractedUrl = linkMatch[0];
+            window.processAddLocationUrl(extractedUrl);
+            document.getElementById('c-location-url').value = ""; // Limpiar input después de procesar
+        } else {
+            Toast.fire("No se detectó un enlace de ubicación válido en el texto. Asegúrate de que el mensaje lo incluya.", "error");
+        }
+    }
+
+    function procesarPedido(){
+        const text = document.getElementById('rawText').value;
+        if (!text) return alert("Pega el texto primero");
+
+        // 1. Buscar URL de Google Maps
+        const mapRegex = /https?:\/\/(maps\..+?|goo\.gl\/maps\/|maps\.app\.goo\.gl\/)\/\S+/g;
+        const linkEncontrado = text.match(mapRegex);
+
+        // 2. Intentar sacar un nombre (opcional: asume que la primera línea es el nombre)
+        const lineas = text.split('\n');
+        const nombreCliente = lineas[0].substring(0, 20); // Toma los primeros 20 caracteres
+
+        if (linkEncontrado) {
+            const url = linkEncontrado[0];
+            crearTarjeta(nombreCliente, url);
+            document.getElementById('rawText').value = ""; // Limpiar input
+        } else {
+            alert("No se detectó un enlace de ubicación. Asegúrate de que el mensaje lo incluya.");
+        }
+    }
+
+    window.submitQuickLocation = async function() {
+        const data = {
+            client_id: document.getElementById('c-location-client-id').value,
+            title: document.getElementById('c-location-title').value,
+            address: document.getElementById('c-location-address').value,
+            lat: document.getElementById('c-location-lat').value,
+            lng: document.getElementById('c-location-lng').value
+        };
+
+        if(!data.title || !data.address || !data.lat) return Toast.fire("Complete los datos", "warning");
+
+        const resp = await fetch('?route=pos_save_client_location', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+        });
+        const res = await resp.json();
+        if(res.success) {
+            Toast.fire(res.message, "success");
+            bsModalAddLocation.hide();
+            window.loadClientLocations(data.client_id);
+            bsModalSelectLocation.show();
+        } else { Toast.fire(res.message, "error"); }
     }
 
     /**
@@ -961,24 +1372,18 @@
     window.selectClientFromList = function(id, name, phone) {
         // Forzamos el nombre de sistema para el ID 1, para los demás usamos el formato estándar
         const displayName = (id == 1) ? 'Cliente Ocasional' : (phone ? `${name} (${phone})` : name);
-        
-        document.getElementById('f-client-id').value = id;
-        document.getElementById('f-client-name').value = displayName;
-        
+
+        // Actualizar los campos del modal y el estado interno
+        document.getElementById('f-client-id').value = id; // Actualiza el campo oculto
+        document.getElementById('f-client-name').value = displayName; // Actualiza el campo visible
         // Sincronizar el estado interno para mantener consistencia si se cierra y abre el modal
-        posFinalizeState.clientId = id;
-        posFinalizeState.clientName = displayName;
 
         // Ocultar modales de búsqueda/creación
         bsModalSearch.hide();
         bsModalCreate.hide();
 
-        // Usamos un pequeño delay (150ms) para permitir que Bootstrap limpie el backdrop del buscador
-        // antes de mostrar el modal de finalización. Esto resuelve el problema de carga de datos.
         setTimeout(() => {
             bsModalFinalize.show();
-            
-            // Si el modo de entrega es delivery, cargamos las ubicaciones específicas del nuevo cliente
             if(document.getElementById('f-delivery-type').value === 'delivery') loadClientLocations(id);
         }, 150);
     }
@@ -1042,6 +1447,13 @@
             Toast.fire(res.message, "success");
             // Impresión automática de la comanda
             printOrderDirectly(res.order_id, '80mm');
+
+            const createdOrder = {
+                id: res.order_id,
+                total: res.total, // El servidor ahora retorna el total calculado
+                payment_method: data.paymentMethod
+            };
+
             posCart = [];
             document.getElementById('posObservation').value = "";
             renderTicket();
@@ -1049,23 +1461,49 @@
             // Resetear inputs del modal
             document.getElementById('f-client-id').value = 1;
             document.getElementById('f-client-name').value = 'Cliente Ocasional';
+            document.getElementById('f-delivery-type').value = 'local';
+            document.getElementById('f-payment-method').value = 'efectivo';
+            document.getElementById('f-observation').value = '';
+            document.getElementById('f-location-url').value = '';
+            document.getElementById('f-lat').value = '';
+            document.getElementById('f-lng').value = '';
+            
+            const display = document.getElementById('f-location-display');
+            if(display) display.innerText = 'Seleccionar o agregar dirección...';
 
-            // Flujo de cobranza: Preguntar si desea registrar el pago ahora
-            Swal.fire({
-                title: '¿Registrar pago?',
-                text: "El pedido se guardó como 'Confirmado'. ¿Desea proceder al cobro y facturación ahora?",
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#00b894',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Sí, cobrar ahora',
-                cancelButtonText: 'No, cerrar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Redirigir a la vista de finalizar venta y cobro mixtos
-                    window.location.href = `?route=orders_finalize&id=${res.order_id}`;
-                }
-            });
+            // Ocultar campos de delivery y resetear indicadores visuales
+            toggleDeliveryFields('local');
+
+            // Resetear el estado del modal de finalización para el próximo pedido
+            const posFinalizeState = {
+                clientId: 1,
+                clientName: 'Cliente Ocasional',
+                observation: '',
+                deliveryType: 'local',
+                paymentMethod: 'efectivo'
+            };
+            // Flujo de cobranza: Preguntar si desea registrar el pago ahora (con retraso para esperar impresión)
+            setTimeout(() => {
+                Swal.fire({
+                    title: '¿Registrar pago?',
+                    text: "El pedido se guardó. ¿Desea proceder al cobro ahora?",
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#00b894',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Sí, cobrar ahora',
+                    cancelButtonText: 'No, cerrar',
+                    didOpen: () => { Swal.getConfirmButton().focus(); }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        if (!isCashOpen) {
+                            Toast.fire("No puede cobrar sin caja abierta", "error");
+                        } else {
+                            openPaymentModal(createdOrder);
+                        }
+                    }
+                });
+            }, 1200); // Pausa de 1.2s para asegurar que el foco regrese tras abrir el diálogo de impresión
         } else {
             Toast.fire(res.message, "error");
         }
@@ -1093,27 +1531,5 @@
 
     // Autofocus en el buscador al cargar la vista (descomentar si se desea)
     // document.getElementById('posSearch').focus();
-
-    function ProcesarPedido(){ // Se corrigió el nombre de la función para que coincida con el onclick
-        const fullTextInput = document.getElementById('f-location-url').value;
-        if (!fullTextInput) {
-            Toast.fire("Pega el texto primero", "warning");
-            return;
-        }
-
-        // Regex para buscar URLs de Google Maps dentro del texto
-        const mapRegex = /https?:\/\/(?:www\.)?(?:maps\.app\.goo\.gl\/|goo\.gl\/maps\/|maps\.google\.com\/maps\?q=)\S+/g;
-        const linkMatch = fullTextInput.match(mapRegex);
-
-        if (linkMatch && linkMatch.length > 0) {
-            const extractedUrl = linkMatch[0];
-            // Llamar a la función existente que procesa la URL y actualiza el mapa/inputs
-            window.processLocationUrl(extractedUrl);
-            document.getElementById('f-location-url').value = ""; // Limpiar input después de procesar
-            Toast.fire("Enlace de ubicación procesado.", "success");
-        } else {
-            Toast.fire("No se detectó un enlace de ubicación válido en el texto. Asegúrate de que el mensaje lo incluya.", "error");
-        }
-    }                    
 
 </script>

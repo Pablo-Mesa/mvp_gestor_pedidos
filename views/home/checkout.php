@@ -328,7 +328,10 @@
                   Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
                   Math.sin(dLon/2) * Math.sin(dLon/2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c;
+        
+        // Ajustamos la línea recta a una estimación por calles (distancia real).
+        const circuityFactor = 1.3;
+        return parseFloat(((R * c) * circuityFactor).toFixed(2));
     }
 
     // --- 1. Lógica del Mapa (Leaflet) ---
@@ -698,10 +701,15 @@
         if (deliveryType === 'delivery' && lat && lng) {
             const dist = calculateDistance(storeConfig.lat, storeConfig.lng, parseFloat(lat), parseFloat(lng));
             
+            // Debug para inspeccionar en consola por qué falla una zona
+            //console.log(`[Logística] Distancia estimada (con ajuste vial): ${dist.toFixed(2)} km`);
+            
             let foundPrice = null;
             if (storeConfig.rates && storeConfig.rates.length > 0) {
                 for (const rate of storeConfig.rates) {
-                    if (dist >= parseFloat(rate.km_from) && dist <= parseFloat(rate.km_to)) {
+                    const from = parseFloat(rate.km_from);
+                    const to = parseFloat(rate.km_to);
+                    if (dist >= from && dist <= to) {
                         foundPrice = parseFloat(rate.price);
                         break;
                     }

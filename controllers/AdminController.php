@@ -60,6 +60,7 @@ class AdminController {
                 'ingresos_hoy' => $mStats['income'],
                 'platos_vendidos' => $mStats['dishes'],
                 'web_income' => $mStats['web_income'] ?? 0,
+                'web_delivery_fees' => $mStats['web_delivery_fees'] ?? 0,
                 'local_income' => $mStats['local_income'] ?? 0,
                 'waiter_income' => $mStats['waiter_income'] ?? 0,
                 'delivery_orders_count' => $mStats['delivery_orders_count'] ?? 0,
@@ -80,6 +81,7 @@ class AdminController {
                 'ingresos_hoy' => $stats['income_today'],
                 'platos_vendidos' => $stats['dishes_sold'],
                 'web_income' => $stats['web_income'] ?? 0,
+                'web_delivery_fees' => $stats['web_delivery_fees'] ?? 0,
                 'local_income' => $stats['local_income'] ?? 0,
                 'waiter_income' => $stats['waiter_income'] ?? 0,
                 'web_orders_count' => $stats['web_orders_count'] ?? 0,
@@ -128,6 +130,7 @@ class AdminController {
         require_once '../models/Product.php';
         require_once '../models/Category.php';
         require_once '../models/Client.php';
+        require_once '../models/CashRegister.php';
 
         $productModel = new Product();
         $products = $productModel->readAllActive()->fetchAll(PDO::FETCH_ASSOC);

@@ -2,10 +2,6 @@
     $cashModel = new CashRegister();
     $isCashOpen = $cashModel->getActiveSession($_SESSION['user_id']) ? true : false;
 ?>
-<!-- Leaflet para el mapa de entrega -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <style>
     .pos-container {
         display: flex;
@@ -234,13 +230,18 @@
     .pos-location-card strong { color: #2d3436; display: block; }
     .pos-location-card small { color: #636e72; font-size: 0.7rem; line-height: 1.2; }
 
-    #c-location-map { height: 220px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 15px; }
     /* Tabla de Clientes en Modal */
     .pos-client-table { width: 100%; font-size: 0.85rem; border-collapse: collapse; }
     .pos-client-table th { background: #f8fafc; padding: 10px; border-bottom: 2px solid #e2e8f0; text-align: left; color: #64748b; }
     .pos-client-table td { padding: 10px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
     .pos-client-table tr:hover td { background: #f0f7ff; color: #0984e3; }
     .pos-client-table tr:focus { background: #e0f2fe; outline: 2px solid #0984e3; outline-offset: -2px; }
+
+    /* Igualar altura visual de modales secundarios con modalFinalize */
+    #modalAddLocation .modal-content,
+    #modalSelectLocation .modal-content {
+        min-height: 620px;
+    }
 
     /* Quitar flechas de los input de número (Spinner) en el cobro */
     .pay-input::-webkit-outer-spin-button,
@@ -387,14 +388,6 @@
                 <!-- tipo de entrega -->        
                 <div class="row g-2 mb-3">
                     <div class="col-6">
-                        <label class="form-label fw-bold small"><i class="fas fa-truck me-1"></i> Entrega</label>
-                        <select id="f-delivery-type" class="form-select" onchange="toggleDeliveryFields(this.value)">
-                            <option value="local">Consumo Local</option>
-                            <option value="pickup">Para Retirar</option>
-                            <option value="delivery">Envio / Delivery</option>
-                        </select>
-                    </div>
-                    <div class="col-6">
                         <label class="form-label fw-bold small"><i class="fas fa-wallet me-1"></i> Pago</label>
                         <select id="f-payment-method" class="form-select">
                             <option value="efectivo">Efectivo</option>
@@ -402,6 +395,14 @@
                             <option value="transferencia">Transferencia</option>
                         </select>
                     </div>
+                    <div class="col-6">
+                        <label class="form-label fw-bold small"><i class="fas fa-truck me-1"></i> Entrega</label>
+                        <select id="f-delivery-type" class="form-select" onchange="toggleDeliveryFields(this.value)">
+                            <option value="local">Consumo Local</option>
+                            <option value="pickup">Para Retirar</option>
+                            <option value="delivery">Envio / Delivery</option>
+                        </select>
+                    </div>                    
                 </div>
                 <!-- campos adicionales para entrega -->        
                 <div id="f-delivery-extra" style="display: none;" class="mb-3">
@@ -539,14 +540,9 @@
                 <div class="mb-3"><label class="form-label small fw-bold">Título (Ej: Casa, Oficina)</label><input type="text" id="c-location-title" class="form-control" placeholder="Casa"></div>
                 <div class="mb-3">
                     <label class="form-label small fw-bold">Link de Ubicación (WhatsApp/Maps)</label>
-                    <div class="input-group">
-                        <input type="text" id="c-location-url" class="form-control" placeholder="Pegue el link aquí...">
-                        <button class="btn btn-secondary" type="button" onclick="ProcesarPedidoAddLocation()">Extraer</button>
-                    </div>
+                    <input type="text" id="c-location-url" class="form-control" placeholder="https://maps.app.goo.gl/...">
                 </div>
-                <div id="c-location-map"></div>
                 <div class="mb-3"><label class="form-label small fw-bold">Dirección / Referencia</label><textarea id="c-location-address" class="form-control" rows="2" placeholder="Calle, número, color de portón..."></textarea></div>
-                <input type="hidden" id="c-location-lat"><input type="hidden" id="c-location-lng">
             </div>
             <div class="modal-footer border-0"><button type="button" class="btn btn-success w-100 fw-bold py-2" onclick="submitQuickLocation()">GUARDAR DIRECCIÓN</button></div>
         </div>
@@ -614,7 +610,6 @@
     
     // Instancias de Modales
     let bsModalFinalize, bsModalSearch, bsModalCreate, payModal, bsModalSelectLocation, bsModalAddLocation;
-    let addLocationMap, addLocationMarker;
     
     const totalEl = document.getElementById('posTotal');
     const itemsEl = document.getElementById('ticketItems');
@@ -784,48 +779,6 @@
                 ['c-name', 'c-phone', 'c-email', 'c-billing-name', 'c-billing-ruc'].forEach(id => document.getElementById(id).value = '');
             }
         } catch(e) { console.error(e); }
-    }
-
-    /**
-     * Extrae coordenadas de una URL de Google Maps y actualiza el mapa
-     */
-    window.processLocationUrl = async function(url) {
-        if (!url || url.trim().length < 10) return;
-        
-        // Regex flexible para capturar coordenadas
-        const regex = /(?:@|query=|!3d)(-?\d+\.\d+)(?:,|!4d)(-?\d+\.\d+)/;
-        const match = url.match(regex);
-
-        if (match) {
-            window.updatePosMapMarker(parseFloat(match[1]), parseFloat(match[2]));
-        } else if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
-            // Resolver link corto vía backend
-            try {                
-                const resp = await fetch(`?route=admin_resolve_map_url&url=${encodeURIComponent(url)}`); // Asumiendo que esta ruta existe
-                const res = await resp.json();
-                if (res.success) {
-                    window.updatePosMapMarker(parseFloat(res.lat), parseFloat(res.lng));
-                } else {
-                    console.error("Servidor no pudo resolver el link:", res.message);
-                    Toast.fire("El link de ubicación no pudo ser resuelto.", "error");
-                }
-            } catch (e) {
-                console.error("Error al resolver URL:", e);
-            }
-        }
-    }
-
-    window.updatePosMapMarker = function(lat, lng) {
-        // Esta función actualiza los campos de lat/lng en el modal de Finalizar Venta
-        const latInputF = document.getElementById('f-lat');
-        const lngInputF = document.getElementById('f-lng');
-
-        if (latInputF) latInputF.value = lat;
-        if (lngInputF) lngInputF.value = lng;
-
-        if (!isNaN(lat) && !isNaN(lng)) {
-            Toast.fire("Ubicación extraída correctamente", "success");
-        }
     }
 
     /**
@@ -1006,7 +959,7 @@
                 searchBtn.focus();
             }
 
-            const focusPath = [searchBtn, createBtn, delivery, payment, selectLocationBtn, observation, confirmBtn];
+            const focusPath = [searchBtn, createBtn, payment, delivery, selectLocationBtn, observation, confirmBtn];
             
             focusPath.forEach((el, index) => {
                 if (el) {
@@ -1084,27 +1037,6 @@
             document.getElementById('c-name').focus();
         });
 
-        // Leaflet para el modal de agregar ubicación
-        document.getElementById('modalAddLocation').addEventListener('shown.bs.modal', function () {
-            if (!addLocationMap) {
-                addLocationMap = L.map('c-location-map').setView([-25.3006, -57.6359], 13);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(addLocationMap);
-                addLocationMarker = L.marker([-25.3006, -57.6359], {draggable: true}).addTo(addLocationMap);
-                
-                addLocationMarker.on('dragend', function(event) {
-                    const position = event.target.getLatLng();
-                    document.getElementById('c-location-lat').value = position.lat;
-                    document.getElementById('c-location-lng').value = position.lng;
-                });
-
-                addLocationMap.on('click', function(e) {
-                    addLocationMarker.setLatLng(e.latlng);
-                    document.getElementById('c-location-lat').value = e.latlng.lat;
-                    document.getElementById('c-location-lng').value = e.latlng.lng;
-                });
-            }
-            addLocationMap.invalidateSize();
-        });
     });
 
     window.toggleDeliveryFields = function(val) {
@@ -1122,15 +1054,8 @@
             clientId: document.getElementById('f-client-id').value,
             deliveryType: document.getElementById('f-delivery-type').value,
             paymentMethod: document.getElementById('f-payment-method').value,
-            observation: document.getElementById('f-observation').value,
-            locationUrl: document.getElementById('f-location-url').value,
-            lat: document.getElementById('f-lat').value,
-            lng: document.getElementById('f-lng').value
+            observation: document.getElementById('f-observation').value
         };
-
-        if(formValues.deliveryType === 'delivery' && !formValues.lat) {
-            return Toast.fire("Debe pegar un link de ubicación válido", "warning");
-        }
 
         submitPOS(formValues);
     }
@@ -1167,7 +1092,7 @@
         addModalEl.addEventListener('hidden.bs.modal', onHidden);
         bsModalAddLocation.hide();
     }
-/**
+    /**
      * Carga las ubicaciones del cliente seleccionado en el POS
      */
     window.loadClientLocations = async function(clientId) {
@@ -1200,7 +1125,7 @@
     }
 
     window.selectClientLocation = function(loc) {
-        document.getElementById('f-location-url').value = loc.address;
+        document.getElementById('f-location-url').value = loc.location_url;
         document.getElementById('f-lat').value = loc.lat;
         document.getElementById('f-lng').value = loc.lng;
         
@@ -1271,7 +1196,6 @@
         if (linkMatch && linkMatch.length > 0) {
             const extractedUrl = linkMatch[0];
             window.processAddLocationUrl(extractedUrl);
-            document.getElementById('c-location-url').value = ""; // Limpiar input después de procesar
         } else {
             Toast.fire("No se detectó un enlace de ubicación válido en el texto. Asegúrate de que el mensaje lo incluya.", "error");
         }
@@ -1303,11 +1227,10 @@
             client_id: document.getElementById('c-location-client-id').value,
             title: document.getElementById('c-location-title').value,
             address: document.getElementById('c-location-address').value,
-            lat: document.getElementById('c-location-lat').value,
-            lng: document.getElementById('c-location-lng').value
+            location_url: document.getElementById('c-location-url').value
         };
 
-        if(!data.title || !data.address || !data.lat) return Toast.fire("Complete los datos", "warning");
+        if(!data.title || !data.address || !data.location_url) return Toast.fire("Complete los datos", "warning");
 
         const resp = await fetch('?route=pos_save_client_location', {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
@@ -1437,8 +1360,9 @@
                 delivery_type: data.deliveryType,
                 payment_method: data.paymentMethod,
                 observation: data.observation,
-                lat: data.lat, lng: data.lng,
-                delivery_address: data.locationUrl
+                location_url: document.getElementById('f-location-url').value,
+                lat: document.getElementById('f-lat').value,
+                lng: document.getElementById('f-lng').value
             })
         });
 

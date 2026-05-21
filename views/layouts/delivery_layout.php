@@ -211,6 +211,24 @@
         .delivery-select:focus {
             border-color: var(--delivery-primary);
         }
+
+        /* Componente para enlaces de ubicación directos */
+        .url-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 14px;
+            border-radius: 12px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: #0984e3;
+            font-weight: 700;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .url-box:hover { background: #f1f5f9; border-color: #0984e3; }
         
     </style>
 </head>

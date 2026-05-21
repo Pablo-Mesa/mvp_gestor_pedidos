@@ -26,6 +26,7 @@ class Order {
     public $delivery_address;   // Propiedad para snapshot (no persistente en orders)
     public $delivery_lat;       // Propiedad para snapshot (no persistente en orders)
     public $delivery_lng;       // Propiedad para snapshot (no persistente en orders)
+    public $delivery_url;       // Propiedad para snapshot (no persistente en orders)
     public $created_at;
     public $error; // Para capturar mensajes de error SQL
 
@@ -44,8 +45,8 @@ class Order {
         try {
             // 0. Validación de integridad para envíos
             if ($this->delivery_type === 'delivery') {
-                if (empty($this->delivery_address) || is_null($this->delivery_lat) || is_null($this->delivery_lng)) {
-                    throw new Exception("Error de integridad: El pedido es delivery pero faltan datos de ubicación (Dirección/Coordenadas).");
+                if (empty($this->delivery_address)) {
+                    throw new Exception("Error de integridad: El pedido es delivery pero falta la dirección de entrega.");
                 }
             }
 
@@ -78,8 +79,8 @@ class Order {
             // 2. Si es delivery, insertar en order_shipments
             if ($this->delivery_type === 'delivery') {
                 $queryShip = "INSERT INTO order_shipments 
-                              (order_id, client_location_id, delivery_rate_id, address_snapshot, lat_snapshot, lng_snapshot, delivery_user_id) 
-                              VALUES (:order_id, :location_id, :rate_id, :address, :lat, :lng, :delivery_user_id)";
+                              (order_id, client_location_id, delivery_rate_id, address_snapshot, lat_snapshot, lng_snapshot, url_snapshot, delivery_user_id) 
+                              VALUES (:order_id, :location_id, :rate_id, :address, :lat, :lng, :url, :delivery_user_id)";
                 $stmtShip = $this->conn->prepare($queryShip);
                 
                 $stmtShip->bindValue(':order_id', $this->id);
@@ -88,6 +89,7 @@ class Order {
                 $stmtShip->bindValue(':address', $this->delivery_address); // Propiedad temporal para snapshot
                 $stmtShip->bindValue(':lat', $this->delivery_lat);
                 $stmtShip->bindValue(':lng', $this->delivery_lng);
+                $stmtShip->bindValue(':url', $this->delivery_url);
                 $stmtShip->bindValue(':delivery_user_id', $this->delivery_user_id);
                 $stmtShip->execute();
             }
@@ -128,7 +130,7 @@ class Order {
         }
 
         $query = "SELECT o.*, c.name as user_name, c.phone as user_phone, ch.name as channel_name, ch.icon as channel_icon, 
-                         s.address_snapshot as delivery_address, s.lat_snapshot as delivery_lat, s.lng_snapshot as delivery_lng, 
+                         s.address_snapshot as delivery_address, s.lat_snapshot as delivery_lat, s.lng_snapshot as delivery_lng, s.url_snapshot as delivery_url,
                          s.delivery_user_id, d.name as delivery_name, drd.price as delivery_cost, drd.km_from, drd.km_to,
                          (SELECT COALESCE(SUM(p.monto_total), 0) FROM pagos p JOIN pos_ventas_cabecera v ON p.venta_id = v.id WHERE v.order_id = o.id AND v.estado = 1) as total_paid,
                          (SELECT COUNT(*) FROM pos_ventas_cabecera WHERE order_id = o.id) as has_invoice,
@@ -229,7 +231,7 @@ class Order {
      */
     public function readOne() {
         $query = "SELECT o.*, c.name as user_name, c.email as user_email, c.phone as user_phone,
-                         s.address_snapshot as delivery_address, s.lat_snapshot as delivery_lat, s.lng_snapshot as delivery_lng,
+                         s.address_snapshot as delivery_address, s.lat_snapshot as delivery_lat, s.lng_snapshot as delivery_lng, s.url_snapshot as delivery_url,
                          s.delivery_user_id, st.name as staff_name, drd.price as delivery_cost,
                          (SELECT COALESCE(SUM(p.monto_total), 0) FROM pagos p JOIN pos_ventas_cabecera v ON p.venta_id = v.id WHERE v.order_id = o.id AND v.estado = 1) as total_paid,
                          (SELECT COUNT(*) FROM pos_ventas_cabecera WHERE order_id = o.id) as has_invoice,

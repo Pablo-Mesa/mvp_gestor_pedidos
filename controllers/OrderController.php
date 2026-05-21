@@ -819,6 +819,7 @@ class OrderController {
             $order->delivery_address = $input['delivery_address'] ?? '';
             $order->delivery_lat = $input['delivery_lat'] ?? null;
             $order->delivery_lng = $input['delivery_lng'] ?? null;
+            $order->delivery_url = $input['delivery_url'] ?? $input['location_url'] ?? null;
             
             if ($order->delivery_lat && $order->delivery_lng) {
                 $pricing = $this->getDeliveryPricing($order->delivery_lat, $order->delivery_lng);
@@ -900,14 +901,16 @@ class OrderController {
         $order->delivery_address = $input['delivery_address'] ?? ($input['delivery_type'] === 'delivery' ? 'Ubicación vía POS' : '');
         $order->delivery_lat = $input['delivery_lat'] ?? $input['lat'] ?? null;
         $order->delivery_lng = $input['delivery_lng'] ?? $input['lng'] ?? null;
+        $order->delivery_url = $input['location_url'] ?? $input['delivery_url'] ?? null;
 
         // Si se solicita guardar una nueva ubicación permanentemente para este cliente
-        if (!empty($input['save_new_location']) && $order->client_id > 1 && $order->delivery_lat && $order->delivery_lng) {
+        if (!empty($input['save_new_location']) && $order->client_id > 1 && ($order->delivery_lat || $order->delivery_url)) {
             $locationModel = new ClientLocation();
             $locationModel->create([
                 'client_id' => $order->client_id,
                 'title'     => !empty($input['new_location_title']) ? $input['new_location_title'] : 'Dirección POS',
                 'address'   => $order->delivery_address,
+                'location_url' => $order->delivery_url,
                 'lat'       => $order->delivery_lat,
                 'lng'       => $order->delivery_lng
             ]);
@@ -971,7 +974,7 @@ class OrderController {
             exit;
         }
 
-        if (empty($input['client_id']) || empty($input['title']) || empty($input['address']) || empty($input['lat']) || empty($input['lng'])) {
+        if (empty($input['client_id']) || empty($input['title']) || empty($input['address']) || empty(trim($input['location_url'] ?? ''))) {
             echo json_encode(['success' => false, 'message' => 'Datos incompletos para guardar ubicación.']);
             exit;
         }
@@ -981,8 +984,9 @@ class OrderController {
             'client_id' => $input['client_id'],
             'title'     => $input['title'],
             'address'   => $input['address'],
-            'lat'       => $input['lat'],
-            'lng'       => $input['lng']
+            'location_url' => $input['location_url'] ?? null,
+            'lat'       => $input['lat'] ?? null,
+            'lng'       => $input['lng'] ?? null
         ];
 
         if ($locationModel->create($data)) {

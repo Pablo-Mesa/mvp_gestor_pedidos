@@ -4,6 +4,7 @@ require_once '../config/db.php';
 class ClientLocation {
     private $conn;
     private $table = 'client_locations';
+    public $error;
 
     public function __construct() {
         $database = new Database();
@@ -18,14 +19,15 @@ class ClientLocation {
     }
 
     public function create($data) {
-        $query = "INSERT INTO " . $this->table . " (client_id, title, address, lat, lng) VALUES (?, ?, ?, ?, ?)";
+        $query = "INSERT INTO " . $this->table . " (client_id, title, address, location_url, lat, lng) VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = $this->conn->prepare($query);
         return $stmt->execute([
             $data['client_id'],
             $data['title'],
             $data['address'],
-            $data['lat'],
-            $data['lng']
+            $data['location_url'] ?? null,
+            $data['lat'] ?? null,
+            $data['lng'] ?? null
         ]);
     }
 

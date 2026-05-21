@@ -321,12 +321,18 @@ function renderOrderCardHTML($order) {
                         <i class="fab fa-whatsapp"></i> WhatsApp
                     </button>
                 </div>
-                <?php if($order['delivery_lat'] && $order['delivery_lng']): ?>
+                <?php if(!empty($order['delivery_lat']) && !empty($order['delivery_lng']) && floatval($order['delivery_lat']) != 0): ?>
                     <div class="map-wrapper">
                         <div id="map-<?php echo $order['id']; ?>" class="map-preview"></div>
                         <a href="https://www.google.com/maps/search/?api=1&query=<?php echo $order['delivery_lat']; ?>,<?php echo $order['delivery_lng']; ?>" 
                            target="_blank" class="map-overlay-btn">
                             <i class="fas fa-directions"></i> GPS
+                        </a>
+                    </div>
+                <?php elseif(!empty(trim($order['delivery_url'] ?? ''))): ?>
+                    <div style="margin-bottom: 10px;">
+                        <a href="<?php echo htmlspecialchars($order['delivery_url']); ?>" target="_blank" class="btn-logistics" style="background: #4285F4; color: white; text-decoration: none;">
+                            <i class="fas fa-map-marked-alt"></i> ABRIR UBICACIÓN (MAPS)
                         </a>
                     </div>
                 <?php endif; ?>
@@ -532,7 +538,15 @@ function renderOrderCardJS(order) {
                     <a href="tel:${phone}" class="btn-contact btn-call"><i class="fas fa-phone-alt"></i> Llamar</a>                    
                     <button onclick="openWhatsAppMenu('${phone}', '${order.id}')" class="btn-contact btn-whatsapp"><i class="fab fa-whatsapp"></i> WhatsApp</button>
                 </div>
-                ${order.delivery_lat ? `<div class="map-wrapper"><div id="map-${order.id}" class="map-preview"></div><a href="https://www.google.com/maps/search/?api=1&query=${order.delivery_lat},${order.delivery_lng}" target="_blank" class="map-overlay-btn"><i class="fas fa-directions"></i> GPS</a></div>` : ''}
+                ${(order.delivery_lat && order.delivery_lng && parseFloat(order.delivery_lat) !== 0) ? 
+                    `<div class="map-wrapper"><div id="map-${order.id}" class="map-preview"></div><a href="https://www.google.com/maps/search/?api=1&query=${order.delivery_lat},${order.delivery_lng}" target="_blank" class="map-overlay-btn"><i class="fas fa-directions"></i> GPS</a></div>` : 
+                    (order.delivery_url && order.delivery_url.trim() !== '' ? 
+                        `<div style="margin-bottom: 10px;">
+                            <a href="${order.delivery_url}" target="_blank" class="btn-logistics" style="background: #4285F4; color: white; text-decoration: none;">
+                                <i class="fas fa-map-marked-alt"></i> ABRIR UBICACIÓN (MAPS)
+                            </a>
+                        </div>` : '')
+                }
                 <div class="delivery-actions">
                     ${(order.status === 'confirmed' || order.status === 'paid') ? `<button class="btn-logistics btn-start" style="background: #ffc107; color: #000; cursor: pointer;" onclick="event.stopPropagation(); updateOrderStatus(${order.id}, 'shipped')"><i class="fas fa-play"></i> Iniciar Entrega</button>` : ''}
                     ${order.status === 'shipped' ? `

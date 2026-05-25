@@ -25,6 +25,7 @@ if ($filter_category_id) {
                 'id' => $p['id'], // ID único para inputs
                 'product_id' => $p['id'],
                 'product_name' => $p['name'],
+                'product_description' => $p['description'] ?? '',
                 'product_price' => $p['price'],
                 'price_half' => $p['price_half'],
                 'image' => $p['image'],
@@ -58,6 +59,7 @@ if ($filter_category_id) {
                     'id' => $p['id'],
                     'product_id' => $p['id'],
                     'product_name' => $p['name'],
+                    'product_description' => $p['description'] ?? '',
                     'product_price' => $p['price'],
                     'price_half' => $p['price_half'],
                     'image' => $p['image'],
@@ -245,8 +247,18 @@ $localPlaceholder = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22
 
 <?php else: ?>
 
+    <!-- Controles de Visualización (Test Punto 3) -->
+    <div class="display-controls" style="display: flex; justify-content: flex-end; margin-bottom: 1rem; gap: 8px; padding: 0 5px;">
+        <button id="grid-view-btn" class="view-toggle-btn active" onclick="setViewMode('grid')" title="Vista Cuadrícula">
+            <i class="fas fa-th-large"></i>
+        </button>
+        <button id="list-view-btn" class="view-toggle-btn" onclick="setViewMode('list')" title="Vista Lista">
+            <i class="fas fa-list"></i>
+        </button>
+    </div>
+
     <!-- Grid de Productos -->
-    <div class="product-grid">
+    <div class="product-grid" id="main-product-grid">
         <?php if(empty($menu_items)): ?>
             <div style="grid-column: 1/-1; text-align: center; padding: 4rem 2rem; color: #636e72;">
                 <i class="fas fa-utensils" style="font-size: 3rem; margin-bottom: 1.5rem; opacity: 0.2;"></i>
@@ -291,7 +303,12 @@ $localPlaceholder = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22
                         
                         <!-- nombre/descripcion del producto -->
                         <div class="product-title"><?php echo htmlspecialchars($item['product_name']); ?></div>
-                        
+
+                        <!-- Descripción dinámica (Visible solo en modo lista) -->
+                        <div class="product-description">
+                            <?php echo htmlspecialchars($item['product_description'] ?? $item['description'] ?? ''); ?>
+                        </div>
+
                         <!-- Leyenda de Prueba Social -->
                         <div class="social-legend" id="legend-<?php echo $item['product_id']; ?>">
                             <?php 
@@ -512,17 +529,83 @@ function updatePrice(itemId, newPrice, newName, newId) {
     btn.dataset.id = newId; // CORRECTO: Actualiza el atributo data-id. NO usar setAttribute('onclick', ...)
 }
 
-function filterCategory(cat, btn) {
-    // Lógica visual simple para ocultar/mostrar tarjetas
+/**
+ * Inyecta esqueletos de carga en el grid
+ */
+function renderSkeletons() {
+    const grid = document.getElementById('main-product-grid');
+    if (!grid) return;
+
+    const viewMode = localStorage.getItem('product_view_mode') || 'grid';
+    let skeletonHTML = '';
+    const count = window.innerWidth < 768 ? 4 : 6;
+
+    for (let i = 0; i < count; i++) {
+        skeletonHTML += `
+            <div class="skeleton-card">
+                <div class="skeleton skeleton-img"></div>
+                <div class="skeleton-body">
+                    <div class="skeleton skeleton-title"></div>
+                    ${viewMode === 'list' ? '<div class="skeleton skeleton-desc"></div>' : ''}
+                    <div class="skeleton skeleton-price"></div>
+                    <div class="skeleton skeleton-btn"></div>
+                </div>
+            </div>
+        `;
+    }
+    grid.innerHTML = skeletonHTML;
+}
+
+async function filterCategory(cat, btn) {
+    const grid = document.getElementById('main-product-grid');
+    if (!grid) return;
+
+    // 1. UI: Activar botón
     document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
-    document.querySelectorAll('.product-card').forEach(card => {
-        if (cat === 'all' || card.dataset.category === cat) {
-            card.style.display = 'flex';
-        } else {
-            card.style.display = 'none';
-        }
-    });
+    // 2. Backup del contenido real y mostrar Skeletons
+    const originalCards = Array.from(grid.querySelectorAll('.product-card'));
+    renderSkeletons();
+
+    // 3. Simular tiempo de "procesamiento/carga" (500ms es el punto dulce de UX)
+    setTimeout(() => {
+        grid.innerHTML = ''; // Limpiar skeletons
+        originalCards.forEach(card => {
+            if (cat === 'all' || card.dataset.category === cat) {
+                card.style.display = 'flex';
+                grid.appendChild(card);
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }, 500);
 }
+
+/**
+ * Cambia el modo de visualización entre cuadrícula y lista
+ */
+function setViewMode(mode) {
+    const grid = document.getElementById('main-product-grid');
+    const gridBtn = document.getElementById('grid-view-btn');
+    const listBtn = document.getElementById('list-view-btn');
+    
+    if (!grid) return;
+
+    if (mode === 'list') {
+        grid.classList.add('is-list-view');
+        listBtn.classList.add('active');
+        gridBtn.classList.remove('active');
+    } else {
+        grid.classList.remove('is-list-view');
+        gridBtn.classList.add('active');
+        listBtn.classList.remove('active');
+    }
+    localStorage.setItem('product_view_mode', mode);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const savedMode = localStorage.getItem('product_view_mode');
+    if (savedMode === 'list') setViewMode('list');
+});
 </script>

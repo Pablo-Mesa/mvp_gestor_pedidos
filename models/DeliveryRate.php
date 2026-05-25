@@ -90,7 +90,7 @@ class DeliveryRate {
     }
 
     public function getDetails($rateId) {
-        $query = "SELECT km_from, km_to, price FROM delivery_rate_details WHERE delivery_rate_id = ? ORDER BY km_from ASC";
+        $query = "SELECT id, km_from, km_to, price FROM delivery_rate_details WHERE delivery_rate_id = ? ORDER BY km_from ASC";
         $stmt = $this->conn->prepare($query);
         $stmt->execute([$rateId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

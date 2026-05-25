@@ -91,14 +91,17 @@
     </div>
 
     <script>
-        // Pequeño script para feedback visual en el botón
-        document.querySelector('form').addEventListener('submit', function() {
-            const btn = this.querySelector('button');
-            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Cargando...';
-            btn.disabled = true;
-            btn.classList.add('opacity-80', 'cursor-not-allowed');
-        });
-        drawCube("here_cube", false, "28px");
+        document.addEventListener('DOMContentLoaded', function() {
+            // Pequeño script para feedback visual en el botón
+            document.querySelector('form').addEventListener('submit', function() {
+                const btn = this.querySelector('button');
+                btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Cargando...';
+                btn.disabled = true;
+                btn.classList.add('opacity-80', 'cursor-not-allowed');
+            });
+            drawCube("here_cube", false, "28px");
+            document.getElementById("email").focus();
+        });        
     </script>
 </body>
 </html>

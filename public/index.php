@@ -134,6 +134,11 @@ switch ($route) {
         $controller = new OrderController();
         $controller->assignDelivery();
         break;
+    case 'orders_assign_rate_api':
+        require_once '../controllers/OrderController.php';
+        $controller = new OrderController();
+        $controller->assignDeliveryRateApi();
+        break;
     case 'orders_pending_count':
         require_once '../controllers/OrderController.php';
         $controller = new OrderController();

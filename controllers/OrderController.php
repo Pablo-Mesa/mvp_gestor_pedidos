@@ -252,7 +252,69 @@ class OrderController {
         $order = $orderModel->readOne(); // Obtener los datos principales del pedido
         $details = $orderModel->readDetails(); // Obtener los detalles de los ítems
 
-        echo json_encode(['success' => true, 'order' => $order, 'details' => $details]); // Devolver ambos
+        // Obtener las tarifas de delivery activas para permitir asignación manual
+        $rateModel = new DeliveryRate();
+        $activeRateData = $rateModel->getActive();
+        $activeRates = $activeRateData['details'] ?? [];
+
+        echo json_encode([
+            'success' => true, 
+            'order' => $order, 
+            'details' => $details,
+            'available_rates' => $activeRates
+        ]);
+        exit;
+    }
+
+    /**
+     * Endpoint AJAX para asignar manualmente una tarifa de delivery a un pedido
+     */
+    public function assignDeliveryRateApi() {
+        if (ob_get_length()) ob_clean();
+        header('Content-Type: application/json');
+        $this->checkAccess(['admin', 'cajero']);
+
+        $data = json_decode(file_get_contents('php://input'), true);
+        $orderId = $data['order_id'] ?? null;
+        $rateId = $data['delivery_rate_id'] ?? null;
+
+        if (!$orderId || !$rateId) {
+            echo json_encode(['success' => false, 'message' => 'Datos incompletos']);
+            exit;
+        }
+
+        try {
+            $db = (new Database())->getConnection();
+            $db->beginTransaction();
+
+            // 1. Obtener el precio de la tarifa seleccionada
+            $stmtRate = $db->prepare("SELECT price FROM delivery_rate_details WHERE id = :id");
+            $stmtRate->execute([':id' => $rateId]);
+            $rate = $stmtRate->fetch(PDO::FETCH_ASSOC);
+            if (!$rate) throw new Exception("Tarifa no encontrada");
+            $deliveryCost = (float)$rate['price'];
+
+            // 2. Actualizar el order_shipments
+            $stmtShip = $db->prepare("UPDATE order_shipments SET delivery_rate_id = :rid WHERE order_id = :oid");
+            $stmtShip->execute([':rid' => $rateId, ':oid' => $orderId]);
+
+            // 3. Recalcular el total del pedido basado en los items originales
+            $stmtSum = $db->prepare("SELECT SUM(quantity * price) as subtotal FROM orders_items WHERE order_id = :oid");
+            $stmtSum->execute([':oid' => $orderId]);
+            $itemsTotal = (float)$stmtSum->fetchColumn();
+
+            $newTotal = $itemsTotal + $deliveryCost;
+
+            // 4. Actualizar el pedido principal
+            $stmtOrder = $db->prepare("UPDATE orders SET total = :total WHERE id = :oid");
+            $stmtOrder->execute([':total' => $newTotal, ':oid' => $orderId]);
+
+            $db->commit();
+            echo json_encode(['success' => true, 'new_total' => $newTotal]);
+        } catch (Exception $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
         exit;
     }
 
@@ -916,17 +978,24 @@ class OrderController {
             ]);
         }
 
-        $deliveryCost = 0;
-        $order->delivery_rate_id = null;
+        $deliveryCost = (float)($input['delivery_cost'] ?? 0);
+        $order->delivery_rate_id = !empty($input['delivery_rate_id']) ? $input['delivery_rate_id'] : null;
 
-        if ($order->delivery_type === 'delivery' && $order->delivery_lat && $order->delivery_lng) {
-            $pricing = $this->getDeliveryPricing($order->delivery_lat, $order->delivery_lng);
-            if ($pricing['delivery_rate_id'] === null) {
-                echo json_encode(['success' => false, 'message' => 'La ubicación está fuera de zona. Verifique coordenadas o link.']);
-                exit;
+        if ($order->delivery_type === 'delivery') {
+            // Si tiene coordenadas, validamos contra el motor de reglas (getDeliveryPricing)
+            if ($order->delivery_lat && $order->delivery_lng) {
+                $pricing = $this->getDeliveryPricing($order->delivery_lat, $order->delivery_lng);
+                
+                // Solo sobreescribimos si el motor encuentra una zona válida
+                if ($pricing['delivery_rate_id'] !== null) {
+                    $deliveryCost = $pricing['price'];
+                    $order->delivery_rate_id = $pricing['delivery_rate_id'];
+                } elseif (!$order->delivery_rate_id) {
+                    // Si el motor falla y no hay tarifa manual, error
+                    echo json_encode(['success' => false, 'message' => 'La ubicación está fuera de zona. Verifique coordenadas o link.']);
+                    exit;
+                }
             }
-            $deliveryCost = $pricing['price'];
-            $order->delivery_rate_id = $pricing['delivery_rate_id'];
         }
 
         $total = 0;

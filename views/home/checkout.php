@@ -152,9 +152,12 @@
                             <?php foreach($savedLocations as $loc): ?>
                                 <div class="location-card <?php if(!$firstLocationSelected) { echo 'selected'; $firstLocationSelected = true; } ?>" onclick="selectLocation(this)"
                                      data-id="<?= $loc['id'] ?>"
-                                     data-lat="<?= $loc['lat'] ?>" data-lng="<?= $loc['lng'] ?>" data-addr="<?= htmlspecialchars($loc['address']) ?>"
+                                     data-lat="<?= $loc['lat'] ?>" 
+                                     data-lng="<?= $loc['lng'] ?>" 
+                                     data-url="<?= htmlspecialchars($loc['location_url'] ?? '') ?>"
+                                     data-addr="<?= htmlspecialchars($loc['address']) ?>"
                                      data-has-orders="<?= $loc['has_orders'] ? '1' : '0' ?>">
-                                    <i class="fas fa-home"></i>
+                                    <i class="<?= !empty($loc['location_url']) && empty($loc['lat']) ? 'fab fa-whatsapp text-success' : 'fas fa-map-marker-alt' ?>"></i>
                                     <strong><?= htmlspecialchars($loc['title']) ?></strong>
                                     <small><?= htmlspecialchars($loc['address']) ?></small>
                                 </div>
@@ -165,6 +168,7 @@
                     <!-- Inputs Ocultos para Lat/Lng -->
                     <input type="hidden" name="delivery_lat" id="lat">
                     <input type="hidden" name="delivery_lng" id="lng">
+                    <input type="hidden" name="delivery_url" id="delivery_url">
                     <input type="hidden" name="delivery_address" id="selected_address">
                     <input type="hidden" name="location_id" id="location_id">
                 </div>
@@ -260,6 +264,11 @@
                 <div id="delivery-cost-row" class="summary-item" style="display: none; border-bottom: 1px solid #eee; padding-bottom: 10px;">
                     <span>Costo de Envío (Est.)</span>
                     <span id="checkout-delivery-price">Gs. 0</span>
+                </div>
+
+                <div id="delivery-pending-row" class="summary-item" style="display: none; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #e67e22; font-weight: 600;">
+                    <span><i class="fas fa-exclamation-circle"></i> Envío por confirmar</span>
+                    <span style="font-size: 0.8rem; text-align: right;">Costo no incluido*</span>
                 </div>
 
                 <div class="summary-total">
@@ -471,6 +480,7 @@
         
         document.getElementById('lat').value = card.dataset.lat;
         document.getElementById('lng').value = card.dataset.lng;
+        document.getElementById('delivery_url').value = card.dataset.url || '';
         document.getElementById('selected_address').value = card.dataset.addr;
         document.getElementById('location_id').value = card.dataset.id;
         
@@ -632,9 +642,9 @@
                 html += `
                     <div class="location-card" onclick="selectLocation(this)"
                          data-id="${loc.id}"
-                         data-lat="${loc.lat}" data-lng="${loc.lng}" data-addr="${safeAddr}"
+                         data-lat="${loc.lat}" data-lng="${loc.lng}" data-url="${loc.location_url || ''}" data-addr="${safeAddr}"
                          data-has-orders="${loc.has_orders ? '1' : '0'}">
-                        <i class="fas fa-home"></i>
+                        <i class="${loc.location_url && !loc.lat ? 'fab fa-whatsapp text-success' : 'fas fa-map-marker-alt'}"></i>
                         <strong>${loc.title}</strong>
                         <small>${loc.address}</small>
                     </div>
@@ -681,6 +691,7 @@
         const container = document.getElementById('checkout-items');
         const totalEl = document.getElementById('checkout-total');
         const deliveryRow = document.getElementById('delivery-cost-row');
+        const deliveryPendingRow = document.getElementById('delivery-pending-row');
         const deliveryPriceEl = document.getElementById('checkout-delivery-price');
 
         if (cart.length === 0) {
@@ -688,6 +699,9 @@
             window.location.href = '?route=home'; // Redirigir si no hay nada
             return;
         }
+
+        deliveryRow.style.display = 'none';
+        deliveryPendingRow.style.display = 'none';
 
         let html = '';
         let total = 0;
@@ -697,6 +711,7 @@
         const deliveryType = document.querySelector('input[name="delivery_type"]:checked')?.value;
         const lat = document.getElementById('lat').value;
         const lng = document.getElementById('lng').value;
+        const url = document.getElementById('delivery_url').value;
 
         if (deliveryType === 'delivery' && lat && lng) {
             const dist = calculateDistance(storeConfig.lat, storeConfig.lng, parseFloat(lat), parseFloat(lng));
@@ -727,8 +742,8 @@
                 deliveryPriceEl.style.color = '#dc3545';
                 Toast.fire("Zona no cubierta", "La ubicación seleccionada supera nuestro límite de entrega.", "warning");
             }
-        } else {
-            deliveryRow.style.display = 'none';
+        } else if (deliveryType === 'delivery' && (url || !lat)) {
+            deliveryPendingRow.style.display = 'flex';
         }
 
         cart.forEach(item => {
@@ -760,8 +775,9 @@
         const deliveryType = document.querySelector('input[name="delivery_type"]:checked').value;
         if (deliveryType === 'delivery') {
             const lat = document.getElementById('lat').value;
-            if (!lat) {
-                Toast.fire("Ubicación requerida", "Por favor selecciona una dirección para el envío.", "warning");
+            const url = document.getElementById('delivery_url').value;
+            if (!lat && !url) {
+                Toast.fire("Ubicación requerida", "Por favor selecciona una dirección o link para el envío.", "warning");
                 return;
             }
 

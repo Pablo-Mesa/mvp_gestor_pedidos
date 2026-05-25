@@ -30,14 +30,38 @@ if (isset($recentSessions)) {
     <!-- Historial de Sesiones (Arqueos Recientes) - AHORA ARRIBA -->
     <?php if (isset($recentSessions) && !empty($recentSessions)): ?>
         <div class="card shadow mb-4">
-            <div class="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+            <div class="card-header py-3 bg-light d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                 <h6 class="m-0 font-weight-bold text-secondary"><i class="fas fa-history me-2"></i>Historial de Sesiones / Arqueos</h6>
-                <small class="text-muted">Seleccione una sesión para auditar movimientos</small>
+                
+                <form action="" method="GET" class="d-flex flex-wrap gap-2 align-items-center mb-0" id="filterSessionsForm">
+                    <input type="hidden" name="route" value="cash">
+                    
+                    <div class="input-group input-group-sm" style="width: auto;">
+                        <span class="input-group-text bg-white"><i class="fas fa-calendar-alt text-muted small"></i></span>
+                        <input type="month" name="filter_month" class="form-control" 
+                               value="<?php echo $_GET['filter_month'] ?? date('Y-m'); ?>" 
+                               onchange="this.form.submit()">
+                    </div>
+
+                    <div class="input-group input-group-sm" style="width: auto; min-width: 220px;">
+                        <span class="input-group-text bg-white"><i class="fas fa-search text-muted small"></i></span>
+                        <input type="text" name="search_term" class="form-control" 
+                               placeholder="Cajero o Estación..." 
+                               value="<?php echo htmlspecialchars($_GET['search_term'] ?? ''); ?>"
+                               onchange="this.form.submit()">
+                        <?php if(!empty($_GET['search_term']) || (isset($_GET['filter_month']) && $_GET['filter_month'] !== date('Y-m'))): ?>
+                            <a href="?route=cash" class="btn btn-outline-secondary" title="Limpiar Filtros">
+                                <i class="fas fa-times text-danger"></i>
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </form>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-sm table-bordered table-hover align-middle" style="font-size: 0.85rem;">
-                        <thead class="bg-gray-100">
+                <!-- Altura fijada en ~280px para mostrar 5 registros aproximadamente -->
+                <div class="table-responsive" style="max-height: 210px; overflow-y: auto;">
+                    <table class="table table-sm table-bordered table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                        <thead class="sticky-top bg-gray-100" style="top: 0; z-index: 10; background-color: #f8f9fc !important;">
                             <tr>
                                 <th>Cajero</th>
                                 <th>Apertura</th>

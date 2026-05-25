@@ -131,12 +131,19 @@ class AdminController {
         require_once '../models/Category.php';
         require_once '../models/Client.php';
         require_once '../models/CashRegister.php';
+        require_once '../models/DeliveryRate.php';
+        require_once '../models/Setting.php';
 
         $productModel = new Product();
         $products = $productModel->readAllActive()->fetchAll(PDO::FETCH_ASSOC);
 
         $categoryModel = new Category();
         $categories = $categoryModel->readAll()->fetchAll(PDO::FETCH_ASSOC);
+
+        $rateModel = new DeliveryRate();
+        $activeRates = $rateModel->getActive();
+        $settingModel = new Setting();
+        $siteSettings = $settingModel->getAll();
 
         $data = ['title' => 'Recepción de Pedidos'];
         

@@ -1191,6 +1191,45 @@ if (empty($orders) && $hasFilter):
                             </tfoot>
                         </table>
                     </div>`;
+
+                // Lógica de Asignación Manual de Delivery (Sugerencia de usuario)
+                if (order.delivery_type === 'delivery') {
+                    const urlHtml = order.delivery_url ? `
+                        <div class="alert alert-info py-2 px-3 mt-2" style="font-size: 0.85rem;">
+                            <h6 class="mb-1 fw-bold"><i class="fas fa-map-marker-alt"></i> Ubicación proporcionada:</h6>
+                            <p class="mb-2 text-muted">Use este link para consultar la distancia y elegir la tarifa correcta:</p>
+                            <a href="${order.delivery_url}" target="_blank" class="btn btn-sm btn-outline-primary w-100 py-2">
+                                <i class="fas fa-external-link-alt me-1"></i> Abrir Ubicación en Google Maps / WhatsApp
+                            </a>
+                        </div>
+                    ` : '';
+
+                    // Solo permitimos editar si no está pagado ni terminado
+                    const canEditPricing = !['completed', 'rejected', 'cancelled'].includes(order.status) && (parseFloat(order.total_paid || 0) < parseFloat(order.total));
+                    
+                    let ratesHtml = '';
+                    if (canEditPricing && res.available_rates && res.available_rates.length > 0) {
+                        ratesHtml = `
+                            <div class="mt-3 p-3 border rounded bg-light">
+                                <label class="form-label small fw-bold text-uppercase text-muted">Asignar Tarifa de Envío:</label>
+                                <div class="input-group input-group-sm">
+                                    <select id="manual-rate-select" class="form-select fw-bold">
+                                        <option value="">-- Seleccionar Tarifa --</option>
+                                        ${res.available_rates.map(r => `
+                                            <option value="${r.id}" ${order.delivery_rate_id == r.id ? 'selected' : ''}>
+                                                Gs. ${new Intl.NumberFormat('es-PY').format(r.price)} (${r.km_from}-${r.km_to} km)
+                                            </option>
+                                        `).join('')}
+                                    </select>
+                                    <button class="btn btn-primary" onclick="assignManualRate(${order.id})">Guardar</button>
+                                </div>
+                                <small class="text-muted d-block mt-1" style="font-size: 0.7rem;">* Esta acción recalcula el Total del Pedido automáticamente.</small>
+                            </div>
+                        `;
+                    }
+                    html += urlHtml + ratesHtml;
+                }
+
                 document.getElementById('od-modal-body').innerHTML = html;
             } else {
                 throw new Error(res.message || 'Error en respuesta del servidor');
@@ -1198,6 +1237,51 @@ if (empty($orders) && $hasFilter):
         } catch(e) {
             console.error('Error cargando detalles:', e);
             document.getElementById('od-modal-body').innerHTML = '<div class="alert alert-danger">Error al cargar: ' + e.message + '</div>';
+        }
+    }
+
+    /**
+     * Procesa la asignación manual de tarifa de delivery desde el detalle del pedido
+     */
+    async function assignManualRate(orderId) {
+        const rateId = document.getElementById('manual-rate-select').value;
+        if (!rateId) return Toast.fire("Por favor selecciona una tarifa de la lista", "warning");
+
+        try {
+            const resp = await fetch('?route=orders_assign_rate_api', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                body: JSON.stringify({ order_id: orderId, delivery_rate_id: rateId })
+            });
+
+            if (!resp.ok) {
+                throw new Error("HTTP Error: " + resp.status);
+            }
+
+            // Validar si la respuesta es realmente JSON antes de intentar parsear
+            const contentType = resp.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                const text = await resp.text();
+                console.group("⚠️ ERROR DE RESPUESTA DEL SERVIDOR");
+                console.error("Se esperaba JSON pero se recibió:", contentType);
+                console.warn("Cuerpo de respuesta (posible error PHP):", text);
+                console.groupEnd();
+                throw new Error("La respuesta del servidor no es un JSON válido.");
+            }
+
+            const res = await resp.json();
+            if (res.success) {
+                Toast.fire("Tarifa asignada y total del pedido actualizado.", "success");
+                // Recargar el detalle para ver los cambios reflejados
+                openOrderDetailModal(orderId);
+                // Refrescar la tabla de fondo para sincronizar totales
+                refreshOrders(true);
+            } else {
+                Toast.fire(res.message || "Error al asignar tarifa", "error");
+            }
+        } catch (e) {
+            console.error("🛑 Error en assignManualRate:", e.message);
+            Toast.fire("Error de red al intentar actualizar el pedido.", "error");
         }
     }
 

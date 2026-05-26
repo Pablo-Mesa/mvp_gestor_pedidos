@@ -111,6 +111,33 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
+     * Resetea el estado completo del POS
+     */
+    function resetPOS() {
+        posCart = [];
+        document.getElementById('posObservation').value = "";
+        selectedClientId = 1;
+        
+        // Reset campos modal finalización
+        const fields = {
+            'f-client-id': 1,
+            'f-client-name': 'Cliente Ocasional',
+            'f-delivery-type': 'local',
+            'f-payment-method': 'efectivo',
+            'f-observation': '',
+            'f-delivery-cost': 0
+        };
+        
+        Object.keys(fields).forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = fields[id];
+        });
+        
+        toggleDeliveryFields('local');
+        renderTicket();
+    }
+
+    /**
      * Abre el modal principal y sincroniza los datos del ticket
      */
     window.openFinalizeModal = function() {
@@ -264,22 +291,13 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const result = await Swal.fire({
-            title: '¿Confirmar cobro?',
-            text: `Se registrará el pago para el Pedido #${document.getElementById('pay-input-order-id').value}.`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#28a745',
-            confirmButtonText: 'Sí, registrar pago',
-            cancelButtonText: 'Revisar',
-            didOpen: () => { Swal.getConfirmButton().focus(); }
-        });
-
-        if (!result.isConfirmed) return;
-
         const formData = new FormData(document.getElementById('form-pay-modal'));
-        const btn = document.getElementById('pay-btn-submit');
+        const shouldPrint = document.getElementById('pay-should-print').value;
+        const btn = e.submitter || document.getElementById('pay-btn-submit');
+        const originalHTML = btn.innerHTML;
+        
         btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>PROCESANDO...';
 
         try {
             const resp = await fetch('?route=orders_process_finalize', {
@@ -287,20 +305,27 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             const res = await resp.json();
             if (res.success) {
+                if (typeof Toast !== 'undefined') Toast.fire("Venta registrada con éxito", "success");
+                
                 payModal.hide();
+                
+                if (shouldPrint === '1' && res.print_sale_id) {
+                    printSaleTicket(res.print_sale_id);
+                }
+
                 setTimeout(() => {
-                    Swal.fire({
-                        title: "¡Éxito!",
-                        text: "Venta registrada correctamente.",
-                        icon: "success",
-                        didOpen: () => { Swal.getConfirmButton().focus(); }
-                    });
-                }, 400);
+                    resetPOS();
+                }, shouldPrint === '1' ? 1200 : 100);
             } else {
-                Toast.fire(res.message || "Error", "error");
+                Toast.fire(res.message || "Error al procesar el pago", "error");
                 btn.disabled = false;
+                btn.innerHTML = originalHTML;
             }
-        } catch(e) { Toast.fire("Error de red", "error"); btn.disabled = false; }
+        } catch(e) { 
+            Toast.fire("Error de red", "error"); 
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
     }
 
     /**
@@ -327,40 +352,93 @@ document.addEventListener('DOMContentLoaded', function() {
         inp.addEventListener('focus', function() { if(this.value == "0") this.value = ""; });
         inp.addEventListener('blur', function() { if(this.value == "") this.value = "0"; });
 
-        // Navegación por teclado en campos de pago
-        inp.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === 'ArrowDown') {
-                e.preventDefault(); // Evita que la flecha modifique el valor numérico
-                const nextInput = payInputs[index + 1];
-                if (nextInput) {
-                    nextInput.focus();
-                    nextInput.select();
-                } else {
-                    // Es el último campo: si el botón está habilitado (monto cubierto), darle foco
-                    if (!paySubmitBtn.disabled) {
-                        paySubmitBtn.focus();
-                        // Si presionó Enter, ejecutar directamente la acción
-                        if (e.key === 'Enter') paySubmitBtn.click();
-                    }
-                }
-            } else if (e.key === 'ArrowUp') {
+        // La navegación específica por input se ha movido al Motor Global de Teclado
+    });
+
+    /**
+     * Motor de Navegación Global por Teclado
+     */
+    document.addEventListener('keydown', function(e) {
+        const active = document.activeElement;
+
+        // 1. Buscador -> Categorías
+        if (active.id === 'posSearch' && e.key === 'ArrowDown') {
+            e.preventDefault();
+            const firstCat = document.querySelector('.btn-pos-filter');
+            if (firstCat) firstCat.focus();
+        }
+
+        // 2. Navegación en Categorías
+        if (active.classList.contains('btn-pos-filter')) {
+            const pills = Array.from(document.querySelectorAll('.btn-pos-filter'));
+            const idx = pills.indexOf(active);
+            if (e.key === 'ArrowRight') { e.preventDefault(); if (pills[idx + 1]) pills[idx + 1].focus(); }
+            else if (e.key === 'ArrowLeft') { e.preventDefault(); if (pills[idx - 1]) pills[idx - 1].focus(); else document.getElementById('posSearch').focus(); }
+            else if (e.key === 'ArrowDown') { e.preventDefault(); const firstItem = document.querySelector('.pos-item-card:not([style*="display: none"])'); if (firstItem) firstItem.focus(); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); document.getElementById('posSearch').focus(); }
+        }
+
+        // 3. Grid de Productos
+        const card = active.closest('.pos-item-card');
+        if (card && !active.classList.contains('btn-portion')) {
+            const items = Array.from(document.querySelectorAll('.pos-item-card:not([style*="display: none"])'));
+            const idx = items.indexOf(card);
+            const grid = document.getElementById('posGrid');
+            const cols = grid ? getComputedStyle(grid).gridTemplateColumns.split(' ').length : 4;
+
+            if (e.key === 'ArrowRight') { e.preventDefault(); if (items[idx + 1]) items[idx + 1].focus(); }
+            else if (e.key === 'ArrowLeft') { e.preventDefault(); if (items[idx - 1]) items[idx - 1].focus(); }
+            else if (e.key === 'ArrowDown') { e.preventDefault(); if (items[idx + cols]) items[idx + cols].focus(); }
+            else if (e.key === 'ArrowUp') { 
+                e.preventDefault(); 
+                if (items[idx - cols]) items[idx - cols].focus(); 
+                else { const activeCat = document.querySelector('.btn-pos-filter.active'); if (activeCat) activeCat.focus(); }
+            } else if (e.key === 'Enter') {
                 e.preventDefault();
-                const prevInput = payInputs[index - 1];
-                if (prevInput) {
-                    prevInput.focus();
-                    prevInput.select();
-                } else {
-                    e.preventDefault();
-                    // Optionally focus on the last element of the previous section if needed
-                }
+                const portions = card.querySelectorAll('.btn-portion');
+                if (portions.length > 0) portions[0].focus();
+                else { card.click(); card.style.transform = 'scale(0.95)'; setTimeout(() => card.style.transform = '', 100); }
             }
-        });
+        }
+
+        // 4. Botones de Porción
+        if (active.classList.contains('btn-portion')) {
+            const cardParent = active.closest('.pos-item-card');
+            const portions = Array.from(cardParent.querySelectorAll('.btn-portion'));
+            const pIdx = portions.indexOf(active);
+            if (e.key === 'ArrowRight' && portions[pIdx + 1]) { e.preventDefault(); portions[pIdx + 1].focus(); }
+            else if (e.key === 'ArrowLeft' && portions[pIdx - 1]) { e.preventDefault(); portions[pIdx - 1].focus(); }
+            else if (e.key === 'ArrowUp' || e.key === 'Escape') { e.preventDefault(); cardParent.focus(); }
+        }
+
+        // 5. Modal de Pago: Recorrido Efectivo -> Tarjeta -> Transf -> QR -> Botones
+        const payModalEl = active.closest('#modalPayOrder');
+        if (payModalEl) {
+            // Selector que garantiza el orden natural del DOM (montos, referencias y botones finales)
+            const focusable = Array.from(payModalEl.querySelectorAll('input:not([type="hidden"]), .modal-footer button[type="submit"]'));
+            const fIdx = focusable.indexOf(active);
+
+            if (e.key === 'ArrowDown' || (e.key === 'Enter' && active.tagName === 'INPUT')) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (focusable[fIdx + 1]) {
+                    focusable[fIdx + 1].focus();
+                    if (focusable[fIdx + 1].tagName === 'INPUT') focusable[fIdx + 1].select();
+                } else {
+                    document.getElementById('pay-btn-submit').focus();
+                }
+            } else if (e.key === 'ArrowUp' && focusable[fIdx - 1]) {
+                e.preventDefault();
+                focusable[fIdx - 1].focus();
+                if (focusable[fIdx - 1].tagName === 'INPUT') focusable[fIdx - 1].select();
+            }
+        }
     });
 
     // Foco automático al abrir el modal de cobro
     document.getElementById('modalPayOrder').addEventListener('shown.bs.modal', function () {
-        const firstInp = payInputs.find(i => parseFloat(i.value) > 0) || payInputs[0];
-        if (firstInp) { firstInp.focus(); firstInp.select(); }
+        const firstInput = this.querySelector('.pay-input');
+        if (firstInput) { firstInput.focus(); firstInput.select(); }
     });
 
     document.getElementById('modalFinalize').addEventListener('shown.bs.modal', function () {
@@ -1029,4 +1107,5 @@ document.addEventListener('DOMContentLoaded', function() {
     window.clearPOS = clearPOS;
     window.filterByCat = filterByCat;
     window.showProductImg = showProductImg;
+    window.resetPOS = resetPOS;
 });

@@ -61,8 +61,8 @@
     flex-shrink: 0;
 }
 
-.btn-pos-filter:focus, .btn-pos-filter.active {
-    box-shadow: none !important;
+.btn-pos-filter.active {
+    box-shadow: none;
     outline: none !important;
 }
 
@@ -70,6 +70,14 @@
     background: #2d3436 !important;
     color: white !important;
     border-color: #2d3436 !important;
+}
+
+.btn-pos-filter:focus {
+    background-color: #e1f0ff; /* Fondo azul muy suave para resaltar el foco */
+    border-color: #0984e3;
+    color: #0984e3;
+    outline: none !important;
+    box-shadow: 0 0 0 4px rgba(9, 132, 227, 0.3); /* Anillo de enfoque más perceptible */
 }
 
 .pos-grid {
@@ -98,6 +106,27 @@
     min-height: 120px; /* Altura mínima para mantener consistencia */
 }
 .pos-item-card:hover { border-color: #0984e3; transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+
+.modal-footer .btn:focus {
+    outline: none !important;
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+.modal-footer .btn-success:focus {
+    box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.45) !important;
+}
+.modal-footer .btn-outline-success:focus {
+    background-color: #f0fff4 !important; /* Verde muy pálido para resaltar foco */
+    box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.3) !important;
+}
+
+.pos-item-card:focus {
+    outline: none;
+    border-color: #0984e3;
+    border-width: 2px;
+    box-shadow: 0 0 0 4px rgba(9, 132, 227, 0.15);
+    transform: translateY(-2px);
+}
 
 .pos-item-name { font-weight: 600; font-size: 0.9rem; margin-bottom: 5px; display: block; }
 .pos-item-price { color: #00b894; font-weight: 700; font-size: 0.9rem; display: block; } /* Asegura que el precio ocupe su propia línea */

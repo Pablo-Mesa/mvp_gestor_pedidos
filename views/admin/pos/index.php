@@ -27,9 +27,9 @@
         
         <!-- Filtros por categoría -->
         <div class="pos-category-pills">
-            <button type="button" class="btn btn-pos-filter active" onclick="filterByCat('all', this)">Todos</button>
+            <button type="button" class="btn btn-pos-filter active" tabindex="0" onclick="filterByCat('all', this)">Todos</button>
             <?php foreach($categories as $cat): ?>
-                <button type="button" class="btn btn-pos-filter" onclick="filterByCat('<?php echo $cat['id']; ?>', this)">
+                <button type="button" class="btn btn-pos-filter" tabindex="0" onclick="filterByCat('<?php echo $cat['id']; ?>', this)">
                     <?php echo htmlspecialchars($cat['name']); ?>
                 </button>
             <?php endforeach; ?>
@@ -42,6 +42,7 @@
             ?>
                 <!-- Si el producto tiene opción de medio plato, se muestra un diseño diferente con botones para cada porción -->
                 <div class="pos-item-card"
+                     tabindex="0"
                      style="<?php echo $hasHalf ? 'cursor: default;' : ''; ?>"
                      data-name="<?php echo strtolower(htmlspecialchars($p['name'])); ?>"
                      data-cat="<?php echo $p['category_id']; ?>"
@@ -351,6 +352,8 @@
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="order_id" id="pay-input-order-id">
+                    <!-- Campo oculto para decidir si se imprime o no en el backend -->
+                    <input type="hidden" name="should_print" id="pay-should-print" value="1">
                     <div class="row">
                         <div class="col-md-7">
                             <table class="table table-sm table-borderless align-middle">
@@ -386,8 +389,15 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer py-2">
-                    <button type="submit" id="pay-btn-submit" class="btn btn-success w-100 py-2 fw-bold">FINALIZAR Y REGISTRAR VENTA</button>
+                <div class="modal-footer py-2 d-flex flex-row-reverse gap-2">
+                    <!-- Botón Principal: Recibe el foco primero por ser el primero en el DOM (flex-row-reverse lo mueve a la derecha) -->
+                    <button type="submit" id="pay-btn-submit" class="btn btn-success flex-fill py-2 fw-bold" onclick="document.getElementById('pay-should-print').value='1'">
+                        <i class="fas fa-print me-1"></i> GUARDAR E IMPRIMIR
+                    </button>
+                    <!-- Botón Secundario -->
+                    <button type="submit" id="pay-btn-save-only" class="btn btn-outline-success flex-fill py-2 fw-bold" onclick="document.getElementById('pay-should-print').value='0'">
+                        <i class="fas fa-save me-1"></i> SOLO GUARDAR
+                    </button>
                 </div>
             </form>
         </div>

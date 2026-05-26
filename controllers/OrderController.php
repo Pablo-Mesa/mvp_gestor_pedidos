@@ -527,10 +527,11 @@ class OrderController {
             $finalPayments = $hasPayments ? $payments : ($activeSession ? [] : null);
             $sessionId = $activeSession ? $activeSession['id'] : null;
 
-            if ($order->finalizeSale($finalPayments, $sessionId, $docType)) {
+            $ventaId = $order->finalizeSale($finalPayments, $sessionId, $docType);
+            if ($ventaId) {
                 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
                     header('Content-Type: application/json');
-                    echo json_encode(['success' => true]);
+                    echo json_encode(['success' => true, 'print_sale_id' => $ventaId]);
                     exit;
                 }
                 header('Location: ?route=orders&success=paid');

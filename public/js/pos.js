@@ -1,5 +1,14 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Recuperar carrito guardado para evitar pérdida de datos por recargas o cierres accidentales (Resiliencia)
     let posCart = [];
+    try {
+        const savedCart = localStorage.getItem('pos_draft_cart');
+        if (savedCart) posCart = JSON.parse(savedCart);
+    } catch (e) {
+        console.error("Error al recuperar el carrito del localStorage:", e);
+        localStorage.removeItem('pos_draft_cart');
+    }
+
     let selectedClientId = 1; // 1 = Cliente Ocasional por defecto
     const isCashOpen = window.posConfig ? window.posConfig.isCashOpen : false;
 
@@ -22,6 +31,14 @@ document.addEventListener('DOMContentLoaded', function() {
             imageAlt: name,
             confirmButtonText: 'Cerrar'
         });
+    }
+
+    /**
+     * Controla la visibilidad del overlay global de carga
+     */
+    function toggleLoadingOverlay(show) {
+        const overlay = document.getElementById('posLoadingOverlay');
+        if (overlay) overlay.style.display = show ? 'flex' : 'none';
     }
 
     /**
@@ -85,6 +102,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderTicket() {
+        // Persistencia resiliente: Guardar en localStorage si hay items, borrar si está vacío
+        if (posCart.length > 0) {
+            localStorage.setItem('pos_draft_cart', JSON.stringify(posCart));
+        } else {
+            localStorage.removeItem('pos_draft_cart');
+        }
+
         if(posCart.length === 0) {
             itemsEl.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.3); margin-top: 40px;"><i class="fas fa-receipt fa-3x"></i><p>Cargue productos</p></div>';
             totalEl.innerText = "0";
@@ -115,8 +139,13 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function resetPOS() {
         posCart = [];
+        localStorage.removeItem('pos_draft_cart'); // Limpiar persistencia del borrador inmediatamente
         document.getElementById('posObservation').value = "";
         selectedClientId = 1;
+
+        // Re-habilitar botón de confirmación en caso de que haya quedado bloqueado
+        const confirmBtn = document.querySelector('#modalFinalize .btn-success');
+        if(confirmBtn) confirmBtn.disabled = false;
         
         // Reset campos modal finalización
         const fields = {
@@ -134,7 +163,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         toggleDeliveryFields('local');
+        clearPOS(); // Restablece búsqueda y filtros de categorías
         renderTicket();
+
+        // Preparar el foco para la siguiente venta
+        setTimeout(() => document.getElementById('posSearch').focus(), 50);
     }
 
     /**
@@ -304,6 +337,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>PROCESANDO...';
+        toggleLoadingOverlay(true);
 
         try {
             const resp = await fetch('?route=orders_process_finalize', {
@@ -314,23 +348,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (typeof Toast !== 'undefined') Toast.fire("Venta registrada con éxito", "success");
                 
                 payModal.hide();
+                toggleLoadingOverlay(false); // Liberar la interfaz inmediatamente tras ocultar el modal
                 
                 if (shouldPrint === '1' && res.print_sale_id) {
                     printSaleTicket(res.print_sale_id);
                 }
 
                 setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
                     resetPOS();
                 }, shouldPrint === '1' ? 1200 : 100);
             } else {
                 Toast.fire(res.message || "Error al procesar el pago", "error");
                 btn.disabled = false;
                 btn.innerHTML = originalHTML;
+                toggleLoadingOverlay(false);
             }
         } catch(e) { 
             Toast.fire("Error de red", "error"); 
             btn.disabled = false;
             btn.innerHTML = originalHTML;
+            toggleLoadingOverlay(false);
         }
     }
 
@@ -995,6 +1034,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if(confirmBtn) confirmBtn.disabled = true;
 
         bsModalFinalize.hide();
+        toggleLoadingOverlay(true);
 
         try {
             const response = await fetch('?route=pos_store', {
@@ -1031,20 +1071,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     payment_method: data.paymentMethod
                 };
 
-                // Limpiar Carrito
-                posCart = [];
-                document.getElementById('posObservation').value = "";
-                renderTicket();
-                
-                // Resetear campos del modal de finalización
-                document.getElementById('f-client-id').value = 1;
-                document.getElementById('f-client-name').value = 'Cliente Ocasional';
-                document.getElementById('f-delivery-type').value = 'local';
-                document.getElementById('f-payment-method').value = 'efectivo';
-                document.getElementById('f-observation').value = '';
-                document.getElementById('f-delivery-cost').value = 0;
-                
-                toggleDeliveryFields('local');
+                // Limpiar y preparar la vista para la siguiente venta de forma centralizada
+                resetPOS();
 
                 // Preguntar por el cobro inmediato
                 setTimeout(() => {
@@ -1067,13 +1095,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     });
                 }, 800);
+                toggleLoadingOverlay(false);
             } else {
                 Toast.fire(res.message, "error");
                 if(confirmBtn) confirmBtn.disabled = false;
+                toggleLoadingOverlay(false);
             }
         } catch (e) {
             Toast.fire("Error crítico al procesar venta", "error");
             if(confirmBtn) confirmBtn.disabled = false;
+            toggleLoadingOverlay(false);
         }
     }
 
@@ -1109,6 +1140,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.getElementById('posSearch').focus();
+
+    // Sincronizar visualmente el carrito recuperado al cargar la página
+    if (posCart.length > 0) renderTicket();
 
     // Exportar funciones necesarias al objeto window para los onclick del HTML
     window.addToTicket = addToTicket;

@@ -404,4 +404,11 @@
     </div>
 </div>
 
+<!-- Overlay Global de Procesamiento -->
+<div id="posLoadingOverlay" class="pos-loading-overlay">
+    <div class="spinner-border text-light mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+    <h5 class="fw-bold">PROCESANDO OPERACIÓN...</h5>
+    <p class="small opacity-75">Por favor, no cierre ni refresque la ventana.</p>
+</div>
+
 <script src="<?php echo $baseUrl; ?>js/pos.js"></script>

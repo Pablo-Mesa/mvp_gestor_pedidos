@@ -1,0 +1,23 @@
+
+1. Validación de Stock en Tiempo Real (Crítico)
+El problema: Actualmente, el POS permite agregar productos al carrito sin consultar el daily_stock definido en el Menú del Día.
+
+Riesgo: En un local con mucha rotación, podrías vender 20 platos de "Asado" por el POS cuando en cocina solo quedan 5, generando un conflicto grave con el cliente.
+Falta: El objeto products que carga el POS debe incluir el daily_stock. La función addToTicket en pos.js debe validar que quantity < daily_stock.
+2. Persistencia del Carrito (Resiliencia)
+El problema: El carrito del POS (posCart) vive solo en la memoria RAM del navegador.
+
+Riesgo: Si el cajero presiona F5 por error, se corta la luz un segundo o se cierra la pestaña, todo el pedido cargado se pierde.
+Falta: Implementar localStorage para el posCart (similar a como ya lo haces en el layout del cliente), para que al recargar la página, el pedido en proceso siga ahí.
+
+3. Manejo de Errores de Impresión y Red
+El problema: La impresión depende de un iframe que carga una ruta.
+
+Riesgo: Si el servidor de impresión o la red fallan, el sistema asume que la venta terminó (resetPOS), pero el ticket nunca salió.
+Falta: Un mecanismo de "Re-imprimir" en el historial de ventas (aunque ya existe la ruta, debe ser accesible rápidamente desde el POS) por si falla la impresión automática.
+
+4. Control de Correlatividad Legal
+El problema: Aunque existe el modelo de Empresa, el sistema genera números de factura incrementales simples (FAC-0000001).
+
+Riesgo: En Paraguay (y otros países), la SET exige que el número de factura siga el formato 001-001-0000001 y esté vinculado a un "Timbrado" con fecha de vencimiento.
+Falta: Una lógica en Order.php que valide si el Timbrado está vigente antes de permitir una "Factura" y que incremente el número según el rango autorizado, no solo el ID del pedido.

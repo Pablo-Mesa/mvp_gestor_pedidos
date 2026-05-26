@@ -658,7 +658,8 @@
                     'c': '?route=cash',
                     'f': '?route=sales_history',
                     'r': '?route=payments_report',
-                    'h': '?route=shortcuts'
+                    'h': '?route=shortcuts',
+                    'd': '?route=admin'
                 };
                 if (routes[key]) {
                     // Evitar recargar la página si ya estamos en la ruta de destino

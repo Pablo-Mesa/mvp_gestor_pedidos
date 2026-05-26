@@ -173,6 +173,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     window.openSearchClient = function() {
+        // Evita el error de aria-hidden quitando el foco del botón antes de ocultar el modal
+        if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+        
         bsModalFinalize.hide();
         bsModalSearch.show();
         window.searchClientListApi();
@@ -184,6 +187,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     window.openCreateClient = function() {
+        // Evita el error de aria-hidden quitando el foco del botón antes de ocultar el modal
+        if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+
         bsModalFinalize.hide();
         bsModalCreate.show();
     }
@@ -590,6 +596,8 @@ document.addEventListener('DOMContentLoaded', function() {
     window.openSelectLocationModal = function() {
         const clientId = document.getElementById('f-client-id').value;
         const clientName = document.getElementById('f-client-name').value;
+        if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+        
         document.getElementById('select-location-client-name').innerText = clientName;
         bsModalSelectLocation.show();
     }
@@ -898,6 +906,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Si el cliente seleccionado es distinto al actual, reiniciamos los datos de logística
         // para evitar cargar un pedido con información (dirección, coordenadas, tarifas) del cliente anterior.
         if (currentId != id) {
+            // Desenfocar elemento actual (ej: fila de la tabla) para evitar conflictos de aria-hidden
+            if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+
             document.getElementById('f-location-id').value = '';
             document.getElementById('f-delivery-address').value = '';
             document.getElementById('f-location-url').value = '';

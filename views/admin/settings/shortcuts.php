@@ -23,6 +23,12 @@
                                 </tr>
                             </thead>
                             <tbody>
+
+                                <tr>
+                                    <td><kbd>Alt</kbd> + <kbd>D</kbd></td>
+                                    <td>Ir al Dashboard</td>
+                                </tr>
+
                                 <tr>
                                     <td><kbd>Alt</kbd> + <kbd>M</kbd></td>
                                     <td>Enfocar el Menú Lateral</td>
@@ -77,6 +83,10 @@
                                 <tr>
                                     <td><kbd class="bg-success">F2</kbd></td>
                                     <td>Finalizar Venta / Abrir Pago</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd class="bg-success">F3</kbd></td>
+                                    <td>Abrir Modal Lista</td>
                                 </tr>
                                 <tr>
                                     <td><kbd class="bg-success">F4</kbd></td>

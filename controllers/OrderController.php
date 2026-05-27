@@ -445,6 +445,18 @@ class OrderController {
 
         // Cargamos los datos para la vista (Soluciona el error de variable indefinida $order y $details)
         $order = $orderModel->readOne();
+
+        // RESTRICCIÓN DE INTEGRIDAD: Impedir facturación rápida si no hay sesión de caja.
+        // Esto evita discrepancias como la del Pedido 69, donde hay factura pero no ingreso de dinero.
+        if (isset($_GET['quick']) && $_GET['quick'] == 1 && !$activeSession) {
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'No puedes facturar rápido sin una caja abierta. Abre tu caja primero.']);
+                exit;
+            }
+            header('Location: ?route=orders&error=' . urlencode("Debe abrir una sesión de caja para facturar."));
+            exit;
+        }
         $details = $orderModel->readDetails();
         
         // Si tiene factura, verificamos si ya está pagada (Omitir si es una re-impresión rápida)
@@ -465,9 +477,15 @@ class OrderController {
             // Prioridad al tipo de documento solicitado, de lo contrario fallback por RUC
             $docType = $_GET['doc_type'] ?? (!empty($order['billing_ruc']) ? 'factura' : 'ticket');
             
-            // Al ser "Quick" desde facturación, pasamos null en pagos para que NO registre cobro automático.
-            // El cobro debe realizarse como un paso independiente desde la vista de cobro.
-            $ventaId = $orderModel->finalizeSale(null, null, $docType); 
+            // CORRECCIÓN: Si hay una caja abierta, registramos el cobro automático en efectivo.
+            // Esto asegura que el monto (como los 60.000 del ID 69) ingrese al Monitor de Tesorería.
+            $registerId = $activeSession ? $activeSession['id'] : null;
+            $payments = [];
+            if ($activeSession) {
+                $payments = [['metodo' => 'efectivo', 'monto' => $order['total'], 'referencia' => 'Cobro Rápido POS']];
+            }
+
+            $ventaId = $orderModel->finalizeSale($payments, $registerId, $docType); 
             
             if ($ventaId) {
                 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
@@ -524,7 +542,12 @@ class OrderController {
             }
 
             // Determinar qué enviar al modelo: pagos manuales, automáticos (si hay caja) o nulo (solo factura)
-            $finalPayments = $hasPayments ? $payments : ($activeSession ? [] : null);
+            // CORRECCIÓN: Si no hay pagos manuales pero hay caja abierta, registramos el cobro automático para el Monitor de Tesorería.
+            $finalPayments = $hasPayments ? $payments : null;
+            if (!$hasPayments && $activeSession) {
+                $orderData = $order->readOne();
+                $finalPayments = [['metodo' => 'efectivo', 'monto' => $orderData['total'], 'referencia' => 'Cobro Automático POS']];
+            }
             $sessionId = $activeSession ? $activeSession['id'] : null;
 
             $ventaId = $order->finalizeSale($finalPayments, $sessionId, $docType);
@@ -578,7 +601,14 @@ class OrderController {
                     
                     // Pasamos 'null' para los pagos, indicando que no se procesará un nuevo pago.
                     // finalizeSale se encargará de generar el documento de venta si no existe.
-                    $order->finalizeSale(null, $registerId);
+                    
+                    // CORRECCIÓN: Si se completa un pedido y hay caja abierta, registramos el cobro automáticamente 
+                    // para asegurar que el monto (como el del ID 69) ingrese al Monitor de Tesorería.
+                    $payments = [];
+                    if ($activeSession) {
+                        $payments = [['metodo' => 'efectivo', 'monto' => $orderData['total'], 'referencia' => 'Cobro Automático al Completar']];
+                    }
+                    $order->finalizeSale($payments, $registerId);
                 }
             }
 
@@ -949,9 +979,13 @@ class OrderController {
         $order = new Order();
         $order->user_id = $_SESSION['user_id']; // Quién está en el POS
 
-        // PRIORIDAD: 1. ID enviado desde el POS, 2. ID configurado como default, 3. Fallback final (1)
-        // Lo ideal es que en Settings guardes cuál es tu ID de "Cliente Genérico"
-        $order->client_id = !empty($input['client_id']) ? $input['client_id'] : 1;
+        // MEJORA: Obtener el ID de cliente genérico desde los ajustes.
+        if (!empty($input['client_id'])) {
+            $order->client_id = $input['client_id'];
+        } else {
+            $settingModel = new Setting();
+            $order->client_id = $settingModel->get('default_client_id') ?? 1;
+        }
 
         $order->channel_id = 2; // 2 = Mostrador
         $order->payment_method = $input['payment_method'] ?? 'efectivo';

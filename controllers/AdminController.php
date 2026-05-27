@@ -45,8 +45,8 @@ class AdminController {
         $cashModel = new CashRegister();
 
         // Estado de la caja
-        $activeSession = $cashModel->getActiveSession($_SESSION['user_id']);
-        $cash_status = $activeSession ? 'Abierta' : 'Cerrada';
+        $activeSessions = $cashModel->getAllActiveSessions();
+        $cash_status = count($activeSessions) > 0 ? 'Abierta' : 'Cerrada';
 
         if ($view_mode === 'monthly') {
             list($year, $month) = explode('-', $selected_month);
@@ -89,20 +89,40 @@ class AdminController {
                 'delivery_orders_count' => $stats['delivery_orders_count'] ?? 0,
                 'delivery_income' => $stats['delivery_income'] ?? 0,
                 'cash_status' => $cash_status,
-                'active_session' => $activeSession,
+                'active_session' => null,
                 'recent_movements' => []
             ];
 
-            // Enriquecer con detalles de caja si hay sesión activa
-            if ($activeSession) {
-                $sessionTotals = $cashModel->getSessionTotals($activeSession['id']);
-                $data['session_ingress'] = $sessionTotals['ingress'] ?? 0;
-                $data['session_egress'] = $sessionTotals['egress'] ?? 0;
-                $data['session_expected'] = $activeSession['opening_amount'] + $data['session_ingress'] - $data['session_egress'];
+
+            $data['active_sessions'] = [];
+            $allMovements = [];
+
+            // Procesar todas las sesiones activas para la vista global
+            foreach ($activeSessions as $session) {
+                $totals = $cashModel->getSessionTotals($session['id']);
+                $session['session_ingress'] = $totals['ingress'] ?? 0;
+                $session['session_egress'] = $totals['egress'] ?? 0;
+                $session['session_expected'] = $session['opening_amount'] + $session['session_ingress'] - $session['session_egress'];
                 
-                // Obtener 10 movimientos recientes para el dashboard
-                $data['recent_movements'] = array_slice($cashModel->getMovements($activeSession['id']), 0, 10);
+                $data['active_sessions'][] = $session;
+                
+                // Agregamos movimientos al log global del dashboard
+                $sessionMovements = $cashModel->getMovements($session['id']);
+                $allMovements = array_merge($allMovements, $sessionMovements);
             }
+
+            // CÁLCULO DE INTEGRIDAD: Comparar ventas facturadas vs ingresos reales en caja
+            // Esto detectaría casos como el del pedido 69 automáticamente.
+            $totalCashIngress = array_sum(array_column($data['active_sessions'], 'session_ingress'));
+            $totalInvoicedToday = $stats['income_today'];
+            $data['integrity_gap'] = $totalInvoicedToday - $totalCashIngress;
+            $data['has_integrity_issue'] = abs($data['integrity_gap']) > 1; // Margen de 1 Gs por redondeo
+
+            // Ordenar todos los movimientos por fecha para el log del monitor
+            usort($allMovements, function($a, $b) { 
+                return strcmp($b['created_at'], $a['created_at']); 
+            });
+            $data['recent_movements'] = array_slice($allMovements, 0, 10);
         }
 
         // Obtener cantidad de pedidos completados hoy para el gráfico

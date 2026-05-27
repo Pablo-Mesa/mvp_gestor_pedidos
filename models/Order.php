@@ -578,7 +578,7 @@ class Order {
                INNER JOIN pos_ventas_cabecera v ON o.id = v.order_id
                LEFT JOIN order_shipments os ON o.id = os.order_id
                LEFT JOIN delivery_rate_details drd ON os.delivery_rate_id = drd.id
-               WHERE DATE(o.created_at) = :date AND o.status NOT IN ('cancelled', 'rejected') AND v.estado = 1 AND EXISTS (SELECT 1 FROM pagos p WHERE p.venta_id = v.id)
+               WHERE DATE(v.fecha_hora) = :date AND v.estado = 1
                GROUP BY o.channel_id";
         $stmt2 = $this->conn->prepare($q2);
         $stmt2->execute([':date' => $target_date]);
@@ -601,9 +601,8 @@ class Order {
         $q4 = "SELECT COUNT(DISTINCT o.id) as qty, SUM(o.total) as income 
                FROM " . $this->table . " o
                INNER JOIN pos_ventas_cabecera v ON o.id = v.order_id
-               WHERE DATE(o.created_at) = :date 
+               WHERE DATE(v.fecha_hora) = :date 
                  AND (LOWER(o.delivery_type) = 'delivery' OR o.delivery_type = 'envio') 
-                 AND EXISTS (SELECT 1 FROM pagos p WHERE p.venta_id = v.id)
                  AND o.status NOT IN ('cancelled', 'rejected') AND v.estado = 1";
         $stmt4 = $this->conn->prepare($q4);
         $stmt4->execute([':date' => $target_date]);
@@ -646,8 +645,8 @@ class Order {
               INNER JOIN pos_ventas_cabecera v ON o.id = v.order_id
               LEFT JOIN order_shipments os ON o.id = os.order_id
               LEFT JOIN delivery_rate_details drd ON os.delivery_rate_id = drd.id
-              WHERE o.status NOT IN ('cancelled', 'rejected') AND v.estado = 1 AND EXISTS (SELECT 1 FROM pagos p WHERE p.venta_id = v.id)
-              AND YEAR(o.created_at) = :y AND MONTH(o.created_at) = :m 
+              WHERE v.estado = 1 
+              AND YEAR(v.fecha_hora) = :y AND MONTH(v.fecha_hora) = :m 
               GROUP BY o.channel_id";
         $stmt = $this->conn->prepare($q);
         $stmt->execute([':y' => $year, ':m' => $month]);
@@ -668,8 +667,8 @@ class Order {
                FROM " . $this->table . " o
                INNER JOIN pos_ventas_cabecera v ON o.id = v.order_id
                WHERE (LOWER(o.delivery_type) = 'delivery' OR o.delivery_type = 'envio') 
-                 AND o.status NOT IN ('cancelled', 'rejected') AND v.estado = 1 AND EXISTS (SELECT 1 FROM pagos p WHERE p.venta_id = v.id)
-                 AND YEAR(o.created_at) = :y AND MONTH(o.created_at) = :m";
+                 AND v.estado = 1
+                 AND YEAR(v.fecha_hora) = :y AND MONTH(v.fecha_hora) = :m";
         $stmtM = $this->conn->prepare($qM);
         $stmtM->execute([':y' => $year, ':m' => $month]);
         $resM = $stmtM->fetch(PDO::FETCH_ASSOC);

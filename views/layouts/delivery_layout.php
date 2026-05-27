@@ -15,9 +15,7 @@
     <link rel="apple-touch-icon" href="<?php echo $siteLogo; ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/css_cubo.css" />
-    <script src="<?php echo $baseUrl; ?>js/tool-kit-v002.js"></script>
-
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/css_cubo.css"> 
 
     <style>
         :root {
@@ -242,7 +240,8 @@
     <header class="delivery-header">
     
         <div class="header-brand">
-            <img src="<?php echo $siteLogo; ?>" alt="Logo Solver" style="height: 24px; width: auto; margin-right: 8px;">
+            <div id="here_cube">
+            </div>
             <h1>SOLVER LOGÍSTICA</h1>
             <!--<i class="fas fa-route"></i>-->
         </div>
@@ -447,5 +446,12 @@
         }
     </script>
     
+    <script src="<?php echo $baseUrl; ?>js/tool-kit-v002.js"></script>
+
+    <script>
+        // Ejecutar el dibujo del cubo al cargar la página
+        drawCube('here_cube', false, "24px");
+    </script>
+
 </body>
 </html>

@@ -109,4 +109,17 @@ class CashRegister {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+    /**
+     * Obtiene todas las sesiones de caja que están abiertas actualmente.
+     * Es fundamental para el "Monitor Global" del Dashboard.
+     */
+    public function getAllActiveSessions() {
+        $sql = "SELECT r.*, u.name as user_name FROM cash_registers r 
+                JOIN users u ON r.user_id = u.id 
+                WHERE r.status = 'open'";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
 }

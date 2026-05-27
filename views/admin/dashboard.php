@@ -443,6 +443,14 @@
 
     <!-- Monitor Global de Tesorería -->
     <h2 class="section-area-title"><i class="fas fa-vault"></i> Monitor Global de Cajas Abiertas</h2>
+    
+    <?php if(!empty($data['has_integrity_issue'])): ?>
+        <div class="alert alert-danger d-flex align-items-center shadow-sm border-0 mb-3">
+            <i class="fas fa-triangle-exclamation me-3 fa-2x"></i>
+            <div><strong>Alerta de Descalce:</strong> Hay una diferencia de Gs. <?php echo number_format($data['integrity_gap'], 0, ',', '.'); ?> entre las ventas facturadas y los ingresos registrados en caja. Revise cobros pendientes.</div>
+        </div>
+    <?php endif; ?>
+
     <div class="card shadow-sm border-0 mb-4 overflow-hidden">
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -458,23 +466,25 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <?php if($data['active_session']): ?>
-                            <tr>
+                        <?php if(!empty($data['active_sessions'])): ?>
+                            <?php foreach($data['active_sessions'] as $session): ?>
+                                <tr>
                                 <td class="ps-4">
                                     <span class="badge bg-light text-dark border py-2 px-3">
-                                        <i class="fas fa-desktop me-1"></i> <?php echo htmlspecialchars($data['active_session']['cash_station']); ?>
+                                        <i class="fas fa-desktop me-1"></i> <?php echo htmlspecialchars($session['cash_station']); ?>
                                     </span>
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="stat-icon me-2" style="width: 30px; height: 30px; font-size: 0.8rem; background: #e3f2fd; color: #0984e3;"><i class="fas fa-user-tie"></i></div>
-                                        <span class="fw-bold"><?php echo htmlspecialchars($_SESSION['user_name']); ?></span>
+                                        <span class="fw-bold"><?php echo htmlspecialchars($session['user_name']); ?></span>
                                     </div>
                                 </td>
-                                <td class="text-end text-muted">Gs. <?php echo number_format($data['active_session']['opening_amount'] ?? 0, 0, ',', '.'); ?></td>
-                                <td class="text-end text-success fw-bold">+ Gs. <?php echo number_format($data['session_ingress'] ?? 0, 0, ',', '.'); ?></td>
-                                <td class="text-end text-danger fw-bold">- Gs. <?php echo number_format($data['session_egress'] ?? 0, 0, ',', '.'); ?></td>
-                                <td class="text-end pe-4 fw-bold text-primary" style="font-size: 1rem;">Gs. <?php echo number_format($data['session_expected'] ?? 0, 0, ',', '.'); ?></td>
+                                    <td class="text-end text-muted">Gs. <?php echo number_format($session['opening_amount'] ?? 0, 0, ',', '.'); ?></td>
+                                    <td class="text-end text-success fw-bold">+ Gs. <?php echo number_format($session['session_ingress'] ?? 0, 0, ',', '.'); ?></td>
+                                    <td class="text-end text-danger fw-bold">- Gs. <?php echo number_format($session['session_egress'] ?? 0, 0, ',', '.'); ?></td>
+                                    <td class="text-end pe-4 fw-bold text-primary" style="font-size: 1rem;">Gs. <?php echo number_format($session['session_expected'] ?? 0, 0, ',', '.'); ?></td>
+                            <?php endforeach; ?>
                             </tr>
                         <?php else: ?>
                             <tr>
@@ -492,7 +502,7 @@
     </div>
 
     <!-- Listado de Movimientos Recientes -->
-    <?php if($data['active_session'] && !empty($data['recent_movements'])): ?>
+    <?php if(!empty($data['active_sessions']) && !empty($data['recent_movements'])): ?>
     <div class="stats-grid" style="grid-template-columns: 1fr;">
          <div class="stat-card" style="display: block; padding: 0;">
             <div class="p-3 border-bottom d-flex justify-content-between align-items-center">

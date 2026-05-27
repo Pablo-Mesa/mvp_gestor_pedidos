@@ -697,5 +697,33 @@ class Order {
 
         return $stats;
     }
+
+    /**
+     * Obtiene el desglose diario de costos Solver para un mes
+     */
+    public function getSolverMonthlyCosts($year, $month) {
+        $query = "SELECT 
+                    DATE(v.fecha_hora) as date,
+                    SUM(CASE WHEN o.channel_id = 1 THEN (o.total - IFNULL(drd.price, 0)) * 0.10 ELSE 0 END) as web_cost,
+                    0 as mostrador_cost,
+                    0 as mozo_cost,
+                    SUM(CASE WHEN o.delivery_type IN ('delivery', 'envio') THEN 1000 ELSE 0 END) as logistics_cost,
+                    SUM(CASE WHEN o.channel_id = 1 THEN o.total ELSE 0 END) as web_income,
+                    SUM(CASE WHEN o.channel_id = 2 THEN o.total ELSE 0 END) as mostrador_income,
+                    SUM(CASE WHEN o.channel_id = 3 THEN o.total ELSE 0 END) as mozo_income,
+                    COUNT(CASE WHEN o.delivery_type IN ('delivery', 'envio') THEN 1 ELSE NULL END) as delivery_qty
+                  FROM " . $this->table . " o
+                  INNER JOIN pos_ventas_cabecera v ON o.id = v.order_id
+                  LEFT JOIN order_shipments os ON o.id = os.order_id
+                  LEFT JOIN delivery_rate_details drd ON os.delivery_rate_id = drd.id
+                  WHERE v.estado = 1 
+                    AND YEAR(v.fecha_hora) = :y AND MONTH(v.fecha_hora) = :m
+                  GROUP BY DATE(v.fecha_hora)
+                  ORDER BY DATE(v.fecha_hora) ASC";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([':y' => $year, ':m' => $month]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 ?>

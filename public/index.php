@@ -72,6 +72,11 @@ switch ($route) {
         $controller = new AdminController();
         $controller->paymentsReport();
         break;
+    case 'solver_costs':
+        require_once '../controllers/AdminController.php';
+        $controller = new AdminController();
+        $controller->solverCosts();
+        break;
 
     // --- GESTIÓN DE PEDIDOS Y MOZOS ---
     case 'orders':

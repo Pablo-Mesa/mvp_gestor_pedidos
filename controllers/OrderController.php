@@ -481,7 +481,9 @@ class OrderController {
             // Esto asegura que el monto (como los 60.000 del ID 69) ingrese al Monitor de Tesorería.
             $registerId = $activeSession ? $activeSession['id'] : null;
             $payments = [];
-            if ($activeSession) {
+            // REFINAMIENTO: Solo auto-cobramos si el pedido NO es delivery (es decir, es retiro o local).
+            // Para delivery, el dinero entra a caja recién al completar el proceso o mediante cobro manual.
+            if ($activeSession && $order['delivery_type'] !== 'delivery') {
                 $payments = [['metodo' => 'efectivo', 'monto' => $order['total'], 'referencia' => 'Cobro Rápido POS']];
             }
 
@@ -544,9 +546,12 @@ class OrderController {
             // Determinar qué enviar al modelo: pagos manuales, automáticos (si hay caja) o nulo (solo factura)
             // CORRECCIÓN: Si no hay pagos manuales pero hay caja abierta, registramos el cobro automático para el Monitor de Tesorería.
             $finalPayments = $hasPayments ? $payments : null;
+            // REFINAMIENTO: No auto-cobrar pedidos de delivery en esta etapa si no se especifican montos manualmente.
             if (!$hasPayments && $activeSession) {
                 $orderData = $order->readOne();
-                $finalPayments = [['metodo' => 'efectivo', 'monto' => $orderData['total'], 'referencia' => 'Cobro Automático POS']];
+                if ($orderData['delivery_type'] !== 'delivery') {
+                    $finalPayments = [['metodo' => 'efectivo', 'monto' => $orderData['total'], 'referencia' => 'Cobro Automático POS']];
+                }
             }
             $sessionId = $activeSession ? $activeSession['id'] : null;
 

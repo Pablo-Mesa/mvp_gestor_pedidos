@@ -282,5 +282,29 @@ class AdminController {
         $content_view = '../views/admin/sales/payments.php';
         require_once '../views/layouts/admin_layout.php';
     }
+
+    /**
+     * Muestra el desglose mensual de costos generados por la plataforma Solver
+     */
+    public function solverCosts() {
+        require_once '../models/Order.php';
+        
+        $selected_month = $_GET['month'] ?? date('Y-m');
+        list($year, $month) = explode('-', $selected_month);
+
+        $orderModel = new Order();
+        $costs = $orderModel->getSolverMonthlyCosts($year, $month);
+
+        $data = [
+            'title' => 'Auditoría de Costos Solver',
+            'selected_month' => $selected_month,
+            'costs' => $costs,
+            'month_name' => $this->getMonthName($month),
+            'year' => $year
+        ];
+
+        $content_view = '../views/admin/solver/index.php';
+        require_once '../views/layouts/admin_layout.php';
+    }
 }
 ?>

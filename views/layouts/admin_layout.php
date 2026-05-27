@@ -303,6 +303,7 @@
                     ['route' => 'cash',           'label' => 'Apertura y Cierre', 'icon' => 'fas fa-key', 'roles' => ['admin']],
                     ['route' => 'sales_history',  'label' => 'Facturación / Tickets', 'icon' => 'fas fa-file-invoice-dollar'],
                     ['route' => 'payments_report','label' => 'Pagos Recibidos',   'icon' => 'fas fa-money-check-alt'],
+                    ['route' => 'solver_costs',   'label' => 'Costos Solver',     'icon' => 'fas fa-percentage'],
                 ]
             ],
             [

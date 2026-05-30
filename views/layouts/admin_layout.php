@@ -40,15 +40,15 @@
         /* Sidebar (Menú Lateral) */
         .sidebar {
             width: 280px; 
-            background-color: #ffffff; /* Fondo blanco minimalista */
-            color: #495057; /* Texto oscuro para contraste */
+            background-color: #0f172a; /* Slate 900: Moderno y sobrio */
+            color: #94a3b8; /* Slate 400: Texto suave */
             display: flex;
             flex-direction: column;
             transition: all 0.3s ease;
             z-index: 1050;
             height: 100vh;
             overflow-y: auto;
-            border-right: 1px solid #e9ecef; /* Borde sutil a la derecha */
+            border-right: none;
         }
 
         /* Personalización de la barra de desplazamiento para la Sidebar */
@@ -72,11 +72,11 @@
             align-items: center;
             gap: 1rem;
             padding: 1.2rem 1.5rem;
-            background-color: #f8fafc; /* Fondo muy claro para el header */
+            background-color: #0f172a;
             font-weight: bold;
             font-size: 1.2rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            color: #212529; /* Texto oscuro para el header */
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            color: #f8fafc;
         }
 
         .sidebar-menu { 
@@ -88,7 +88,7 @@
         .sidebar-menu li a, .sidebar-menu li .menu-header-link { 
             display: block; 
             padding: 0.8rem 1.5rem; 
-            color: #495057; /* Texto oscuro para contraste */
+            color: #94a3b8;
             text-decoration: none; 
             border-bottom: none; 
             transition: 0.3s; 
@@ -100,12 +100,12 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        .submenu { list-style: none; padding-left: 0; background: rgba(0,0,0,0.03); } /* Fondo muy sutil para submenú */
+        .submenu { list-style: none; padding-left: 0; background: rgba(0,0,0,0.2); } /* Contraste para submenú */
         .submenu li a { padding: 0.6rem 1.5rem 0.6rem 2.5rem; font-size: 0.9rem; border-bottom: none; }
         
         .sidebar-menu li a:hover, .sidebar-menu li a:focus { 
-            background-color: #e9ecef; /* Gris claro en hover */
-            color: #212529; /* Texto más oscuro en hover */
+            background-color: rgba(255,255,255,0.05);
+            color: #f8fafc;
             padding-left: 1.75rem; 
             outline: none;
         }
@@ -123,13 +123,14 @@
         .topbar { 
             background-color: #fff; 
             padding: 0.75rem 1.5rem; 
-            border-bottom: 1px solid #dee2e6; 
+            border-bottom: 1px solid #f1f5f9; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
             position: sticky;
             top: 0;
             z-index: 1000;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
         .topbar-left { display: flex; align-items: center; gap: 15px; }
@@ -191,7 +192,7 @@
             padding: 4px 12px;                           /* Espaciado interno */
             background-color: #f8f9fa;                   /* Fondo muy sutil */
             border-radius: 20px;                         /* Bordes redondeados (estilo pastilla) */
-            border: 1px solid #e9ecef;                   /* Borde suave para dar estructura */
+            border: 1px solid #f1f5f9;
             display: inline-flex;                        /* Para que alinee bien con los iconos */
             align-items: center;
             white-space: nowrap;    
@@ -250,9 +251,9 @@
             to { opacity: 1; transform: translateY(0); } /* Existing styles */
         }
         .sidebar-menu li a.active-link {
-            background-color: #e0f2fe; /* Azul muy claro para activo */
-            color: #0984e3; /* Azul primario para texto activo */
-            border-left: 4px solid #0984e3; /* Borde azul primario */
+            background-color: rgba(99, 102, 241, 0.1); /* Indigo sutil */
+            color: #818cf8; /* Indigo 400 */
+            border-left: 4px solid #6366f1; /* Indigo 500 */
             padding-left: 1.25rem;
             font-weight: 600;
         }
@@ -271,7 +272,7 @@
             </div>
             <a href="?route=admin" class="text-decoration-none d-flex align-items-center">
                 <!-- <img src="<?php echo $siteLogo; ?>" alt="Logo Solver" style="height: 30px; width: auto; margin-right: 10px;"> -->
-                <span class="fw-bold" style="color: #212529;">SOLVER</span>
+                <span class="fw-bold" style="color: #f8fafc;">SOLVER</span>
             </a>
         </div>
         <?php

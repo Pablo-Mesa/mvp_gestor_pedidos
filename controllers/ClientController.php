@@ -73,10 +73,12 @@ class ClientController {
         $client = new Client();
         $client->name = $data['name'];
         $client->phone = $data['phone'];
-        $client->email = $data['email'] ?? ($data['phone'] . '@sistema.com'); // Email dummy si no se provee
-        $client->password = password_hash($data['phone'], PASSWORD_DEFAULT); // Password por defecto es su cel
+        // Si viene vacío o no existe, enviamos null para que el modelo lo maneje
+        $client->email = !empty($data['email']) ? $data['email'] : null;
+        $client->password = null; // Dejamos nulo para que el modelo use el teléfono como clave por defecto
         $client->billing_name = $data['billing_name'] ?? null;
         $client->billing_ruc = $data['billing_ruc'] ?? null;
+        $client->has_whatsapp = $data['has_whatsapp'] ?? 1;
 
         if ($client->register()) {
             echo json_encode(['success' => true, 'id' => $client->id, 'name' => $client->name]);

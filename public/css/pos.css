@@ -261,10 +261,13 @@
 .pos-client-table tr:hover td { background: #f0f7ff; color: #0984e3; }
 .pos-client-table tr:focus { background: #e0f2fe; outline: 2px solid #0984e3; outline-offset: -2px; }
 
-/* Igualar altura visual de modales secundarios con modalFinalize */
-#modalAddLocation .modal-content,
-#modalSelectLocation .modal-content {
-    min-height: 620px;
+.modal.fade .modal-dialog {
+    transition: transform 0.3s ease-out; /* Suaviza el re-centrado */
+}
+
+.modal .modal-content {
+    padding: 0 !important; /* Limpia padding de client_layout.css */
+    max-height: none !important; /* Permite que el modal use el scroll dinámico de Bootstrap */
 }
 
 /* Quitar flechas de los input de número (Spinner) en el cobro */

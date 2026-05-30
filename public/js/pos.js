@@ -1,4 +1,54 @@
 document.addEventListener('DOMContentLoaded', function() {
+    /**
+     * GESTIÓN DE MODALES ANIDADOS (Stack Manager)
+     * Permite apilar modales y cerrarlos uno a uno con la tecla 'Esc'.
+     */
+    const openModalsStack = [];
+
+    document.addEventListener('show.bs.modal', function (event) {
+        const modalEl = event.target;
+        if (!openModalsStack.includes(modalEl.id)) openModalsStack.push(modalEl.id);
+        const zIndex = 1050 + (10 * openModalsStack.length);
+        modalEl.style.zIndex = zIndex;
+        setTimeout(() => {
+            const backdrops = document.querySelectorAll('.modal-backdrop:not(.stack-adjusted)');
+            backdrops.forEach(b => {
+                b.style.zIndex = zIndex - 1;
+                b.classList.add('stack-adjusted');
+            });
+        }, 0);
+    });
+
+    document.addEventListener('hidden.bs.modal', function (event) {
+        const modalId = event.target.id;
+        const index = openModalsStack.indexOf(modalId);
+        if (index > -1) openModalsStack.splice(index, 1);
+        if (openModalsStack.length > 0) {
+            document.body.classList.add('modal-open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // UX: Devolver el foco al botón de búsqueda si volvemos al modal de finalización
+        // desde los modales secundarios de gestión de clientes.
+        if (modalId === 'modalSearchClient' || modalId === 'modalCreateClient') {
+            const finalizeModal = document.getElementById('modalFinalize');
+            if (finalizeModal && finalizeModal.classList.contains('show')) {
+                const searchBtn = document.getElementById('btn-search-client');
+                // Un pequeño retardo asegura que el foco se asiente tras la limpieza de Bootstrap
+                if (searchBtn) setTimeout(() => searchBtn.focus(), 50);
+            }
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && openModalsStack.length > 0) {
+            event.stopImmediatePropagation();
+            const topModalId = openModalsStack[openModalsStack.length - 1];
+            const modalInstance = bootstrap.Modal.getInstance(document.getElementById(topModalId));
+            if (modalInstance) modalInstance.hide();
+        }
+    }, true);
+
     // Recuperar carrito guardado para evitar pérdida de datos por recargas o cierres accidentales (Resiliencia)
     let posCart = [];
     try {
@@ -208,43 +258,75 @@ document.addEventListener('DOMContentLoaded', function() {
     window.openSearchClient = function() {
         // Evita el error de aria-hidden quitando el foco del botón antes de ocultar el modal
         if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-        
-        bsModalFinalize.hide();
         bsModalSearch.show();
         window.searchClientListApi();
     }
 
     window.closeSearchAndReturn = function() {
         bsModalSearch.hide();
-        bsModalFinalize.show();
     }
 
     window.openCreateClient = function() {
         // Evita el error de aria-hidden quitando el foco del botón antes de ocultar el modal
         if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
 
-        bsModalFinalize.hide();
+        const searchInput = document.getElementById('s-client-term');
+        const searchTerm = searchInput ? searchInput.value.trim() : '';
+        
+        const cName = document.getElementById('c-name');
+        const cPhone = document.getElementById('c-phone');
+
+        // Limpiar campos antes de evaluar (reseteo preventivo)
+        if (cName) cName.value = '';
+        if (cPhone) {
+            cPhone.value = '';
+            const feedback = document.getElementById('c-phone-feedback');
+            if (feedback) feedback.style.display = 'none';
+        }
+
+        if (searchTerm) {
+            // 1. Si contiene un guión, asumimos que es tipo RUC/CI. Según la instrucción, no hacemos nada.
+            const isRuc = searchTerm.includes('-');
+
+            if (!isRuc) {
+                // 2. Detectar si es tipo Celular (Empieza con 09 o 9 y es mayormente numérico)
+                const numericOnly = searchTerm.replace(/\D/g, '');
+                const isPhone = /^(0?9)[0-9]{7,9}$/.test(numericOnly);
+
+                if (isPhone && cPhone) {
+                    cPhone.value = searchTerm;
+                    if (typeof checkPhoneExistence === 'function') checkPhoneExistence(searchTerm);
+                } else if (/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/.test(searchTerm) && cName) {
+                    // 3. Si tiene letras, lo tratamos como Nombre
+                    cName.value = searchTerm;
+                }
+            }
+        }
+
         bsModalCreate.show();
     }
 
     window.closeCreateAndReturn = function() {
         bsModalCreate.hide();
-        bsModalFinalize.show();
     }
 
     /**
      * Registro rápido de cliente vía AJAX (Bootstrap Modal)
      */
     window.submitQuickClient = async function() {
+        const rawName = document.getElementById('c-name').value.trim();
+        const phone = document.getElementById('c-phone').value.trim();
+
         const data = {
-            name: document.getElementById('c-name').value,
-            phone: document.getElementById('c-phone').value,
-            email: document.getElementById('c-email').value,
-            billing_name: document.getElementById('c-billing-name').value,
-            billing_ruc: document.getElementById('c-billing-ruc').value
+            name: rawName || `Cliente (${phone})`, // Placeholder automático si el nombre está vacío
+            phone: phone,
+            email: document.getElementById('c-email').value.trim() || null,
+            billing_name: document.getElementById('c-billing-name').value.trim() || null,
+            billing_ruc: document.getElementById('c-billing-ruc').value,
+            has_whatsapp: document.getElementById('c-has-whatsapp').checked ? 1 : 0
         };
 
-        if(!data.name || !data.phone) return Toast.fire("Nombre y Teléfono requeridos", "error");
+        if(!data.phone) return Toast.fire("El número de teléfono es obligatorio", "error");
 
         try {
             const resp = await fetch('?route=admin_clients_store_api', {
@@ -252,12 +334,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            const res = await resp.json();
+
+            const text = await resp.text();
+            let res;
+            try {
+                res = JSON.parse(text);
+            } catch (err) {
+                console.error("Error del Servidor (No es JSON):", text);
+                return Toast.fire("Error en el servidor. Revise la consola (F12)", "error");
+            }
+
             if(res.success) {
                 selectClientFromList(res.id, data.name, data.phone);
                 Toast.fire("Cliente registrado", "success");
-                // Limpiar campos para la próxima
+                // Limpiar campos para la próxima y resetear switch
                 ['c-name', 'c-phone', 'c-email', 'c-billing-name', 'c-billing-ruc'].forEach(id => document.getElementById(id).value = '');
+                document.getElementById('c-has-whatsapp').checked = true;
             }
         } catch(e) { console.error(e); }
     }
@@ -456,26 +548,33 @@ document.addEventListener('DOMContentLoaded', function() {
             else if (e.key === 'ArrowUp' || e.key === 'Escape') { e.preventDefault(); cardParent.focus(); }
         }
 
-        // 5. Modal de Pago: Recorrido Efectivo -> Tarjeta -> Transf -> QR -> Botones
+        // 5. Modal de Pago: Recorrido Cerrar -> Montos -> Guardar e Imprimir
         const payModalEl = active.closest('#modalPayOrder');
         if (payModalEl) {
-            // Selector que garantiza el orden natural del DOM (montos, referencias y botones finales)
-            const focusable = Array.from(payModalEl.querySelectorAll('input:not([type="hidden"]), .modal-footer button[type="submit"]'));
+            // Recorrido restringido solicitado: Botón cerrar, montos de pago y botón de imprimir
+            const focusable = Array.from(payModalEl.querySelectorAll('.btn-close, .pay-input, #pay-btn-submit'));
             const fIdx = focusable.indexOf(active);
 
-            if (e.key === 'ArrowDown' || (e.key === 'Enter' && active.tagName === 'INPUT')) {
+            if (e.key === 'ArrowDown' || e.key === 'Enter') {
+                // Si presionamos Enter en un botón, no interceptamos para que se ejecute el click/submit
+                if (e.key === 'Enter' && active.tagName === 'BUTTON') return;
+
                 e.preventDefault();
                 e.stopImmediatePropagation();
-                if (focusable[fIdx + 1]) {
-                    focusable[fIdx + 1].focus();
-                    if (focusable[fIdx + 1].tagName === 'INPUT') focusable[fIdx + 1].select();
-                } else {
-                    document.getElementById('pay-btn-submit').focus();
+                const nextIdx = (fIdx + 1) % focusable.length;
+                const nextEl = focusable[nextIdx];
+                if (nextEl) {
+                    nextEl.focus();
+                    if (nextEl.tagName === 'INPUT') nextEl.select();
                 }
-            } else if (e.key === 'ArrowUp' && focusable[fIdx - 1]) {
+            } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
-                focusable[fIdx - 1].focus();
-                if (focusable[fIdx - 1].tagName === 'INPUT') focusable[fIdx - 1].select();
+                const prevIdx = (fIdx - 1 + focusable.length) % focusable.length;
+                const prevEl = focusable[prevIdx];
+                if (prevEl) {
+                    prevEl.focus();
+                    if (prevEl.tagName === 'INPUT') prevEl.select();
+                }
             }
         }
     });
@@ -609,7 +708,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // Re-enfocar el modal en pantalla para evitar recortes por cambio de altura dinámica
-            if (bsModalFinalize) bsModalFinalize.handleUpdate();
+            if (bsModalFinalize) setTimeout(() => bsModalFinalize.handleUpdate(), 10);
         }
 
     /**
@@ -647,23 +746,10 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('add-location-client-name').innerText = clientName;
         document.getElementById('c-location-client-id').value = clientId;
 
-        // Esperar a que el modal de selección se oculte para evitar errores de foco (aria-hidden)
-        const selectModalEl = document.getElementById('modalSelectLocation');
-        const onHidden = () => {
-            bsModalAddLocation.show();
-            selectModalEl.removeEventListener('hidden.bs.modal', onHidden);
-        };
-        selectModalEl.addEventListener('hidden.bs.modal', onHidden);
-        bsModalSelectLocation.hide();
+        bsModalAddLocation.show();
     }
 
     window.closeAddLocationAndReturn = function() {
-        const addModalEl = document.getElementById('modalAddLocation');
-        const onHidden = () => {
-            bsModalSelectLocation.show();
-            addModalEl.removeEventListener('hidden.bs.modal', onHidden);
-        };
-        addModalEl.addEventListener('hidden.bs.modal', onHidden);
         bsModalAddLocation.hide();
     }
     /**
@@ -699,7 +785,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // Ajustar posición del modal tras cargar contenido dinámico (direcciones)
-            if (bsModalSelectLocation) bsModalSelectLocation.handleUpdate();
+            if (bsModalSelectLocation) setTimeout(() => bsModalSelectLocation.handleUpdate(), 10);
         } catch (e) { console.error(e); }
     }
 
@@ -754,7 +840,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Re-enfocar el modal principal ya que su contenido (contenedor de tarifas) cambió de visibilidad
-        if (bsModalFinalize) bsModalFinalize.handleUpdate();
+        if (bsModalFinalize) setTimeout(() => bsModalFinalize.handleUpdate(), 10);
 
         updateDeliveryCostFromSelect();
 
@@ -884,7 +970,6 @@ document.addEventListener('DOMContentLoaded', function() {
             Toast.fire(res.message, "success");
             bsModalAddLocation.hide();
             window.loadClientLocations(data.client_id);
-            bsModalSelectLocation.show();
         } else { Toast.fire(res.message, "error"); }
     }
 
@@ -933,7 +1018,7 @@ document.addEventListener('DOMContentLoaded', function() {
             tbody.innerHTML = html;
 
             // Re-enfocar el modal tras actualizar la lista de resultados de búsqueda
-            if (bsModalSearch) bsModalSearch.handleUpdate();
+            if (bsModalSearch) setTimeout(() => bsModalSearch.handleUpdate(), 10);
         } catch(e) {
             tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-danger">Error en búsqueda</td></tr>';
         }
@@ -983,7 +1068,6 @@ document.addEventListener('DOMContentLoaded', function() {
         bsModalCreate.hide();
 
         setTimeout(() => {
-            bsModalFinalize.show();
             document.getElementById('btn-open-map-url').style.display = 'none';
             if(document.getElementById('f-delivery-type').value === 'delivery') loadClientLocations(id);
         }, 150);
@@ -1021,6 +1105,9 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (e) {
             console.error("Error validando teléfono", e);
         }
+        
+        // Re-centrar si el feedback cambió la altura del modal de creación
+        if (bsModalCreate) setTimeout(() => bsModalCreate.handleUpdate(), 10);
     }
 
     /**

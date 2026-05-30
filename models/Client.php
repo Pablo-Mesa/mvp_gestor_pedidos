@@ -20,20 +20,30 @@ class Client {
     }
 
     public function register() {
+        // 1. Limpieza de Email: Si no es un correo válido o está vacío, forzamos NULL
+        // Esto evita el error de "Duplicate entry ''" y previene datos basura combinados.
+        $isValidEmail = filter_var($this->email, FILTER_VALIDATE_EMAIL);
+        $this->email = $isValidEmail ? trim($this->email) : null;
+
+        // 2. Lógica de Contraseña: Solo generamos un hash si el cliente tiene un email válido.
+        // Sin email, el cliente no puede loguearse a la PWA, por lo que no necesita contraseña.
+        $password_hash = null;
+        if ($this->email) {
+            $plainPassword = !empty($this->password) ? $this->password : $this->phone;
+            $password_hash = password_hash($plainPassword, PASSWORD_BCRYPT);
+        }
+
         $query = "INSERT INTO " . $this->table . " 
                   (name, email, password, phone, has_whatsapp, billing_name, billing_ruc) 
                   VALUES (:name, :email, :password, :phone, :has_whatsapp, :billing_name, :billing_ruc)";
         
         $stmt = $this->conn->prepare($query);
 
-        // Encriptar contraseña
-        $password_hash = password_hash($this->password, PASSWORD_BCRYPT);
-
         $stmt->bindParam(':name', $this->name);
         $stmt->bindParam(':email', $this->email);
         $stmt->bindParam(':password', $password_hash);
         $stmt->bindParam(':phone', $this->phone);
-        $stmt->bindParam(':has_whatsapp', $this->has_whatsapp);
+        $stmt->bindValue(':has_whatsapp', (int)$this->has_whatsapp, PDO::PARAM_INT);
         $stmt->bindParam(':billing_name', $this->billing_name);
         $stmt->bindParam(':billing_ruc', $this->billing_ruc);
 

@@ -111,7 +111,7 @@
 
 <!-- MODAL 1: FINALIZAR VENTA -->
 <div class="modal fade" id="modalFinalize" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             
             <!-- encabezado del modal -->
@@ -254,7 +254,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title fw-bold"><i class="fas fa-user-plus me-2 text-primary"></i>Nuevo Cliente</h5>
-                <button type="button" class="btn-close" onclick="closeCreateAndReturn()"></button>
+                <button type="button" id="btn-close-quick-client" class="btn-close" onclick="closeCreateAndReturn()"></button>
             </div>
             <div class="modal-body">
                 <div class="row g-3">
@@ -266,6 +266,14 @@
                         <label class="form-label small fw-bold">Teléfono / WhatsApp</label>
                         <input id="c-phone" class="form-control" placeholder="0981..." maxlength="15" oninput="checkPhoneExistence(this.value)">
                         <div id="c-phone-feedback" class="small mt-1" style="display:none;"></div>
+                    </div>
+                    <div class="col-12 mt-0">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="c-has-whatsapp" value="1" checked>
+                            <label class="form-check-label small fw-bold" for="c-has-whatsapp">
+                                <i class="fab fa-whatsapp text-success me-1"></i> Tiene WhatsApp
+                            </label>
+                        </div>
                     </div>
                     <div class="col-12">
                         <label class="form-label small fw-bold">Email (Opcional)</label>
@@ -283,7 +291,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary w-100 fw-bold" onclick="submitQuickClient()">REGISTRAR Y SELECCIONAR</button>
+                <button type="button" id="btn-submit-quick-client" class="btn btn-primary w-100 fw-bold" onclick="submitQuickClient()">REGISTRAR Y SELECCIONAR</button>
             </div>
         </div>
     </div>
@@ -412,3 +420,71 @@
 </div>
 
 <script src="<?php echo $baseUrl; ?>js/pos.js"></script>
+
+<script>
+/**
+ * UX: Navegación por teclado para el Registro Rápido de Clientes
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    const modalQuickClient = document.getElementById('modalCreateClient');
+    
+    if (modalQuickClient) {
+        // 1. Foco inicial automático al abrir
+        modalQuickClient.addEventListener('shown.bs.modal', function () {
+            document.getElementById('c-name').focus();
+        });
+
+        // 2. Definición del orden de recorrido
+        const focusableSelectors = [
+            '#c-name',
+            '#c-phone',
+            '#c-has-whatsapp',
+            '#c-email',
+            '#c-billing-name',
+            '#c-billing-ruc',
+            '#btn-submit-quick-client',
+            '#btn-close-quick-client'
+        ];
+
+        modalQuickClient.addEventListener('keydown', function(e) {
+            const activeElement = document.activeElement;
+            const currentIndex = focusableSelectors.findIndex(selector => activeElement.matches(selector));
+
+            if (currentIndex === -1) return;
+
+            const isEnter = (e.key === 'Enter');
+            const isNext = (e.key === 'ArrowDown' || e.key === 'ArrowRight');
+            const isPrev = (e.key === 'ArrowUp' || e.key === 'ArrowLeft');
+
+            if (isEnter || isNext || isPrev) {
+                // Si es Enter en el botón de registro, dejamos que el click natural (o submitQuickClient) actúe
+                if (isEnter && activeElement.id === 'btn-submit-quick-client') {
+                    return; 
+                }
+
+                // Evitar comportamientos por defecto
+                if (isEnter || isNext || isPrev) e.preventDefault();
+
+                let nextIndex;
+                
+                if (isPrev) {
+                    // Flechas atrás: Recorrido circular inverso
+                    nextIndex = (currentIndex - 1 + focusableSelectors.length) % focusableSelectors.length;
+                } else {
+                    // Enter o Flechas adelante: Recorrido circular
+                    // Nota: Según el pedido, Enter NO debe incluir el botón cerrar en el "recorrido de campos" normal
+                    // pero para simplificar la lógica de "recorrer", seguiremos el orden del array.
+                    nextIndex = (currentIndex + 1) % focusableSelectors.length;
+                }
+
+                const nextElement = document.querySelector(focusableSelectors[nextIndex]);
+                if (nextElement) {
+                    nextElement.focus();
+                    // Si es un input de texto, seleccionar contenido para facilitar edición rápida
+                    if (nextElement.tagName === 'INPUT' && nextElement.type !== 'checkbox') nextElement.select();
+                }
+            }
+        });
+    }
+});
+</script>

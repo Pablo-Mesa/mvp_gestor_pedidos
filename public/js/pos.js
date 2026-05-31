@@ -28,13 +28,29 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.style.overflow = 'hidden';
         }
 
-        // UX: Devolver el foco al botón de búsqueda si volvemos al modal de finalización
-        // desde los modales secundarios de gestión de clientes.
-        if (modalId === 'modalSearchClient' || modalId === 'modalCreateClient') {
+        // UX: Gestión inteligente del foco al cerrar modales anidados
+        if (modalId === 'modalCreateClient') {
+            const searchModal = document.getElementById('modalSearchClient');
+            // Si el buscador de clientes sigue abierto detrás, devolvemos el foco a su input
+            if (searchModal && searchModal.classList.contains('show')) {
+                const searchInput = document.getElementById('s-client-term');
+                if (searchInput) setTimeout(() => {
+                    searchInput.focus();
+                    searchInput.select();
+                }, 50);
+            } else {
+                // Si no hay buscador abierto, volvemos al modal de finalización
+                const finalizeModal = document.getElementById('modalFinalize');
+                if (finalizeModal && finalizeModal.classList.contains('show')) {
+                    const searchBtn = document.getElementById('btn-search-client');
+                    if (searchBtn) setTimeout(() => searchBtn.focus(), 50);
+                }
+            }
+        } else if (modalId === 'modalSearchClient') {
+            // Al cerrar el buscador, devolvemos el foco al botón "Buscar" (Listar) del modal principal
             const finalizeModal = document.getElementById('modalFinalize');
             if (finalizeModal && finalizeModal.classList.contains('show')) {
                 const searchBtn = document.getElementById('btn-search-client');
-                // Un pequeño retardo asegura que el foco se asiente tras la limpieza de Bootstrap
                 if (searchBtn) setTimeout(() => searchBtn.focus(), 50);
             }
         }
@@ -105,7 +121,8 @@ document.addEventListener('DOMContentLoaded', function() {
             confirmButtonColor: '#ff4757',
             cancelButtonColor: '#6c757d',
             confirmButtonText: 'Sí, vaciar',
-            cancelButtonText: 'Cancelar'
+            cancelButtonText: 'Cancelar',
+            focusConfirm: true
         });
 
         if (result.isConfirmed) {
@@ -113,6 +130,8 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('posObservation').value = "";
             renderTicket();
             Toast.fire("Pedido vaciado", "info");
+            // UX: Devolver el foco al buscador tras vaciar
+            document.getElementById('posSearch').focus();
         }
     }
 
@@ -147,11 +166,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function removeFromTicket(id) {
-        posCart = posCart.filter(i => i.id !== id);
+        // Usamos != para permitir la comparación entre el ID numérico del objeto y el ID string del DOM
+        posCart = posCart.filter(i => i.id != id);
         renderTicket();
+        // UX: Devolver el foco al buscador tras eliminar un item
+        document.getElementById('posSearch').focus();
     }
 
     function renderTicket() {
+        // UX: El botón de vaciar carrito solo es visible si hay items
+        const clearBtn = document.querySelector('.btn-clear-cart');
+        if (clearBtn) {
+            if (posCart.length > 0) clearBtn.classList.add('show');
+            else clearBtn.classList.remove('show');
+        }
+
         // Persistencia resiliente: Guardar en localStorage si hay items, borrar si está vacío
         if (posCart.length > 0) {
             localStorage.setItem('pos_draft_cart', JSON.stringify(posCart));
@@ -715,6 +744,28 @@ document.addEventListener('DOMContentLoaded', function() {
      * Recolección de datos y envío final
      */
     window.confirmPOS = function() {
+        const delType = document.getElementById('f-delivery-type').value;
+        const locationId = document.getElementById('f-location-id').value;
+        const rateId = document.getElementById('f-delivery-rate-id').value;
+
+        // Validación de integridad para Delivery: Requiere ubicación y tarifa de costo
+        if (delType === 'delivery') {
+            if (!locationId || !rateId) {
+                Swal.fire({
+                    title: 'Datos de envío incompletos',
+                    text: 'Para procesar un pedido de Delivery es obligatorio seleccionar una dirección del cliente y asignar una tarifa de envío.',
+                    icon: 'warning',
+                    confirmButtonText: 'Completar datos',
+                    confirmButtonColor: '#0984e3'
+                }).then(() => {
+                    // Devolvemos el foco al botón de búsqueda de clientes (Listar clientes)
+                    const searchBtn = document.getElementById('btn-search-client');
+                    if (searchBtn) searchBtn.focus();
+                });
+                return; // Bloquea la ejecución de submitPOS
+            }
+        }
+
         const formValues = {
             clientId: document.getElementById('f-client-id').value,
             locationId: document.getElementById('f-location-id').value,

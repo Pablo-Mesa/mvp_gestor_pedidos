@@ -291,7 +291,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" id="btn-submit-quick-client" class="btn btn-primary w-100 fw-bold" onclick="submitQuickClient()">REGISTRAR Y SELECCIONAR</button>
+                <button type="button" id="btn-submit-quick-client" class="btn btn-primary w-100 fw-bold" onclick="confirmSubmitQuickClient()">REGISTRAR Y SELECCIONAR</button>
             </div>
         </div>
     </div>
@@ -422,6 +422,36 @@
 <script src="<?php echo $baseUrl; ?>js/pos.js"></script>
 
 <script>
+/**
+ * Intercepta el registro de cliente para solicitar confirmación
+ */
+function confirmSubmitQuickClient() {
+    const name = document.getElementById('c-name').value.trim();
+    
+    if (!name) {
+        Toast.fire("El nombre del cliente es obligatorio", "error");
+        document.getElementById('c-name').focus();
+        return;
+    }
+
+    Swal.fire({
+        title: '¿Confirmar nuevo cliente?',
+        text: `Se registrará a "${name}" y se asignará automáticamente a este pedido.`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, registrar',
+        cancelButtonText: 'Revisar datos',
+        confirmButtonColor: '#0984e3',
+        cancelButtonColor: '#64748b',
+        focusConfirm: true // El foco se posiciona automáticamente en el botón "Sí, registrar"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Llamamos a la función original que procesa el AJAX en pos.js
+            if (typeof submitQuickClient === 'function') submitQuickClient();
+        }
+    });
+}
+
 /**
  * UX: Navegación por teclado para el Registro Rápido de Clientes
  */

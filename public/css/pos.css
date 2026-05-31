@@ -194,8 +194,20 @@
     padding: 5px 10px;
     border-radius: 6px;
     cursor: pointer;
-    transition: 0.3s;
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.8);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
 }
+
+.btn-clear-cart.show {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+    pointer-events: auto;
+}
+
 .btn-clear-cart:hover { background: #ff4757; color: white; border-color: #ff4757; }
 
 .ticket-items { flex: 1; overflow-y: auto; margin-bottom: 15px; padding-right: 5px; }

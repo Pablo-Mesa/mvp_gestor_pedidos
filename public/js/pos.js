@@ -611,7 +611,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Foco automático al abrir el modal de cobro
     document.getElementById('modalPayOrder').addEventListener('shown.bs.modal', function () {
         const firstInput = this.querySelector('.pay-input');
-        if (firstInput) { firstInput.focus(); firstInput.select(); }
+        if (firstInput) { setTimeout(() => { firstInput.focus(); firstInput.select(); }, 50); }
     });
 
     document.getElementById('modalFinalize').addEventListener('shown.bs.modal', function () {
@@ -623,7 +623,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectLocationBtn = document.getElementById('btn-select-location');
         const payment = document.getElementById('f-payment-method');
         const observation = document.getElementById('f-observation');
-        const confirmBtn = modalEl.querySelector('[onclick="confirmPOS()"]');
+        // Selector robusto para capturar tanto confirmPOS() como validateAndConfirmPOS()
+        const confirmBtn = modalEl.querySelector('.btn-success[onclick*="onfirmPOS"]');
 
         // Colocar el foco explícitamente cuando el modal ya es visible
         if (searchBtn) {
@@ -646,7 +647,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 break;
                             }
                         }
-                        if (!nextFound) {
+                        if (!nextFound && confirmBtn) {
                             if (el === confirmBtn) {
                                 confirmBtn.click();
                             } else {

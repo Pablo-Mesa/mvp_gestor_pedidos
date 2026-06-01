@@ -997,6 +997,21 @@ class OrderController {
         $order->delivery_type = $input['delivery_type'] ?? 'local';
         $order->observation = $input['observation'] ?? '';
         $order->status = 'confirmed'; // Los pedidos de mostrador suelen estar confirmados de entrada
+
+        // --- VALIDACIÓN DE REGLAS DE NEGOCIO PARA DELIVERY ---
+        if ($order->delivery_type === 'delivery') {
+            if ($order->client_id == 1) {
+                echo json_encode(['success' => false, 'message' => 'No se permite delivery para "Cliente Ocasional". Registre o seleccione un cliente específico para contar con número de contacto.']);
+                exit;
+            }
+            // Verificar existencia de teléfono
+            $clientModel = new Client();
+            $client = $clientModel->getById($order->client_id);
+            if (!$client || empty(trim($client['phone']))) {
+                echo json_encode(['success' => false, 'message' => 'El cliente seleccionado no tiene un número de contacto registrado. Actualice el perfil del cliente antes de continuar.']);
+                exit;
+            }
+        }
         
         $order->client_location_id = $input['location_id'] ?? null;
         // Usamos los nombres de propiedades correctos definidos en el modelo Order

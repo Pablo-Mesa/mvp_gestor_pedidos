@@ -216,7 +216,7 @@
             <!-- pie de modal (botones) -->
             <div class="modal-footer border-0 pt-0">
                 <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Seguir cargando</button>
-                <button type="button" class="btn btn-success px-5 fw-bold" onclick="confirmPOS()">CONFIRMAR VENTA</button>
+                <button type="button" class="btn btn-success px-5 fw-bold" onclick="validateAndConfirmPOS()">CONFIRMAR VENTA</button>
             </div>
 
         </div>
@@ -422,6 +422,31 @@
 <script src="<?php echo $baseUrl; ?>js/pos.js"></script>
 
 <script>
+/**
+ * Valida requisitos mínimos para Delivery antes de procesar
+ */
+function validateAndConfirmPOS() {
+    const deliveryType = document.getElementById('f-delivery-type').value;
+    const clientId = document.getElementById('f-client-id').value;
+    const addressDisplay = document.getElementById('f-location-display').innerText;
+    
+    if (deliveryType === 'delivery') {
+        // 1. Bloqueo de Cliente Ocasional
+        if (clientId == "1") {
+            Swal.fire("Atención", "Para envíos por delivery debe seleccionar o registrar un cliente con número de contacto. No se permite usar 'Cliente Ocasional'.", "warning");
+            return;
+        }
+        // 2. Validación de Ubicación
+        if (addressDisplay.includes('Seleccionar dirección')) {
+            Swal.fire("Ubicación Requerida", "Debe seleccionar una dirección de entrega válida para pedidos por delivery.", "warning");
+            return;
+        }
+    }
+
+    // Si pasa filtros, procede a la función original de confirmación
+    if (typeof confirmPOS === 'function') confirmPOS();
+}
+
 /**
  * Intercepta el registro de cliente para solicitar confirmación
  */

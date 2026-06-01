@@ -45,8 +45,11 @@ class Order {
         try {
             // 0. Validación de integridad para envíos
             if ($this->delivery_type === 'delivery') {
-                if (empty($this->delivery_address)) {
-                    throw new Exception("Error de integridad: El pedido es delivery pero falta la dirección de entrega.");
+                if ($this->client_id == 1) {
+                    throw new Exception("Integridad: No se permite delivery para 'Cliente Ocasional'.");
+                }
+                if (empty($this->delivery_address) && empty($this->delivery_url)) {
+                    throw new Exception("Integridad: El pedido es delivery pero falta la ubicación o dirección.");
                 }
             }
 

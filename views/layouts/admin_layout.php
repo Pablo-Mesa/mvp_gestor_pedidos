@@ -1,7 +1,7 @@
 <?php 
     $baseUrl = str_replace('index.php', '', $_SERVER['SCRIPT_NAME']);
     $siteName = 'Solver';
-    $siteLogo = $baseUrl . 'assets/icono_solver_nobg.png';
+    $siteLogo = $baseUrl . 'assets/icono_solver_nobg.png';    
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -406,7 +406,7 @@
             <?php endforeach; ?>
         </ul>
     </nav>
-
+                                
     <!-- 2. Cuerpo Principal -->
     <div class="main-content">
         

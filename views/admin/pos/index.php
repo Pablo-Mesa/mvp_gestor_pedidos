@@ -468,7 +468,15 @@ function confirmSubmitQuickClient() {
         cancelButtonText: 'Revisar datos',
         confirmButtonColor: '#0984e3',
         cancelButtonColor: '#64748b',
-        focusConfirm: true // El foco se posiciona automáticamente en el botón "Sí, registrar"
+        focusConfirm: true,
+        didOpen: () => {
+            // Asegurar que el modal de SweetAlert esté por delante del stack de modales de Bootstrap (pos.js)
+            const swalContainer = Swal.getContainer();
+            if (swalContainer) swalContainer.style.zIndex = '10000';
+            
+            // Reforzar el foco en el botón de confirmación para agilizar el flujo de teclado
+            Swal.getConfirmButton().focus();
+        }
     }).then((result) => {
         if (result.isConfirmed) {
             // Llamamos a la función original que procesa el AJAX en pos.js

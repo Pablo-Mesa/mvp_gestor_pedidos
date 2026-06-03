@@ -19,7 +19,7 @@ class ClientLocation {
     }
 
     public function create($data) {
-        $query = "INSERT INTO " . $this->table . " (client_id, title, address, location_url, lat, lng) VALUES (?, ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO " . $this->table . " (client_id, title, address, location_url, lat, lng, reference_photo) VALUES (?, ?, ?, ?, ?, ?, ?)";
         $stmt = $this->conn->prepare($query);
         return $stmt->execute([
             $data['client_id'],
@@ -27,7 +27,8 @@ class ClientLocation {
             $data['address'],
             $data['location_url'] ?? null,
             $data['lat'] ?? null,
-            $data['lng'] ?? null
+            $data['lng'] ?? null,
+            $data['reference_photo'] ?? null
         ]);
     }
 

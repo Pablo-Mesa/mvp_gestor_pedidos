@@ -342,6 +342,12 @@ function renderOrderCardHTML($order) {
                             <i class="fas fa-map-marked-alt"></i> ABRIR UBICACIÓN (MAPS)
                         </button>
                     </div>
+                <?php elseif(!empty($order['reference_photo'])): ?>
+                    <div style="margin-bottom: 10px;">
+                        <button onclick="showReferencePhoto('<?php echo $order['reference_photo']; ?>')" class="btn-logistics" style="background: #6c5ce7; color: white; border:none; cursor:pointer;">
+                            <i class="fas fa-camera"></i> VER FOTO DE REFERENCIA
+                        </button>
+                    </div>
                 <?php endif; ?>
 
                 <div class="delivery-actions">
@@ -560,6 +566,13 @@ function renderOrderCardJS(order) {
                             </button>
                         </div>` : '')
                 }
+                ${(!order.delivery_lat && !deliveryUrl && order.reference_photo) ? 
+                    `<div style="margin-bottom: 10px;">
+                        <button onclick="showReferencePhoto('${order.reference_photo}')" class="btn-logistics" style="background: #6c5ce7; color: white; border:none; cursor:pointer;">
+                            <i class="fas fa-camera"></i> VER FOTO DE REFERENCIA
+                        </button>
+                    </div>` : ''
+                }
                 <div class="delivery-actions">
                     ${(order.status === 'confirmed' || order.status === 'paid') ? `<button class="btn-logistics btn-start" style="background: #ffc107; color: #000; cursor: pointer;" onclick="event.stopPropagation(); updateOrderStatus(${order.id}, 'shipped')"><i class="fas fa-play"></i> Iniciar Entrega</button>` : ''}
                     ${order.status === 'shipped' ? `
@@ -618,6 +631,20 @@ function initMapForOrder(order) {
     
     // Asegurar que el mapa calcule bien su tamaño al aparecer
     setTimeout(() => map.invalidateSize(), 400);
+}
+
+/**
+ * Abre la foto de referencia en un modal independiente
+ */
+function showReferencePhoto(photo) {
+    Swal.fire({
+        title: 'Referencia del Lugar',
+        imageUrl: '<?php echo $baseUrl; ?>uploads/locations/' + photo,
+        imageAlt: 'Foto de referencia',
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#2d3436',
+        closeButtonHtml: '<i class="fas fa-times"></i>'
+    });
 }
 
 // Iniciar polling inteligente cada 15 segundos

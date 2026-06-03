@@ -709,15 +709,144 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('c-name').focus();
     });
 
-    // Foco automático en el botón de agregar dirección al abrir el selector de ubicaciones
+    // UX: Navegación por teclado para el Registro Rápido de Clientes
+    const modalQuickClient = document.getElementById('modalCreateClient');
+    const focusableSelectorsQuick = [
+        '#c-name',
+        '#c-phone',
+        '#c-has-whatsapp',
+        '#c-email',
+        '#c-billing-name',
+        '#c-billing-ruc',
+        '#btn-submit-quick-client',
+        '#btn-close-quick-client'
+    ];
+
+    modalQuickClient.addEventListener('keydown', function(e) {
+        const activeElement = document.activeElement;
+        const currentIndex = focusableSelectorsQuick.findIndex(selector => activeElement.matches(selector));
+
+        if (currentIndex === -1) return;
+
+        const isEnter = (e.key === 'Enter');
+        const isNext = (e.key === 'ArrowDown' || e.key === 'ArrowRight');
+        const isPrev = (e.key === 'ArrowUp' || e.key === 'ArrowLeft');
+
+        if (isEnter || isNext || isPrev) {
+            // Si es Enter en el botón de registro, dejamos que el click natural actúe
+            if (isEnter && activeElement.id === 'btn-submit-quick-client') {
+                return; 
+            }
+
+            // Evitar comportamientos por defecto
+            if (isEnter || isNext || isPrev) e.preventDefault();
+
+            let nextIndex;
+            
+            if (isPrev) {
+                // Flechas atrás: Recorrido circular inverso
+                nextIndex = (currentIndex - 1 + focusableSelectorsQuick.length) % focusableSelectorsQuick.length;
+            } else {
+                // Enter o Flechas adelante: Recorrido circular
+                nextIndex = (currentIndex + 1) % focusableSelectorsQuick.length;
+            }
+
+            const nextElement = document.querySelector(focusableSelectorsQuick[nextIndex]);
+            if (nextElement) {
+                nextElement.focus();
+                if (nextElement.tagName === 'INPUT' && nextElement.type !== 'checkbox') nextElement.select();
+            }
+        }
+    });
+
+    // Foco automático en la primera dirección al abrir el selector de ubicaciones
     document.getElementById('modalSelectLocation').addEventListener('shown.bs.modal', function () {
-        const addBtn = this.querySelector('.modal-footer .btn-primary');
-        if (addBtn) addBtn.focus();
+        const firstCard = this.querySelector('.pos-location-card');
+        if (firstCard) {
+            firstCard.focus();
+        } else {
+            const addBtn = this.querySelector('.modal-footer .btn-primary');
+            if (addBtn) addBtn.focus();
+        }
+    });
+
+    // Lógica de navegación por teclado para el selector de direcciones
+    document.getElementById('modalSelectLocation').addEventListener('keydown', function(e) {
+        const active = document.activeElement;
+        
+        // Navegación entre tarjetas de dirección
+        if (active.classList.contains('pos-location-card')) {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                e.preventDefault();
+                const next = active.nextElementSibling;
+                if (next && next.classList.contains('pos-location-card')) {
+                    next.focus();
+                } else {
+                    // Al final de la lista, pasar al botón "Agregar"
+                    const addBtn = this.querySelector('.modal-footer .btn-primary');
+                    if (addBtn) addBtn.focus();
+                }
+            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                e.preventDefault();
+                const prev = active.previousElementSibling;
+                if (prev && prev.classList.contains('pos-location-card')) {
+                    prev.focus();
+                }
+            }
+        } else if (active.closest('.modal-footer') && e.key === 'ArrowUp') {
+            // Volver del botón Agregar a la última tarjeta de la lista
+            const cards = this.querySelectorAll('.pos-location-card');
+            if (cards.length > 0) { e.preventDefault(); cards[cards.length - 1].focus(); }
+        }
     });
 
     // Foco automático al abrir el formulario de nueva dirección
     document.getElementById('modalAddLocation').addEventListener('shown.bs.modal', function () {
         document.getElementById('c-location-title').focus();
+    });
+
+    // UX: Navegación por teclado para el modal de Agregar Ubicación
+    const modalAddLoc = document.getElementById('modalAddLocation');
+    const focusableSelectorsAddLoc = [
+        '#modalAddLocation .btn-close',
+        '#c-location-title',
+        '#c-location-url',
+        '#c-location-address',
+        '#c-location-photo',
+        '#btn-save-location'
+    ];
+
+    modalAddLoc.addEventListener('keydown', function(e) {
+        const activeElement = document.activeElement;
+        const currentIndex = focusableSelectorsAddLoc.findIndex(selector => activeElement.matches(selector));
+
+        if (currentIndex === -1) return;
+
+        const isEnter = (e.key === 'Enter');
+        const isNext = (e.key === 'ArrowDown');
+        const isPrev = (e.key === 'ArrowUp');
+
+        if (isEnter) {
+            if (activeElement.id === 'btn-save-location') return; 
+            //if (activeElement.tagName === 'TEXTAREA') return; // Permitir saltos de línea en dirección
+
+            e.preventDefault();
+            if (currentIndex < focusableSelectorsAddLoc.length - 1) {
+                const nextElement = document.querySelector(focusableSelectorsAddLoc[currentIndex + 1]);
+                if (nextElement) {
+                    nextElement.focus();
+                    if (nextElement.tagName === 'INPUT') nextElement.select();
+                }
+            }
+        } else if (isNext || isPrev) {
+            e.preventDefault();
+            const nextIndex = isPrev 
+                ? (currentIndex - 1 + focusableSelectorsAddLoc.length) % focusableSelectorsAddLoc.length 
+                : (currentIndex + 1) % focusableSelectorsAddLoc.length;
+
+            const nextElement = document.querySelector(focusableSelectorsAddLoc[nextIndex]);
+            if (nextElement) nextElement.focus();
+        }
     });
 
     window.toggleDeliveryFields = function(val) {
@@ -783,6 +912,63 @@ document.addEventListener('DOMContentLoaded', function() {
         submitPOS(formValues);
     }
 
+    /**
+     * Valida requisitos mínimos para Delivery antes de procesar
+     */
+    window.validateAndConfirmPOS = function() {
+        const deliveryType = document.getElementById('f-delivery-type').value;
+        const clientId = document.getElementById('f-client-id').value;
+        const addressDisplay = document.getElementById('f-location-display').innerText;
+        
+        if (deliveryType === 'delivery') {
+            if (clientId == "1") {
+                Swal.fire("Atención", "Para envíos por delivery debe seleccionar o registrar un cliente con número de contacto. No se permite usar 'Cliente Ocasional'.", "warning");
+                return;
+            }
+            if (addressDisplay.includes('Seleccionar dirección')) {
+                Swal.fire("Ubicación Requerida", "Debe seleccionar una dirección de entrega válida para pedidos por delivery.", "warning");
+                return;
+            }
+        }
+        confirmPOS();
+    }
+
+    /**
+     * Intercepta el registro de cliente para solicitar confirmación
+     */
+    window.confirmSubmitQuickClient = function() {
+        const name = document.getElementById('c-name').value.trim();
+        
+        if (!name) {
+            Toast.fire("El nombre del cliente es obligatorio", "error");
+            document.getElementById('c-name').focus();
+            return;
+        }
+
+        Swal.fire({
+            title: '¿Confirmar nuevo cliente?',
+            text: `Se registrará a "${name}" y se asignará automáticamente a este pedido.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, registrar',
+            cancelButtonText: 'Revisar datos',
+            confirmButtonColor: '#0984e3',
+            cancelButtonColor: '#64748b',
+            focusConfirm: true,
+            didOpen: () => {
+                const swalContainer = Swal.getContainer();
+                if (swalContainer) swalContainer.style.zIndex = '10000';
+                Swal.getConfirmButton().focus();
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                if (typeof submitQuickClient === 'function') {
+                    submitQuickClient();
+                }
+            }
+        });
+    }
+
     window.openSelectLocationModal = function() {
         const clientId = document.getElementById('f-client-id').value;
         const clientName = document.getElementById('f-client-name').value;
@@ -825,9 +1011,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 locations.forEach(loc => {
                     const card = document.createElement('div');
                     card.className = 'pos-location-card';
+                    card.tabIndex = 0; // Permitir que la tarjeta reciba foco
                     card.innerHTML = `<i class="fas fa-map-marker-alt"></i><strong>${loc.title}</strong><small>${loc.address}</small>`;
                     card.onclick = () => {
                         window.selectClientLocation(loc);
+                    };
+                    // Soporte para selección con tecla Enter
+                    card.onkeydown = (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            window.selectClientLocation(loc);
+                        }
                     };
                     listEl.appendChild(card);
                 });
@@ -1005,23 +1199,47 @@ document.addEventListener('DOMContentLoaded', function() {
     // }
 
     window.submitQuickLocation = async function() {
-        const data = {
-            client_id: document.getElementById('c-location-client-id').value,
-            title: document.getElementById('c-location-title').value,
-            address: document.getElementById('c-location-address').value,
-            location_url: document.getElementById('c-location-url').value
-        };
+        const clientId = document.getElementById('c-location-client-id').value;
+        const title = document.getElementById('c-location-title').value;
+        const address = document.getElementById('c-location-address').value.trim();
+        const locationUrl = document.getElementById('c-location-url').value.trim();
+        const photoInput = document.getElementById('c-location-photo');
 
-        if(!data.title || !data.address || !data.location_url) return Toast.fire("Complete los datos", "warning");
+        // Validación mínima: Título Y (Link O Foto)
+        if(!title) {
+            return Toast.fire("El título es obligatorio (Ej: Casa, Oficina)", "warning");
+        }
+
+        const hasPhoto = photoInput && photoInput.files && photoInput.files[0];
+        if(!locationUrl && !hasPhoto) {
+            return Toast.fire("Debe proporcionar un Link de ubicación o una Foto de referencia", "warning");
+        }
+
+        const formData = new FormData();
+        formData.append('client_id', clientId);
+        formData.append('title', title);
+        formData.append('address', address);
+        formData.append('location_url', locationUrl);
+        
+        if (photoInput && photoInput.files[0]) {
+            formData.append('reference_photo', photoInput.files[0]);
+        }
 
         const resp = await fetch('?route=pos_save_client_location', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+            method: 'POST',
+            body: formData
         });
+
         const res = await resp.json();
         if(res.success) {
             Toast.fire(res.message, "success");
-            bsModalAddLocation.hide();
-            window.loadClientLocations(data.client_id);
+            if (bsModalAddLocation) bsModalAddLocation.hide();
+            window.loadClientLocations(clientId);
+            // Limpiar campos después de guardar exitosamente
+            document.getElementById('c-location-title').value = '';
+            document.getElementById('c-location-address').value = '';
+            document.getElementById('c-location-url').value = '';
+            if (photoInput) photoInput.value = '';
         } else { Toast.fire(res.message, "error"); }
     }
 
@@ -1195,7 +1413,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
             });
 
-            const res = await response.json();
+            const text = await response.text();
+            let res;
+            try {
+                res = JSON.parse(text);
+            } catch (jsonErr) {
+                // Si falla el parseo, mostramos el error real de PHP en la consola de forma legible
+                console.group("ERROR CRÍTICO DEL SERVIDOR");
+                console.error("La respuesta no es un JSON válido.");
+                console.log("Respuesta recibida:", text);
+                console.groupEnd();
+                throw new Error("Error interno del servidor. Ver detalles en la consola (F12).");
+            }
+
             if(res.success) {
                 Toast.fire(res.message, "success");
                 
@@ -1241,6 +1471,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 toggleLoadingOverlay(false);
             }
         } catch (e) {
+            console.error("Error en submitPOS:", e);
             Toast.fire("Error crítico al procesar venta", "error");
             if(confirmBtn) confirmBtn.disabled = false;
             toggleLoadingOverlay(false);

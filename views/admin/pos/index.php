@@ -341,9 +341,13 @@
                     <label class="form-label small fw-bold">Dirección / Referencia</label>
                     <textarea id="c-location-address" class="form-control" rows="2" placeholder="Calle, número, color de portón..."></textarea>
                 </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Foto de Referencia (Fachada/Portón)</label>
+                    <input type="file" id="c-location-photo" class="form-control" accept="image/*">
+                </div>
             </div>
             <div class="modal-footer border-0">
-                <button type="button" class="btn btn-success w-100 fw-bold py-2" onclick="submitQuickLocation()">GUARDAR DIRECCIÓN</button>
+                <button type="button" id="btn-save-location" class="btn btn-success w-100 fw-bold py-2" onclick="submitQuickLocation()">GUARDAR DIRECCIÓN</button>
             </div>
         </div>
     </div>
@@ -420,134 +424,3 @@
 </div>
 
 <script src="<?php echo $baseUrl; ?>js/pos.js"></script>
-
-<script>
-/**
- * Valida requisitos mínimos para Delivery antes de procesar
- */
-function validateAndConfirmPOS() {
-    const deliveryType = document.getElementById('f-delivery-type').value;
-    const clientId = document.getElementById('f-client-id').value;
-    const addressDisplay = document.getElementById('f-location-display').innerText;
-    
-    if (deliveryType === 'delivery') {
-        // 1. Bloqueo de Cliente Ocasional
-        if (clientId == "1") {
-            Swal.fire("Atención", "Para envíos por delivery debe seleccionar o registrar un cliente con número de contacto. No se permite usar 'Cliente Ocasional'.", "warning");
-            return;
-        }
-        // 2. Validación de Ubicación
-        if (addressDisplay.includes('Seleccionar dirección')) {
-            Swal.fire("Ubicación Requerida", "Debe seleccionar una dirección de entrega válida para pedidos por delivery.", "warning");
-            return;
-        }
-    }
-
-    // Si pasa filtros, procede a la función original de confirmación
-    if (typeof confirmPOS === 'function') confirmPOS();
-}
-
-/**
- * Intercepta el registro de cliente para solicitar confirmación
- */
-function confirmSubmitQuickClient() {
-    const name = document.getElementById('c-name').value.trim();
-    
-    if (!name) {
-        Toast.fire("El nombre del cliente es obligatorio", "error");
-        document.getElementById('c-name').focus();
-        return;
-    }
-
-    Swal.fire({
-        title: '¿Confirmar nuevo cliente?',
-        text: `Se registrará a "${name}" y se asignará automáticamente a este pedido.`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Sí, registrar',
-        cancelButtonText: 'Revisar datos',
-        confirmButtonColor: '#0984e3',
-        cancelButtonColor: '#64748b',
-        focusConfirm: true,
-        didOpen: () => {
-            // Asegurar que el modal de SweetAlert esté por delante del stack de modales de Bootstrap (pos.js)
-            const swalContainer = Swal.getContainer();
-            if (swalContainer) swalContainer.style.zIndex = '10000';
-            
-            // Reforzar el foco en el botón de confirmación para agilizar el flujo de teclado
-            Swal.getConfirmButton().focus();
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Llamamos a la función original que procesa el AJAX en pos.js
-            if (typeof submitQuickClient === 'function') submitQuickClient();
-        }
-    });
-}
-
-/**
- * UX: Navegación por teclado para el Registro Rápido de Clientes
- */
-document.addEventListener('DOMContentLoaded', function() {
-    const modalQuickClient = document.getElementById('modalCreateClient');
-    
-    if (modalQuickClient) {
-        // 1. Foco inicial automático al abrir
-        modalQuickClient.addEventListener('shown.bs.modal', function () {
-            document.getElementById('c-name').focus();
-        });
-
-        // 2. Definición del orden de recorrido
-        const focusableSelectors = [
-            '#c-name',
-            '#c-phone',
-            '#c-has-whatsapp',
-            '#c-email',
-            '#c-billing-name',
-            '#c-billing-ruc',
-            '#btn-submit-quick-client',
-            '#btn-close-quick-client'
-        ];
-
-        modalQuickClient.addEventListener('keydown', function(e) {
-            const activeElement = document.activeElement;
-            const currentIndex = focusableSelectors.findIndex(selector => activeElement.matches(selector));
-
-            if (currentIndex === -1) return;
-
-            const isEnter = (e.key === 'Enter');
-            const isNext = (e.key === 'ArrowDown' || e.key === 'ArrowRight');
-            const isPrev = (e.key === 'ArrowUp' || e.key === 'ArrowLeft');
-
-            if (isEnter || isNext || isPrev) {
-                // Si es Enter en el botón de registro, dejamos que el click natural (o submitQuickClient) actúe
-                if (isEnter && activeElement.id === 'btn-submit-quick-client') {
-                    return; 
-                }
-
-                // Evitar comportamientos por defecto
-                if (isEnter || isNext || isPrev) e.preventDefault();
-
-                let nextIndex;
-                
-                if (isPrev) {
-                    // Flechas atrás: Recorrido circular inverso
-                    nextIndex = (currentIndex - 1 + focusableSelectors.length) % focusableSelectors.length;
-                } else {
-                    // Enter o Flechas adelante: Recorrido circular
-                    // Nota: Según el pedido, Enter NO debe incluir el botón cerrar en el "recorrido de campos" normal
-                    // pero para simplificar la lógica de "recorrer", seguiremos el orden del array.
-                    nextIndex = (currentIndex + 1) % focusableSelectors.length;
-                }
-
-                const nextElement = document.querySelector(focusableSelectors[nextIndex]);
-                if (nextElement) {
-                    nextElement.focus();
-                    // Si es un input de texto, seleccionar contenido para facilitar edición rápida
-                    if (nextElement.tagName === 'INPUT' && nextElement.type !== 'checkbox') nextElement.select();
-                }
-            }
-        });
-    }
-});
-</script>

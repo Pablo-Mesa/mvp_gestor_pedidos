@@ -2,6 +2,7 @@
 date_default_timezone_set('America/Asuncion');
 
 require_once '../config/db.php';
+require_once '../models/CashRegister.php';
 
 class Order {
     private $conn;
@@ -27,6 +28,7 @@ class Order {
     public $delivery_lat;       // Propiedad para snapshot (no persistente en orders)
     public $delivery_lng;       // Propiedad para snapshot (no persistente en orders)
     public $delivery_url;       // Propiedad para snapshot (no persistente en orders)
+    public $reference_photo;    // Foto de referencia de la ubicación
     public $created_at;
     public $error; // Para capturar mensajes de error SQL
 
@@ -48,7 +50,8 @@ class Order {
                 if ($this->client_id == 1) {
                     throw new Exception("Integridad: No se permite delivery para 'Cliente Ocasional'.");
                 }
-                if (empty($this->delivery_address) && empty($this->delivery_url)) {
+                // Si tiene client_location_id, permitimos que proceda (podría ser una ubicación con solo foto)
+                if (empty($this->client_location_id) && empty($this->delivery_address) && empty($this->delivery_url)) {
                     throw new Exception("Integridad: El pedido es delivery pero falta la ubicación o dirección.");
                 }
             }
@@ -134,7 +137,7 @@ class Order {
 
         $query = "SELECT o.*, c.name as user_name, c.phone as user_phone, ch.name as channel_name, ch.icon as channel_icon, 
                          s.address_snapshot as delivery_address, s.lat_snapshot as delivery_lat, s.lng_snapshot as delivery_lng, s.url_snapshot as delivery_url,
-                         s.delivery_user_id, d.name as delivery_name, drd.price as delivery_cost, drd.km_from, drd.km_to,
+                         s.delivery_user_id, d.name as delivery_name, drd.price as delivery_cost, drd.km_from, drd.km_to, cl.reference_photo,
                          (SELECT COALESCE(SUM(p.monto_total), 0) FROM pagos p JOIN pos_ventas_cabecera v ON p.venta_id = v.id WHERE v.order_id = o.id AND v.estado = 1) as total_paid,
                          (SELECT COUNT(*) FROM pos_ventas_cabecera WHERE order_id = o.id) as has_invoice,
                          (SELECT COUNT(*) FROM pos_ventas_cabecera WHERE order_id = o.id AND nro_factura LIKE 'FAC-%') as has_legal_invoice
@@ -142,6 +145,7 @@ class Order {
                   LEFT JOIN clients c ON o.client_id = c.id 
                   LEFT JOIN order_channels ch ON o.channel_id = ch.id
                   LEFT JOIN order_shipments s ON o.id = s.order_id
+                  LEFT JOIN client_locations cl ON s.client_location_id = cl.id
                   LEFT JOIN delivery_rate_details drd ON s.delivery_rate_id = drd.id
                   LEFT JOIN users d ON s.delivery_user_id = d.id
                   WHERE 1=1";
@@ -235,13 +239,14 @@ class Order {
     public function readOne() {
         $query = "SELECT o.*, c.name as user_name, c.email as user_email, c.phone as user_phone,
                          s.address_snapshot as delivery_address, s.lat_snapshot as delivery_lat, s.lng_snapshot as delivery_lng, s.url_snapshot as delivery_url,
-                         s.delivery_user_id, st.name as staff_name, drd.price as delivery_cost,
+                         s.delivery_user_id, st.name as staff_name, drd.price as delivery_cost, cl.reference_photo,
                          (SELECT COALESCE(SUM(p.monto_total), 0) FROM pagos p JOIN pos_ventas_cabecera v ON p.venta_id = v.id WHERE v.order_id = o.id AND v.estado = 1) as total_paid,
                          (SELECT COUNT(*) FROM pos_ventas_cabecera WHERE order_id = o.id) as has_invoice,
                          (SELECT COUNT(*) FROM pos_ventas_cabecera WHERE order_id = o.id AND nro_factura LIKE 'FAC-%') as has_legal_invoice
                   FROM " . $this->table . " o
                   JOIN clients c ON o.client_id = c.id
                   LEFT JOIN order_shipments s ON o.id = s.order_id
+                  LEFT JOIN client_locations cl ON s.client_location_id = cl.id
                   LEFT JOIN delivery_rate_details drd ON s.delivery_rate_id = drd.id
                   LEFT JOIN users st ON o.user_id = st.id
                   WHERE o.id = :id LIMIT 0,1";

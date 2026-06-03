@@ -825,8 +825,11 @@ class OrderController {
         $settingModel = new Setting();
         $settings = $settingModel->getAll();
         
-        $storeLat = $settings['store_lat'] ?? -25.3006;
-        $storeLng = $settings['store_lng'] ?? -57.6359;
+        // Forzar a float para evitar advertencias de tipos en PHP 8+
+        $storeLat = (float)($settings['store_lat'] ?? -25.3006);
+        $storeLng = (float)($settings['store_lng'] ?? -57.6359);
+        $clientLat = (float)$clientLat;
+        $clientLng = (float)$clientLng;
 
         // Radio de la tierra en KM
         $earthRadius = 6371;
@@ -959,9 +962,12 @@ class OrderController {
      * Endpoint para guardar pedidos desde el POS (Admin/Mostrador)
      */
     public function posStore() {
+        while (ob_get_level()) ob_end_clean(); 
+        ob_start(); 
         header('Content-Type: application/json');
         
         if (!isset($_SESSION['user_role']) || !in_array($_SESSION['user_role'], ['admin', 'cajero', 'mozo'])) {
+            ob_clean();
             echo json_encode(['success' => false, 'message' => 'No autorizado']);
             exit;
         }
@@ -970,13 +976,20 @@ class OrderController {
         // No permitir registrar pedidos en el POS si no hay una caja abierta
         $cashModel = new CashRegister();
         if (!$cashModel->getActiveSession($_SESSION['user_id'])) {
+            ob_clean();
             echo json_encode(['success' => false, 'message' => 'ERROR: Debe abrir caja antes de realizar ventas.']);
             exit;
         }
 
         $input = json_decode(file_get_contents('php://input'), true);
-        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            ob_clean();
+            echo json_encode(['success' => false, 'message' => 'JSON de entrada inválido.']);
+            exit;
+        }
+
         if (!$input || empty($input['cart'])) {
+            ob_clean();
             echo json_encode(['success' => false, 'message' => 'El pedido está vacío']);
             exit;
         }
@@ -984,7 +997,7 @@ class OrderController {
         $order = new Order();
         $order->user_id = $_SESSION['user_id']; // Quién está en el POS
 
-        // MEJORA: Obtener el ID de cliente genérico desde los ajustes.
+        // Obtener el ID de cliente
         if (!empty($input['client_id'])) {
             $order->client_id = $input['client_id'];
         } else {
@@ -1001,23 +1014,25 @@ class OrderController {
         // --- VALIDACIÓN DE REGLAS DE NEGOCIO PARA DELIVERY ---
         if ($order->delivery_type === 'delivery') {
             if ($order->client_id == 1) {
+                ob_clean();
                 echo json_encode(['success' => false, 'message' => 'No se permite delivery para "Cliente Ocasional". Registre o seleccione un cliente específico para contar con número de contacto.']);
                 exit;
             }
             // Verificar existencia de teléfono
             $clientModel = new Client();
             $client = $clientModel->getById($order->client_id);
-            if (!$client || empty(trim($client['phone']))) {
+            if (!$client || empty(trim($client['phone'] ?? ''))) {
+                ob_clean();
                 echo json_encode(['success' => false, 'message' => 'El cliente seleccionado no tiene un número de contacto registrado. Actualice el perfil del cliente antes de continuar.']);
                 exit;
             }
         }
         
-        $order->client_location_id = $input['location_id'] ?? null;
+        $order->client_location_id = !empty($input['location_id']) ? $input['location_id'] : null;
         // Usamos los nombres de propiedades correctos definidos en el modelo Order
         $order->delivery_address = $input['delivery_address'] ?? ($input['delivery_type'] === 'delivery' ? 'Ubicación vía POS' : '');
-        $order->delivery_lat = $input['delivery_lat'] ?? $input['lat'] ?? null;
-        $order->delivery_lng = $input['delivery_lng'] ?? $input['lng'] ?? null;
+        $order->delivery_lat = !empty($input['lat']) ? $input['lat'] : (!empty($input['delivery_lat']) ? $input['delivery_lat'] : null);
+        $order->delivery_lng = !empty($input['lng']) ? $input['lng'] : (!empty($input['delivery_lng']) ? $input['delivery_lng'] : null);
         $order->delivery_url = $input['location_url'] ?? $input['delivery_url'] ?? null;
 
         // Si se solicita guardar una nueva ubicación permanentemente para este cliente
@@ -1047,6 +1062,7 @@ class OrderController {
                     $order->delivery_rate_id = $pricing['delivery_rate_id'];
                 } elseif (!$order->delivery_rate_id) {
                     // Si el motor falla y no hay tarifa manual, error
+                    ob_clean();
                     echo json_encode(['success' => false, 'message' => 'La ubicación está fuera de zona. Verifique coordenadas o link.']);
                     exit;
                 }
@@ -1065,6 +1081,7 @@ class OrderController {
         $order->total = $total + $deliveryCost;
 
         if ($order->create()) {
+            ob_clean();
             // El pedido queda en estado "Confirmado" por defecto para permitir flujo posterior
             $order->user_id = $_SESSION['user_id'];
 
@@ -1075,6 +1092,7 @@ class OrderController {
                 'total' => $order->total
             ]);
         } else {
+            ob_clean();
             echo json_encode(['success' => false, 'message' => $order->error]);
         }
     }
@@ -1092,15 +1110,38 @@ class OrderController {
             exit;
         }
 
-        $input = json_decode(file_get_contents('php://input'), true);
-        if (!$input) {
-            echo json_encode(['success' => false, 'message' => 'Cuerpo de la petición inválido.']);
+        // Cambiamos a $_POST ya que FormData envía los datos en este formato
+        $input = $_POST;
+
+        $photoUploaded = (isset($_FILES['reference_photo']) && $_FILES['reference_photo']['error'] === UPLOAD_ERR_OK);
+        $hasUrl = !empty(trim($input['location_url'] ?? ''));
+
+        if (empty($input['client_id']) || empty($input['title']) || (!$hasUrl && !$photoUploaded)) {
+            echo json_encode(['success' => false, 'message' => 'Datos incompletos para guardar ubicación.']);
             exit;
         }
 
-        if (empty($input['client_id']) || empty($input['title']) || empty($input['address']) || empty(trim($input['location_url'] ?? ''))) {
-            echo json_encode(['success' => false, 'message' => 'Datos incompletos para guardar ubicación.']);
-            exit;
+        $photoName = null;
+        // Procesamiento de la foto si existe
+        if (isset($_FILES['reference_photo']) && $_FILES['reference_photo']['error'] === UPLOAD_ERR_OK) {
+            $fileTmpPath = $_FILES['reference_photo']['tmp_name'];
+            $fileName = $_FILES['reference_photo']['name'];
+            $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+            
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+            if (in_array($fileExtension, $allowedExtensions)) {
+                $uploadDir = '../public/uploads/locations/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+                
+                $newFileName = 'loc_' . $input['client_id'] . '_' . time() . '.' . $fileExtension;
+                $dest_path = $uploadDir . $newFileName;
+                
+                if (move_uploaded_file($fileTmpPath, $dest_path)) {
+                    $photoName = $newFileName;
+                }
+            }
         }
 
         $locationModel = new ClientLocation();
@@ -1110,7 +1151,8 @@ class OrderController {
             'address'   => $input['address'],
             'location_url' => $input['location_url'] ?? null,
             'lat'       => $input['lat'] ?? null,
-            'lng'       => $input['lng'] ?? null
+            'lng'       => $input['lng'] ?? null,
+            'reference_photo' => $photoName
         ];
 
         if ($locationModel->create($data)) {

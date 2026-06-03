@@ -216,6 +216,25 @@
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
     }
+
+    /* Control de altura para el modal de fotos de referencia */
+    .swal-reference-popup {
+        max-height: 90vh !important;
+        overflow: auto !important; /* Habilitamos scroll para cuando la imagen se amplíe */
+    }
+    .swal-reference-img {
+        max-height: 65vh !important;
+        object-fit: contain !important;
+        transition: width 0.3s ease, max-width 0.3s ease;
+        cursor: zoom-in;
+    }
+    /* Estado ampliado para ver detalles */
+    .swal-reference-img.img-zoomed {
+        max-height: none !important;
+        width: 180% !important;
+        max-width: 180% !important;
+        cursor: zoom-out;
+    }
 </style>
 
 <div id="delivery-orders-container">
@@ -244,7 +263,8 @@ function renderOrderCardHTML($order) {
     // Normalizar URL: Asegurar que tenga protocolo para evitar que el navegador la trate como relativa
     $deliveryUrl = trim($order['delivery_url'] ?? '');
     if (!empty($deliveryUrl) && strpos($deliveryUrl, 'http') !== 0) {
-        $deliveryUrl = 'https://' . $deliveryUrl;
+        $prefix = (strpos($deliveryUrl, 'google.com') === 0) ? 'https://www.' : 'https://';
+        $deliveryUrl = $prefix . $deliveryUrl;
     }
 
     // Integridad: El cobro depende estrictamente del registro contable (is_paid)
@@ -390,6 +410,7 @@ function renderOrderCardHTML($order) {
 } ?>
 
 <script>
+
 /**
  * Estado global del repartidor para evitar recargas innecesarias
  */
@@ -419,7 +440,22 @@ async function refreshDeliveryOrders(forceUpdate = false) {
         const currentFingerprint = currentOrdersData.map(o => `${o.id}-${o.status}`).join('|');
         const newFingerprint = newData.map(o => `${o.id}-${o.status}`).join('|');
 
-        if (currentFingerprint !== newFingerprint || forceUpdate) {
+        // Si la estructura (IDs o Estados) es igual, verificamos cambios aislados en la información de pago
+        if (currentFingerprint === newFingerprint && !forceUpdate) {
+            newData.forEach(newOrder => {
+                const oldOrder = currentOrdersData.find(o => o.id === newOrder.id);
+                if (oldOrder) {
+                    const paymentChanged = (oldOrder.is_paid != newOrder.is_paid) || (oldOrder.has_invoice != newOrder.has_invoice);
+                    if (paymentChanged) {
+                        console.log(`Actualizando info de pago aislada para Pedido #${newOrder.id}`);
+                        updateOrderPaymentUI(newOrder);
+                        // Sincronizar data local para evitar actualizaciones redundantes en el próximo ciclo
+                        oldOrder.is_paid = newOrder.is_paid;
+                        oldOrder.has_invoice = newOrder.has_invoice;
+                    }
+                }
+            });
+        } else {
             console.log("Detectados cambios en pedidos. Actualizando vista...");
             
             // Detectar si hay IDs nuevos (pedidos recién asignados)
@@ -437,6 +473,41 @@ async function refreshDeliveryOrders(forceUpdate = false) {
     } catch (err) {
         console.error("Error sincronizando pedidos:", err);
     }
+}
+
+/**
+ * Actualiza aisladamente el bloque de pago de un pedido sin redibujar toda la tarjeta
+ */
+function updateOrderPaymentUI(order) {
+    const card = document.getElementById(`card-${order.id}`);
+    if (!card) return;
+
+    const paymentSummary = card.querySelector('.payment-summary');
+    if (!paymentSummary) return;
+
+    const mustCollect = (parseInt(order.is_paid) === 0);
+    const hasInvoice = (parseInt(order.has_invoice) > 0);
+    const formattedTotal = new Intl.NumberFormat('es-PY').format(order.total);
+    const formattedEarnings = new Intl.NumberFormat('es-PY').format(order.delivery_cost || 0);
+
+    paymentSummary.innerHTML = `
+        <div class="payment-row">
+            <span style="font-size: 0.8rem; color: #636e72;">Método: <strong>${order.payment_method}</strong></span>
+            <div>
+            ${hasInvoice ? `
+                <span class="badge-payment" style="background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; margin-right: 4px; padding: 3px 8px;">
+                    <i class="fas fa-file-invoice"></i>
+                </span>` : ''}
+            <span class="badge-payment ${mustCollect ? 'bg-collect' : 'bg-paid'}">
+                ${mustCollect ? 'A Cobrar' : 'Ya Pagado'}
+            </span>
+            </div>
+        </div>
+        <div class="payment-row" style="margin-top: 4px;">
+            <span class="amount-to-collect">Gs. ${formattedTotal}</span>
+            <span style="font-size: 0.8rem; color: #a4b0be;">Envío: Gs. ${formattedEarnings}</span>
+        </div>
+    `;
 }
 
 /**
@@ -510,7 +581,8 @@ function renderOrderCardJS(order) {
     // Normalizar URL en JS también para consistencia
     let deliveryUrl = (order.delivery_url || '').trim();
     if (deliveryUrl && !deliveryUrl.startsWith('http')) {
-        deliveryUrl = 'https://' + deliveryUrl;
+        const prefix = deliveryUrl.startsWith('google.com') ? 'https://www.' : 'https://';
+        deliveryUrl = prefix + deliveryUrl;
     }
 
     return `
@@ -643,7 +715,17 @@ function showReferencePhoto(photo) {
         imageAlt: 'Foto de referencia',
         confirmButtonText: 'Entendido',
         confirmButtonColor: '#2d3436',
-        closeButtonHtml: '<i class="fas fa-times"></i>'
+        closeButtonHtml: '<i class="fas fa-times"></i>',
+        customClass: {
+            popup: 'swal-reference-popup',
+            image: 'swal-reference-img'
+        },
+        didOpen: () => {
+            const img = Swal.getImage();
+            img.addEventListener('click', () => {
+                img.classList.toggle('img-zoomed');
+            });
+        }
     });
 }
 

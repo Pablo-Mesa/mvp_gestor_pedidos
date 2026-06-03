@@ -10,18 +10,18 @@
                 </span>
             </div>
             
-            <p><strong>Cliente:</strong> <?php echo htmlspecialchars($order['user_name']); ?></p>
+            <p><strong>Cliente:</strong> <?php echo htmlspecialchars($order['user_name'] ?? ''); ?></p>
             <p><strong>Teléfono:</strong> <?php echo htmlspecialchars($order['user_phone'] ?? 'No registrado'); ?></p>
-            <p><strong>Email:</strong> <?php echo htmlspecialchars($order['user_email']); ?></p>
+            <p><strong>Email:</strong> <?php echo htmlspecialchars($order['user_email'] ?? ''); ?></p>
             <hr>
             <p><strong>Origen:</strong> <?php echo $order['channel_id'] == 1 ? '🌐 Web' : '🏪 Mostrador'; ?></p>
             <?php if(!empty($order['staff_name'])): ?>
-                <p><strong>Registrado por:</strong> <?php echo htmlspecialchars($order['staff_name']); ?></p>
+                <p><strong>Registrado por:</strong> <?php echo htmlspecialchars($order['staff_name'] ?? ''); ?></p>
             <?php endif; ?>
             
             <?php if($order['observation']): ?>
                 <div style="background: #fff3cd; padding: 10px; border-radius: 4px; margin-top: 10px; color: #856404;">
-                    <strong>⚠️ Observación:</strong> <?php echo htmlspecialchars($order['observation']); ?>
+                    <strong>⚠️ Observación:</strong> <?php echo htmlspecialchars($order['observation'] ?? ''); ?>
                 </div>
             <?php endif; ?>
         </div>
@@ -38,7 +38,7 @@
                 </tr>
                 <?php foreach($details as $item): ?>
                 <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 8px;"><?php echo htmlspecialchars($item['product_name']); ?></td>
+                    <td style="padding: 8px;"><?php echo htmlspecialchars($item['product_name'] ?? ''); ?></td>
                     <td style="padding: 8px; text-align: center;"><?php echo $item['quantity']; ?></td>
                     <td style="padding: 8px; text-align: right;"><?php echo number_format($item['price'], 0); ?></td>
                     <td style="padding: 8px; text-align: right; font-weight: bold;"><?php echo number_format($item['price'] * $item['quantity'], 0); ?></td>

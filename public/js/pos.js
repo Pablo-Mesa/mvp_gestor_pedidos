@@ -53,6 +53,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 const searchBtn = document.getElementById('btn-search-client');
                 if (searchBtn) setTimeout(() => searchBtn.focus(), 50);
             }
+        } else if (modalId === 'modalSelectLocation') {
+            const finalizeModal = document.getElementById('modalFinalize');
+            if (finalizeModal && finalizeModal.classList.contains('show')) {
+                // UX: El flujo lógico tras seleccionar ubicación es ir a la tarifa (si es manual) o a las notas
+                const selectors = ['#f-delivery-rate-id', '#f-observation', '.modal-footer .btn-success'];
+                setTimeout(() => {
+                    for (let s of selectors) {
+                        const el = document.querySelector(s);
+                        if (el && el.offsetParent !== null && !el.disabled) {
+                            el.focus();
+                            break;
+                        }
+                    }
+                }, 50);
+            }
+        } else if (modalId === 'ticketModal') {
+            const searchInput = document.getElementById('posSearch');
+            if (searchInput) setTimeout(() => searchInput.focus(), 50);
         }
     });
 
@@ -79,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const isCashOpen = window.posConfig ? window.posConfig.isCashOpen : false;
 
     // Instancias de Modales
-    let bsModalFinalize, bsModalSearch, bsModalCreate, payModal, bsModalSelectLocation, bsModalAddLocation;
+    let bsModalFinalize, bsModalSearch, bsModalCreate, payModal, bsModalSelectLocation, bsModalAddLocation, bsModalTicket;
 
     const totalEl = document.getElementById('posTotal');
     const itemsEl = document.getElementById('ticketItems');
@@ -176,9 +194,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderTicket() {
         // UX: El botón de vaciar carrito solo es visible si hay items
         const clearBtn = document.querySelector('.btn-clear-cart');
+        const expandBtn = document.getElementById('btn-expand-ticket');
+        const hasItems = posCart.length > 0;
+
         if (clearBtn) {
-            if (posCart.length > 0) clearBtn.classList.add('show');
+            if (hasItems) clearBtn.classList.add('show');
             else clearBtn.classList.remove('show');
+        }
+
+        if (expandBtn) {
+            expandBtn.style.display = hasItems ? 'inline-block' : 'none';
         }
 
         // Persistencia resiliente: Guardar en localStorage si hay items, borrar si está vacío
@@ -508,6 +533,7 @@ document.addEventListener('DOMContentLoaded', function() {
     payModal = new bootstrap.Modal(document.getElementById('modalPayOrder'));
     bsModalSelectLocation = new bootstrap.Modal(document.getElementById('modalSelectLocation'));
     bsModalAddLocation = new bootstrap.Modal(document.getElementById('modalAddLocation'));
+    bsModalTicket = new bootstrap.Modal(document.getElementById('ticketModal'));
 
     const payInputs = Array.from(document.querySelectorAll('.pay-input'));
     const paySubmitBtn = document.getElementById('pay-btn-submit');
@@ -616,48 +642,68 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('modalFinalize').addEventListener('shown.bs.modal', function () {
         const modalEl = document.getElementById('modalFinalize');
-        const searchBtn = modalEl.querySelector('[onclick="openSearchClient()"]');
-        const createBtn = modalEl.querySelector('[onclick="openCreateClient()"]');
+        const searchBtn = document.getElementById('btn-search-client');
 
-        const delivery = document.getElementById('f-delivery-type');
-        const selectLocationBtn = document.getElementById('btn-select-location');
-        const payment = document.getElementById('f-payment-method');
-        const observation = document.getElementById('f-observation');
-        // Selector robusto para capturar tanto confirmPOS() como validateAndConfirmPOS()
-        const confirmBtn = modalEl.querySelector('.btn-success[onclick*="onfirmPOS"]');
-
-        // Colocar el foco explícitamente cuando el modal ya es visible
+        // Colocar el foco inicial en el botón de búsqueda de clientes
         if (searchBtn) {
             searchBtn.focus();
         }
 
-        const focusPath = [searchBtn, createBtn, payment, delivery, selectLocationBtn, observation, confirmBtn];
+        // Inicializar navegación por teclado si no se ha hecho aún
+        if (!modalEl.dataset.navInitialized) {
+            modalEl.addEventListener('keydown', function(e) {
+                const active = document.activeElement;
+                const isEnter = (e.key === 'Enter');
+                const isNext = (e.key === 'ArrowDown');
+                const isPrev = (e.key === 'ArrowUp');
 
-        focusPath.forEach((el, index) => {
-            if (el) {
-                el.onkeydown = (e) => {
-                    if (e.key === 'Enter') { /*&& e.target.tagName !== 'TEXTAREA'*/
-                        e.preventDefault();
-                        let nextFound = false;
-                        for (let i = index + 1; i < focusPath.length; i++) {
-                            // offsetParent es null si el elemento o sus padres tienen display:none
-                            if (focusPath[i] && focusPath[i].offsetParent !== null) {
-                                focusPath[i].focus();
-                                nextFound = true;
-                                break;
-                            }
-                        }
-                        if (!nextFound && confirmBtn) {
-                            if (el === confirmBtn) {
-                                confirmBtn.click();
-                            } else {
-                                confirmBtn.focus();
-                            }
-                        }
-                    }
-                };
-            }
-        });
+                if (!isEnter && !isNext && !isPrev) return;
+
+                // Selectores en orden lógico de lectura de la vista
+                const selectors = [
+                    '.btn-close',
+                    '#btn-search-client',
+                    '.btn-success[onclick*="openCreateClient"]',
+                    '#f-payment-method',
+                    '#f-delivery-type',
+                    '#btn-select-location',
+                    '#f-delivery-rate-id',
+                    '#f-observation',
+                    '.modal-footer .btn-light',
+                    '.modal-footer .btn-success'
+                ];
+
+                // Filtrar solo los elementos que existen y están visibles (pueden recibir foco)
+                const elements = selectors
+                    .map(s => modalEl.querySelector(s))
+                    .filter(el => el && el.offsetParent !== null);
+
+                const currentIndex = elements.indexOf(active);
+                if (currentIndex === -1) return;
+
+                // Permitir que Enter active botones normalmente (excepto el de cerrar)
+                if (isEnter && active.tagName === 'BUTTON' && !active.classList.contains('btn-close')) {
+                    return;
+                }
+
+                // Prevenir saltos de línea en textarea y scroll de flechas
+                e.preventDefault();
+
+                let nextIndex;
+                if (isPrev) {
+                    nextIndex = (currentIndex - 1 + elements.length) % elements.length;
+                } else {
+                    nextIndex = (currentIndex + 1) % elements.length;
+                }
+
+                const nextEl = elements[nextIndex];
+                if (nextEl) {
+                    nextEl.focus();
+                    if (typeof nextEl.select === 'function') nextEl.select();
+                }
+            });
+            modalEl.dataset.navInitialized = "true";
+        }
     });
 
     // Foco automático para el buscador de clientes cuando termina la animación
@@ -1082,7 +1128,6 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             rateSelect.value = "";
             rateSelect.disabled = false; // Habilitado para selección manual
-            setTimeout(() => { rateSelect.focus(); }, 500);
         }
 
         // Re-enfocar el modal principal ya que su contenido (contenedor de tarifas) cambió de visibilidad
@@ -1241,6 +1286,84 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('c-location-url').value = '';
             if (photoInput) photoInput.value = '';
         } else { Toast.fire(res.message, "error"); }
+    }
+
+    /**
+     * Muestra el detalle del ticket en un modal más grande y visual
+     */
+    window.openTicketModal = function() {
+        const modalBody = document.querySelector('#ticketModal .modal-body');
+        if (!modalBody) return;
+
+        if (posCart.length === 0) {
+            modalBody.innerHTML = `
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-receipt fa-4x mb-3 opacity-25"></i>
+                    <p class="h5">El pedido está vacío</p>
+                    <p class="small">Cargue productos para ver el detalle extendido.</p>
+                </div>`;
+        } else {
+            let total = 0;
+            let html = `
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light text-uppercase small">
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-center" style="width: 140px;">Cantidad</th>
+                                <th class="text-end" style="width: 120px;">Unitario</th>
+                                <th class="text-end" style="width: 140px;">Subtotal</th>
+                                <th class="text-center" style="width: 50px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+            
+            posCart.forEach(item => {
+                const subtotal = item.price * item.quantity;
+                total += subtotal;
+                html += `
+                    <tr>
+                        <td><span class="fw-bold text-dark">${item.name}</span></td>
+                        <td class="text-center">
+                            <div class="input-group input-group-sm justify-content-center">
+                                <button class="btn btn-outline-secondary" onclick="updateItemQtyModal('${item.id}', -1)"><i class="fas fa-minus"></i></button>
+                                <span class="input-group-text bg-white fw-bold px-3">${item.quantity}</span>
+                                <button class="btn btn-outline-secondary" onclick="updateItemQtyModal('${item.id}', 1)"><i class="fas fa-plus"></i></button>
+                            </div>
+                        </td>
+                        <td class="text-end text-muted">${new Intl.NumberFormat('es-PY').format(item.price)}</td>
+                        <td class="text-end fw-bold text-primary">${new Intl.NumberFormat('es-PY').format(subtotal)}</td>
+                        <td class="text-center">
+                            <button class="btn btn-link text-danger p-0" onclick="removeFromTicket('${item.id}'); openTicketModal();" title="Quitar item">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+                <div class="alert alert-success mt-4 d-flex justify-content-between align-items-center mb-0 p-3 border-0 shadow-sm">
+                    <span class="fw-bold h5 mb-0 text-uppercase">Total del Pedido:</span>
+                    <span class="h3 fw-bold mb-0">Gs. ${new Intl.NumberFormat('es-PY').format(total)}</span>
+                </div>`;
+            modalBody.innerHTML = html;
+        }
+        bsModalTicket.show();
+    }
+
+    window.updateItemQtyModal = function(id, delta) {
+        const item = posCart.find(i => i.id == id);
+        if (item) {
+            item.quantity += delta;
+            if (item.quantity <= 0) {
+                removeFromTicket(id);
+            }
+            renderTicket();
+            if (document.getElementById('ticketModal').classList.contains('show')) openTicketModal();
+        }
     }
 
     /**
@@ -1487,6 +1610,12 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const finalizeBtn = document.getElementById('btnOpenFinalize');
             if (finalizeBtn && !finalizeBtn.disabled) finalizeBtn.click();
+        }
+        
+        // F6: Ver Detalle del Ticket (Expandido)
+        if (e.key === 'F6') {
+            e.preventDefault();
+            window.openTicketModal();
         }
         
         // F3: Buscar Cliente (si el modal de finalizar está abierto)

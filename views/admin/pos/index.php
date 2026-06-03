@@ -80,9 +80,14 @@
                 <h3><i class="fas fa-shopping-cart"></i> Nuevo Pedido</h3>
                 <small id="current-time"></small>
             </div>
-            <button class="btn-clear-cart" onclick="confirmClearCart()" title="Vaciar Pedido">
-                <i class="fas fa-trash-alt"></i>
-            </button>
+            <div class="d-flex gap-2">
+                <button id="btn-expand-ticket" class="btn btn-sm btn-outline-light border-secondary" onclick="openTicketModal()" title="Ver Detalle Extendido [F6]" style="display: none;">
+                    <i class="fas fa-expand-alt"></i>
+                </button>
+                <button class="btn-clear-cart" onclick="confirmClearCart()" title="Vaciar Pedido">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
         </div>
 
         <div class="ticket-items" id="ticketItems">
@@ -421,6 +426,27 @@
     <div class="spinner-border text-light mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
     <h5 class="fw-bold">PROCESANDO OPERACIÓN...</h5>
     <p class="small opacity-75">Por favor, no cierre ni refresque la ventana.</p>
+</div>
+
+<!-- Modal para mostrar los detalles del ticket -->
+<div class="modal fade" id="ticketModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold" id="ticketModalLabel"><i class="fas fa-receipt me-2 text-warning"></i>Detalle del Pedido Actual</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Aqui se mostrarán los detalles del ticket vía JS -->
+            </div>
+            <div class="modal-footer bg-light border-top-0">
+                <button type="button" class="btn btn-outline-secondary fw-bold px-4" data-bs-dismiss="modal">CERRAR</button>
+                <button type="button" class="btn btn-success fw-bold px-5" onclick="bootstrap.Modal.getInstance(document.getElementById('ticketModal')).hide(); openFinalizeModal();">
+                    FINALIZAR VENTA <i class="fas fa-chevron-right ms-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="<?php echo $baseUrl; ?>js/pos.js"></script>

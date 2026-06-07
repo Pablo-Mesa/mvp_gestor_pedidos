@@ -984,16 +984,19 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     window.confirmSubmitQuickClient = function() {
         const name = document.getElementById('c-name').value.trim();
+        const phone = document.getElementById('c-phone').value.trim();
         
-        if (!name) {
-            Toast.fire("El nombre del cliente es obligatorio", "error");
-            document.getElementById('c-name').focus();
+        if (!phone) {
+            Toast.fire("El número de teléfono es obligatorio", "error");
+            document.getElementById('c-phone').focus();
             return;
         }
 
+        const displayName = name || `Cliente (${phone})`;
+
         Swal.fire({
             title: '¿Confirmar nuevo cliente?',
-            text: `Se registrará a "${name}" y se asignará automáticamente a este pedido.`,
+            text: `Se registrará a "${displayName}" y se asignará automáticamente a este pedido.`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Sí, registrar',

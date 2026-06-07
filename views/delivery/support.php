@@ -159,8 +159,16 @@ async function sendBaseWA(phone, text, btn = null) {
         }
     }
 
-    // Asegurar formato internacional de Paraguay
-    const cleanPhone = phone.startsWith('595') ? phone : '595' + (phone.startsWith('0') ? phone.substring(1) : phone);
+    // Normalización robusta para WhatsApp
+    let cleanPhone = phone.replace(/\D/g, '');
+    if (!cleanPhone.startsWith('595')) {
+        if (cleanPhone.startsWith('0')) {
+            cleanPhone = '595' + cleanPhone.substring(1);
+        } else {
+            cleanPhone = '595' + cleanPhone;
+        }
+    }
+
     const finalUrl = messageBody 
         ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageBody)}` 
         : `https://wa.me/${cleanPhone}`;

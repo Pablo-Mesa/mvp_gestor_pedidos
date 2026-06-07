@@ -829,10 +829,24 @@ function openWhatsAppMenu(phone, orderId) {
 }
 
 function sendWA(phone, text) {
-    // Formato internacional para Paraguay (595)
+    // 1. Limpiar el número de cualquier carácter no numérico (espacios, +, -, etc.)
+    let cleanPhone = String(phone).replace(/\D/g, '');
+
+    // 2. Normalizar el formato para Paraguay (595)
+    if (!cleanPhone.startsWith('595')) {
+        if (cleanPhone.startsWith('0')) {
+            // Caso: 0981... -> Quitar el 0 y poner 595
+            cleanPhone = '595' + cleanPhone.substring(1);
+        } else {
+            // Caso: 981... -> Simplemente poner 595
+            cleanPhone = '595' + cleanPhone;
+        }
+    }
+
     const url = text 
-        ? `https://wa.me/595${phone}?text=${text}` 
-        : `https://wa.me/595${phone}`;
+        ? `https://wa.me/${cleanPhone}?text=${text}` 
+        : `https://wa.me/${cleanPhone}`;
+
     window.open(url, '_blank');
     Swal.close();
 }

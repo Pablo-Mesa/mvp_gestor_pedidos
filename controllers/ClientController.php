@@ -65,13 +65,14 @@ class ClientController {
         header('Content-Type: application/json');
         $data = json_decode(file_get_contents('php://input'), true);
 
-        if (empty($data['name']) || empty($data['phone'])) {
-            echo json_encode(['success' => false, 'message' => 'Nombre y teléfono son obligatorios']);
+        if (empty($data['phone'])) {
+            echo json_encode(['success' => false, 'message' => 'El teléfono es obligatorio']);
             exit;
         }
 
         $client = new Client();
-        $client->name = $data['name'];
+        // Si el nombre viene vacío, generamos uno automático basado en el teléfono
+        $client->name = !empty($data['name']) ? $data['name'] : 'Cliente ' . $data['phone'];
         $client->phone = $data['phone'];
         // Si viene vacío o no existe, enviamos null para que el modelo lo maneje
         $client->email = !empty($data['email']) ? $data['email'] : null;

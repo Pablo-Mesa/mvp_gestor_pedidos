@@ -262,7 +262,7 @@ class Order {
      * Obtiene los detalles (platos) de un pedido
      */
     public function readDetails() {
-        $query = "SELECT od.*, p.name as product_name 
+        $query = "SELECT od.*, p.name as product_name, p.iva_porcentaje 
                   FROM orders_items od
                   JOIN products p ON od.product_id = p.id
                   WHERE od.order_id = :id";
@@ -408,8 +408,9 @@ class Order {
      * @param array|null $payments Detalles de los pagos recibidos. Si es null, no registra pago.
      * @param int|null $cash_register_id ID de la sesión de caja activa
      * @param string $docType Tipo de documento: 'ticket' o 'factura'
+     * @param bool $isElectronic Si se debe procesar como factura electrónica vía Sifende
      */
-    public function finalizeSale($payments = [], $cash_register_id = null, $docType = 'ticket') {
+    public function finalizeSale($payments = [], $cash_register_id = null, $docType = 'ticket', $isElectronic = false) {
         try {
             // Solo iniciamos transacción si no hay una activa
             $isNested = $this->conn->inTransaction();
@@ -454,33 +455,62 @@ class Order {
 
                 $details = $this->readDetails();
 
-                // 1. Calcular Impuestos (IVA 10% para Gastronomía en Py)
-                $total = $order['total'];
-                $iva10 = round($total / 11, 2);
-                $grav10 = $total - $iva10;
+                // 1. Inicializar Acumuladores de Impuestos (Normativa DNIT/SIFEN)
+                $totalGrav10 = 0; $totalIva10 = 0;
+                $totalGrav5 = 0;  $totalIva5 = 0;
+                $totalExenta = 0;
+                $totalVenta = $order['total'];
+
+                foreach ($details as $item) {
+                    $subtotal = $item['price'] * $item['quantity'];
+                    $ivaTipo = $item['iva_porcentaje'] ?? 10;
+
+                    if ($ivaTipo == 10) {
+                        $iva = round($subtotal / 11, 2);
+                        $totalIva10 += $iva;
+                        $totalGrav10 += ($subtotal - $iva);
+                    } elseif ($ivaTipo == 5) {
+                        $iva = round($subtotal / 21, 2);
+                        $totalIva5 += $iva;
+                        $totalGrav5 += ($subtotal - $iva);
+                    } else {
+                        $totalExenta += $subtotal;
+                    }
+                }
 
                 // Definir prefijo según el tipo de documento
                 $prefix = ($docType === 'factura') ? 'FAC-' : 'TK-';
 
                 // 2. Insertar Cabecera de Venta
                 $qVenta = "INSERT INTO pos_ventas_cabecera 
-                           (order_id, cliente_id, user_id, nro_factura, fecha_hora, gravada_10, iva_10, total_venta, estado) 
-                           VALUES (:oid, :cid, :uid, :nro, CURRENT_TIMESTAMP, :g10, :i10, :total, 1)";
+                           (order_id, cliente_id, user_id, nro_factura, fecha_hora, 
+                            gravada_10, iva_10, gravada_5, iva_5, exenta, 
+                            total_venta, estado, estado_sifen) 
+                           VALUES (:oid, :cid, :uid, :nro, CURRENT_TIMESTAMP, 
+                            :g10, :i10, :g5, :i5, :exe, 
+                            :total, 1, :est_sifen)";
+                
                 $stVenta = $this->conn->prepare($qVenta);
+                $estadoSifenInitial = ($isElectronic && $docType === 'factura') ? 'pendiente' : 'pendiente';
+
                 $stVenta->execute([
                     ':oid'   => $order['id'],
                     ':cid'   => $order['client_id'],
                     ':uid'   => $this->user_id,
                     ':nro'   => $prefix . str_pad($order['id'], 7, '0', STR_PAD_LEFT),
-                    ':g10'   => $grav10,
-                    ':i10'   => $iva10,
-                    ':total' => $total
+                    ':g10'   => $totalGrav10,
+                    ':i10'   => $totalIva10,
+                    ':g5'    => $totalGrav5,
+                    ':i5'    => $totalIva5,
+                    ':exe'   => $totalExenta,
+                    ':total' => $totalVenta,
+                    ':est_sifen' => $estadoSifenInitial
                 ]);
                 $ventaId = $this->conn->lastInsertId();
 
-                // 3. Insertar Detalles de Venta
-                $qDet = "INSERT INTO pos_ventas_detalle (venta_id, producto_id, cantidad, precio_unitario_venta, subtotal) 
-                         VALUES (:vid, :pid, :cant, :pre, :sub)";
+                // 3. Insertar Detalles de Venta con IVA tipo
+                $qDet = "INSERT INTO pos_ventas_detalle (venta_id, producto_id, cantidad, precio_unitario_venta, subtotal, iva_tipo) 
+                         VALUES (:vid, :pid, :cant, :pre, :sub, :iva)";
                 $stDet = $this->conn->prepare($qDet);
                 foreach ($details as $item) {
                     $stDet->execute([
@@ -488,7 +518,8 @@ class Order {
                         ':pid'  => $item['product_id'],
                         ':cant' => $item['quantity'],
                         ':pre'  => $item['price'],
-                        ':sub'  => $item['price'] * $item['quantity']
+                        ':sub'  => $item['price'] * $item['quantity'],
+                        ':iva'  => $item['iva_porcentaje'] ?? 10
                     ]);
                 }
             }

@@ -260,11 +260,19 @@
 function renderOrderCardHTML($order) {
     $phone = preg_replace('/[^0-9]/', '', $order['user_phone'] ?? '');
     
-    // Normalizar URL: Asegurar que tenga protocolo para evitar que el navegador la trate como relativa
     $deliveryUrl = trim($order['delivery_url'] ?? '');
-    if (!empty($deliveryUrl) && strpos($deliveryUrl, 'http') !== 0) {
-        $prefix = (strpos($deliveryUrl, 'google.com') === 0) ? 'https://www.' : 'https://';
-        $deliveryUrl = $prefix . $deliveryUrl;
+    $mapsUrl = '';
+
+    if (!empty($deliveryUrl)) {
+        if (strpos($deliveryUrl, 'http') !== 0) {
+            $deliveryUrl = 'https://' . $deliveryUrl;
+        }
+
+        if (strpos($deliveryUrl, 'google.com/maps') !== false || strpos($deliveryUrl, 'maps.app.goo.gl') !== false || strpos($deliveryUrl, 'goo.gl/maps') !== false || strpos($deliveryUrl, 'tinyurl.com') !== false) {
+            $mapsUrl = $deliveryUrl;
+        } else {
+            $mapsUrl = "https://www.google.com/maps/search/?api=1&query=" . urlencode($deliveryUrl);
+        }
     }
 
     // Integridad: El cobro depende estrictamente del registro contable (is_paid)
@@ -356,11 +364,11 @@ function renderOrderCardHTML($order) {
                             <i class="fas fa-directions"></i> GPS
                         </a>
                     </div>
-                <?php elseif(!empty($deliveryUrl)): ?>
+                <?php elseif(!empty($mapsUrl)): ?>
                     <div style="margin-bottom: 10px;">
-                        <button onclick="openExternalLink('<?php echo addslashes($deliveryUrl); ?>')" class="btn-logistics" style="background: #4285F4; color: white; border:none; cursor:pointer;">
+                        <a href="<?php echo htmlspecialchars($mapsUrl); ?>" target="_blank" rel="noopener noreferrer" class="btn-logistics" style="background: #4285F4; color: white; border:none; text-decoration:none;">
                             <i class="fas fa-map-marked-alt"></i> ABRIR UBICACIÓN (MAPS)
-                        </button>
+                        </a>
                     </div>
                 <?php elseif(!empty($order['reference_photo'])): ?>
                     <div style="margin-bottom: 10px;">
@@ -578,11 +586,16 @@ function renderOrderCardJS(order) {
     else if (order.status === 'confirmed') statusBadge = '<span class="status-badge-header shipped" style="background:#fff3cd; color:#856404;"><i class="fas fa-clock"></i> Asignado</span>';
     else if (order.status === 'shipped') statusBadge = '<span class="status-badge-header shipped"><i class="fas fa-truck"></i> En Camino</span>';
 
-    // Normalizar URL en JS también para consistencia
-    let deliveryUrl = (order.delivery_url || '').trim();
-    if (deliveryUrl && !deliveryUrl.startsWith('http')) {
-        const prefix = deliveryUrl.startsWith('google.com') ? 'https://www.' : 'https://';
-        deliveryUrl = prefix + deliveryUrl;
+    let dUrl = (order.delivery_url || '').trim();
+    if (dUrl && !dUrl.startsWith('http')) dUrl = 'https://' + dUrl;
+    
+    let mapsApiUrl = '';
+    if (dUrl) {
+        if (dUrl.includes('google.com/maps') || dUrl.includes('maps.app.goo.gl') || dUrl.includes('goo.gl/maps') || dUrl.includes('tinyurl.com')) {
+            mapsApiUrl = dUrl;
+        } else {
+            mapsApiUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dUrl)}`;
+        }
     }
 
     return `
@@ -631,14 +644,14 @@ function renderOrderCardJS(order) {
                 </div>
                 ${(order.delivery_lat && order.delivery_lng && parseFloat(order.delivery_lat) !== 0) ? 
                     `<div class="map-wrapper"><div id="map-${order.id}" class="map-preview"></div><a href="https://www.google.com/maps/search/?api=1&query=${order.delivery_lat},${order.delivery_lng}" target="_blank" rel="noopener noreferrer" class="map-overlay-btn"><i class="fas fa-directions"></i> GPS</a></div>` : 
-                    (deliveryUrl ? 
+                    (mapsApiUrl ? 
                         `<div style="margin-bottom: 10px;">
-                            <button onclick="openExternalLink('${deliveryUrl}')" class="btn-logistics" style="background: #4285F4; color: white; border:none; cursor:pointer;">
+                            <a href="${mapsApiUrl}" target="_blank" rel="noopener noreferrer" class="btn-logistics" style="background: #4285F4; color: white; border:none; text-decoration:none;">
                                 <i class="fas fa-map-marked-alt"></i> ABRIR UBICACIÓN (MAPS)
-                            </button>
+                            </a>
                         </div>` : '')
                 }
-                ${(!order.delivery_lat && !deliveryUrl && order.reference_photo) ? 
+                ${(!order.delivery_lat && !dUrl && order.reference_photo) ? 
                     `<div style="margin-bottom: 10px;">
                         <button onclick="showReferencePhoto('${order.reference_photo}')" class="btn-logistics" style="background: #6c5ce7; color: white; border:none; cursor:pointer;">
                             <i class="fas fa-camera"></i> VER FOTO DE REFERENCIA

@@ -340,6 +340,7 @@
                     ['route' => 'hero_promos',       'label' => 'Horarios de Atención', 'icon' => 'fas fa-clock'],
                     ['route' => 'settings_contact',  'label' => 'Canales de Contacto',  'icon' => 'fas fa-phone-volume'],
                     ['route' => 'settings_checkout', 'label' => 'Ajustes de Checkout',  'icon' => 'fas fa-shopping-cart'],
+                    ['route' => 'settings_sifende',  'label' => 'Facturación SIFEN',    'icon' => 'fas fa-file-invoice'],
                     ['route' => 'users',             'label' => 'Staff / Usuarios',     'icon' => 'fas fa-users'],
                     ['route' => 'shortcuts',         'label' => 'Atajos de Teclado',    'icon' => 'fas fa-keyboard', 'roles' => ['admin', 'cajero']],
                 ]

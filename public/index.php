@@ -315,6 +315,13 @@ switch ($route) {
         $controller = new SettingController();
         $controller->checkout();
         break;
+    case 'sifende':
+    case 'admin_sifende':
+    case 'settings_sifende':
+        require_once '../controllers/SettingController.php';
+        $controller = new SettingController();
+        $controller->sifende();
+        break;
     case 'settings_delivery':
         require_once '../controllers/SettingController.php';
         $controller = new SettingController();

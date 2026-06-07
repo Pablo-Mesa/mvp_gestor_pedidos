@@ -27,6 +27,14 @@ class SettingController {
         require_once '../views/layouts/admin_layout.php';
     }
 
+    public function sifende() {
+        $model = new Setting();
+        $settings = $model->getAll();
+        
+        $content_view = '../views/admin/settings/sifende.php';
+        require_once '../views/layouts/admin_layout.php';
+    }
+
     public function checkout() {
         $model = new Setting();
         $settings = $model->getAll();
@@ -225,6 +233,14 @@ class SettingController {
             // Actualizar Nombre
             if (isset($_POST['site_name'])) {
                 $model->update('site_name', $_POST['site_name']);
+            }
+
+            // Actualizar Credenciales de Sifende (API Facturación)
+            if (isset($_POST['sifende_settings'])) {
+                $model->update('sifende_app_id', $_POST['sifende_app_id'] ?? '');
+                $model->update('sifende_app_key', $_POST['sifende_app_key'] ?? '');
+                $model->update('sifende_api_url', $_POST['sifende_api_url'] ?? '');
+                $redirectRoute = 'settings_sifende';
             }
 
             // Actualizar Módulos de Checkout

@@ -10,6 +10,7 @@ require_once '../models/CashRegister.php'; // Nuevo Modelo
 require_once '../models/DeliveryRate.php';
 require_once '../models/Client.php';
 require_once '../models/Empresa.php';
+require_once '../services/SifendeService.php';
 
 class OrderController {
 
@@ -487,9 +488,17 @@ class OrderController {
                 $payments = [['metodo' => 'efectivo', 'monto' => $order['total'], 'referencia' => 'Cobro Rápido POS']];
             }
 
-            $ventaId = $orderModel->finalizeSale($payments, $registerId, $docType); 
+            // Determinar si es electrónica para el modelo
+            $isElectronic = ($docType === 'factura');
+            $ventaId = $orderModel->finalizeSale($payments, $registerId, $docType, $isElectronic); 
             
             if ($ventaId) {
+                // Si es factura, disparar envío a Sifende
+                if ($isElectronic) {
+                    $sifende = new SifendeService();
+                    $sifende->enviarFactura($ventaId);
+                }
+
                 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
                     if (ob_get_length()) ob_clean();
                     header('Content-Type: application/json');
@@ -555,8 +564,17 @@ class OrderController {
             }
             $sessionId = $activeSession ? $activeSession['id'] : null;
 
-            $ventaId = $order->finalizeSale($finalPayments, $sessionId, $docType);
+            // Determinar si es electrónica para el modelo
+            $isElectronic = ($docType === 'factura');
+            $ventaId = $order->finalizeSale($finalPayments, $sessionId, $docType, $isElectronic);
+
             if ($ventaId) {
+                // Si es factura, disparar envío a Sifende
+                if ($isElectronic) {
+                    $sifende = new SifendeService();
+                    $sifende->enviarFactura($ventaId);
+                }
+
                 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
                     header('Content-Type: application/json');
                     echo json_encode(['success' => true, 'print_sale_id' => $ventaId]);

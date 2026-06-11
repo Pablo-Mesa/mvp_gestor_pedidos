@@ -1389,7 +1389,7 @@ document.addEventListener('DOMContentLoaded', function() {
         tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Buscando...</td></tr>';
 
         try {
-            const resp = await fetch(`?route=admin_clients_search&term=${encodeURIComponent(term)}&limit=10&order=name_asc`);
+            const resp = await fetch(`?route=admin_clients_search&term=${encodeURIComponent(term)}&limit=15&order=name_asc`);
             const clients = await resp.json();
 
             // El "Cliente Ocasional" ahora es simplemente una opción rápida que no sobreescribe
@@ -1402,9 +1402,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 clients.forEach(c => {
                     // Escapar nombres para evitar que comillas rompan el atributo HTML
                     const safeName = c.name.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                    const isTaxpayer = c.is_taxpayer || false;
+                    const sourceIcon = isTaxpayer ? '<i class="fas fa-university text-info me-1" title="Desde Padrón de Contribuyentes"></i>' : '';
+                    
                     html += `
-                        <tr class="selectable-client" tabindex="0" onclick="window.selectClientFromList(${c.id}, '${safeName}', '${c.phone || ''}')">
-                            <td><strong>${c.name}</strong></td>
+                        <tr class="selectable-client" tabindex="0" onclick="window.selectClientFromList(${c.id || 'null'}, '${safeName}', '${c.phone || ''}', '${c.billing_ruc || ''}', ${isTaxpayer})">
+                            <td>${sourceIcon}<strong>${c.name}</strong></td>
                             <td>${c.billing_ruc || '---'}</td>
                             <td>${c.phone || '---'}</td>
                         </tr>
@@ -1420,7 +1423,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    window.selectClientFromList = function(id, name, phone) {
+    window.selectClientFromList = function(id, name, phone, ruc = '', isTaxpayer = false) {
+        // UX: Si el cliente viene del padrón de contribuyentes y no está en nuestra DB local (sin ID)
+        if (isTaxpayer && !id) {
+            bsModalSearch.hide();
+            
+            // Pre-cargamos el formulario de creación rápida para formalizar al cliente
+            const cName = document.getElementById('c-name');
+            const cBillingRuc = document.getElementById('c-billing-ruc');
+            const cBillingName = document.getElementById('c-billing-name');
+
+            if (cName) cName.value = name;
+            if (cBillingRuc) cBillingRuc.value = ruc;
+            if (cBillingName) cBillingName.value = name;
+
+            bsModalCreate.show();
+            
+            // Foco en el teléfono, ya que el padrón nacional no suele proveer este dato
+            setTimeout(() => {
+                const phoneInput = document.getElementById('c-phone');
+                if (phoneInput) phoneInput.focus();
+            }, 500);
+
+            Toast.fire("Contribuyente encontrado. Complete los datos para registrarlo.", "info");
+            return;
+        }
+
         const currentId = document.getElementById('f-client-id').value;
 
         // Si el cliente seleccionado es distinto al actual, reiniciamos los datos de logística

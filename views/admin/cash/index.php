@@ -1,3 +1,13 @@
+<style>
+    /* Eliminar spinners en el campo de monto inicial */
+    input[name="opening_amount"]::-webkit-inner-spin-button,
+    input[name="opening_amount"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    input[name="opening_amount"] { -moz-appearance: textfield; }
+</style>
+
 <?php
 // Identificar qué usuarios tienen sesiones abiertas actualmente para prevenir duplicados
 $activeUserIds = [];
@@ -19,10 +29,10 @@ if (isset($recentSessions)) {
         <div class="d-flex gap-2">
             <!-- El administrador siempre puede ver el botón de apertura para asignar a otros -->
             <?php if (!$activeSession || $_SESSION['user_role'] === 'admin'): ?>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalOpenCash">
+                <button id="btnNewOpening" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalOpenCash" title="Atajo: F2">
                     <i class="fas fa-play me-2"></i>Nueva Apertura
                 </button>
-            <?php endif; ?>
+            <?php endif; ?> 
         </div>
     </div>
     <!-- /Cierre de d-flex header -->
@@ -252,7 +262,7 @@ if (isset($recentSessions)) {
                 </div>
 
                 <label class="form-label">Monto Inicial (Gs.)</label>
-                <input type="number" name="opening_amount" class="form-control" placeholder="0" required autofocus>
+                <input type="number" name="opening_amount" class="form-control" placeholder="0" required>
                 <small class="text-muted">Monto físico disponible en caja al iniciar el turno.</small>
             </div>
             <div class="modal-footer">
@@ -290,6 +300,7 @@ if (isset($recentSessions)) {
 </div>
 
 <script>
+    
 function prepareCloseModal(id, station, expected) {
     document.getElementById('close_session_id').value = id;
     document.getElementById('close_station_label').innerText = station;
@@ -323,9 +334,35 @@ function updateRoleField() {
 
 // Ejecutar validación inicial al abrir el modal
 document.addEventListener('DOMContentLoaded', function() {
+    // 1. Enfocar el botón de Nueva Apertura al cargar la vista
+    const btnOpenMain = document.getElementById('btnNewOpening');
+    if (btnOpenMain) {
+        btnOpenMain.focus();
+    }
+
+    // 2. Escuchar la tecla F2 como atajo para este botón
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'F2') {
+            const btn = document.getElementById('btnNewOpening');
+            if (btn) {
+                e.preventDefault();
+                btn.click();
+            }
+        }
+    });
+
     const modalOpen = document.getElementById('modalOpenCash');
     if (modalOpen) {
-        modalOpen.addEventListener('shown.bs.modal', updateRoleField);
+        modalOpen.addEventListener('shown.bs.modal', function() {
+            updateRoleField();
+            const select = document.getElementById('select_cashier');
+            if (select) {
+                select.focus();
+            } else {
+                // Si no hay select (cajero no admin), enfocar el monto
+                modalOpen.querySelector('input[name="opening_amount"]')?.focus();
+            }
+        });
     }
 
     // Interceptor de envío de formulario para confirmación de apertura
@@ -354,5 +391,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
 });
 </script>

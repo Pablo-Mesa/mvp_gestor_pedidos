@@ -1,4 +1,5 @@
 <?php
+require_once '../config/db.php';
 require_once '../models/Client.php';
 
 class ClientController {
@@ -21,21 +22,72 @@ class ClientController {
         $client = new Client();
         $db = (new Database())->getConnection();
         
-        // Búsqueda inteligente: Prioriza nombres que empiezan con el término 
-        // y asegura insensibilidad a mayúsculas/minúsculas (CI).
-        $query = "SELECT id, name, phone FROM clients 
-                  WHERE LOWER(name) LIKE LOWER(:term_any) OR phone LIKE :term_any 
-                  ORDER BY (CASE WHEN LOWER(name) LIKE LOWER(:term_start) THEN 1 ELSE 2 END), name ASC
-                  LIMIT 15";
-        
-        $stmt = $db->prepare($query);
-        $stmt->execute([
-            ':term_any' => "%$term%",
-            ':term_start' => "$term%"
-        ]);
-        $clients = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        echo json_encode($clients);
+        try {
+            $limit = 15;
+            $params = [];
+
+            // SQL base para clientes locales: Normalizamos con CAST para evitar conflictos de Collation en la UNION
+            $sqlLocalSelect = "SELECT id, CAST(name AS CHAR) AS name, CAST(phone AS CHAR) AS phone, 
+                                      CAST(billing_ruc AS CHAR) AS billing_ruc, 0 AS is_taxpayer 
+                               FROM clients";
+            
+            $sqlLocalWhere = " WHERE (LOWER(CAST(name AS CHAR)) LIKE LOWER(:t1) OR phone LIKE :t2 OR billing_ruc LIKE :t3)";
+
+            $params[':t1'] = "%$term%";
+            $params[':t2'] = "%$term%";
+            $params[':t3'] = "%$term%";
+
+            // Solo consultamos la tabla masiva si el término es lo suficientemente largo
+            if (strlen($term) >= 3) {
+                // Verificamos si la tabla de contribuyentes existe
+                try {
+                    $tableCheck = $db->query("SHOW TABLES LIKE 'contribuyentes'");
+                    $tableExists = $tableCheck && $tableCheck->rowCount() > 0;
+                } catch (Exception $e) {
+                    $tableExists = false;
+                }
+
+                if ($tableExists) {
+                    $query = "SELECT * FROM (
+                                ($sqlLocalSelect $sqlLocalWhere)
+                                UNION ALL
+                                (SELECT NULL AS id, 
+                                        CAST(razon_social AS CHAR) AS name, 
+                                        NULL AS phone, 
+                                        CAST(CONCAT(ruc, '-', IFNULL(dv, '')) AS CHAR) AS billing_ruc, 
+                                        1 AS is_taxpayer 
+                                 FROM contribuyentes c
+                                 WHERE (LOWER(CAST(razon_social AS CHAR)) LIKE LOWER(:t4) OR CAST(ruc AS CHAR) LIKE :t5)
+                                 AND NOT EXISTS (
+                                     SELECT 1 FROM clients cl 
+                                     WHERE cl.billing_ruc = CAST(c.ruc AS CHAR) 
+                                        OR cl.billing_ruc = CAST(CONCAT(c.ruc, '-', IFNULL(c.dv, '')) AS CHAR)
+                                 ))
+                              ) as combined
+                              ORDER BY (CASE WHEN name LIKE :t_order THEN 1 ELSE 2 END), name ASC
+                              LIMIT $limit";
+                    
+                    $params[':t4'] = "%$term%";
+                    $params[':t5'] = "$term%";
+                    $params[':t_order'] = "$term%";
+                } else {
+                    // Si no existe la tabla masiva, buscamos solo en locales pero con el orden inteligente
+                    $query = $sqlLocalSelect . $sqlLocalWhere . " ORDER BY (CASE WHEN name LIKE :t_order THEN 1 ELSE 2 END), name ASC LIMIT $limit";
+                    $params[':t_order'] = "$term%";
+                }
+            } else {
+                $query = $sqlLocalSelect . $sqlLocalWhere . " ORDER BY name ASC LIMIT $limit";
+            }
+
+            $stmt = $db->prepare($query);
+            $stmt->execute($params);
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            echo json_encode($results);
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
     /**

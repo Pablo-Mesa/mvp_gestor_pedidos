@@ -1382,9 +1382,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const term = document.getElementById('s-client-term').value.trim();
         const tbody = document.getElementById('s-client-results');
 
-        // Si el término tiene un solo caracter, no buscamos (esperamos al segundo)
-        // Si está vacío, traemos los primeros 10 por defecto
-        if (term.length === 1) return;
+        // Búsqueda proactiva: permitimos ver locales siempre, contribuyentes solo con 3+ letras
+        if (term.length === 1 || term.length === 2) {
+             // Opcional: mostrar un mensaje indicando que necesita más letras para buscar en el padrón nacional
+        }
 
         tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Buscando...</td></tr>';
 
@@ -1425,27 +1426,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.selectClientFromList = function(id, name, phone, ruc = '', isTaxpayer = false) {
         // UX: Si el cliente viene del padrón de contribuyentes y no está en nuestra DB local (sin ID)
+        // Si es contribuyente del padrón (no tiene ID local), forzamos registro rápido
         if (isTaxpayer && !id) {
             bsModalSearch.hide();
             
-            // Pre-cargamos el formulario de creación rápida para formalizar al cliente
-            const cName = document.getElementById('c-name');
-            const cBillingRuc = document.getElementById('c-billing-ruc');
-            const cBillingName = document.getElementById('c-billing-name');
-
-            if (cName) cName.value = name;
-            if (cBillingRuc) cBillingRuc.value = ruc;
-            if (cBillingName) cBillingName.value = name;
-
-            bsModalCreate.show();
+            // Auto-completar formulario de registro
+            document.getElementById('c-name').value = name;
+            document.getElementById('c-billing-name').value = name;
+            document.getElementById('c-billing-ruc').value = ruc;
             
-            // Foco en el teléfono, ya que el padrón nacional no suele proveer este dato
+            // Abrir registro y enfocar teléfono (dato faltante vital)
+            bsModalCreate.show();
             setTimeout(() => {
                 const phoneInput = document.getElementById('c-phone');
-                if (phoneInput) phoneInput.focus();
-            }, 500);
+                if (phoneInput) {
+                    phoneInput.focus();
+                    phoneInput.placeholder = "Ingrese teléfono para contacto...";
+                }
+            }, 400);
 
-            Toast.fire("Contribuyente encontrado. Complete los datos para registrarlo.", "info");
+            Toast.fire("Contribuyente encontrado. Guarde los datos para registrar la venta.", "info");
             return;
         }
 

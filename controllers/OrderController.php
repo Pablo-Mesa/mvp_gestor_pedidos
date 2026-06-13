@@ -447,8 +447,6 @@ class OrderController {
         // Cargamos los datos para la vista (Soluciona el error de variable indefinida $order y $details)
         $order = $orderModel->readOne();
 
-        // RESTRICCIÓN DE INTEGRIDAD: Impedir facturación rápida si no hay sesión de caja.
-        // Esto evita discrepancias como la del Pedido 69, donde hay factura pero no ingreso de dinero.
         if (isset($_GET['quick']) && $_GET['quick'] == 1 && !$activeSession) {
             if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
                 header('Content-Type: application/json');
@@ -478,15 +476,8 @@ class OrderController {
             // Prioridad al tipo de documento solicitado, de lo contrario fallback por RUC
             $docType = $_GET['doc_type'] ?? (!empty($order['billing_ruc']) ? 'factura' : 'ticket');
             
-            // CORRECCIÓN: Si hay una caja abierta, registramos el cobro automático en efectivo.
-            // Esto asegura que el monto (como los 60.000 del ID 69) ingrese al Monitor de Tesorería.
             $registerId = $activeSession ? $activeSession['id'] : null;
-            $payments = [];
-            // REFINAMIENTO: Solo auto-cobramos si el pedido NO es delivery (es decir, es retiro o local).
-            // Para delivery, el dinero entra a caja recién al completar el proceso o mediante cobro manual.
-            if ($activeSession && $order['delivery_type'] !== 'delivery') {
-                $payments = [['metodo' => 'efectivo', 'monto' => $order['total'], 'referencia' => 'Cobro Rápido POS']];
-            }
+            $payments = null; // Cobro automático eliminado para garantizar registro manual
 
             // Determinar si es electrónica para el modelo
             $isElectronic = ($docType === 'factura');
@@ -552,16 +543,8 @@ class OrderController {
                 exit;
             }
 
-            // Determinar qué enviar al modelo: pagos manuales, automáticos (si hay caja) o nulo (solo factura)
-            // CORRECCIÓN: Si no hay pagos manuales pero hay caja abierta, registramos el cobro automático para el Monitor de Tesorería.
+            // Determinar qué enviar al modelo: solo pagos registrados manualmente por el cajero
             $finalPayments = $hasPayments ? $payments : null;
-            // REFINAMIENTO: No auto-cobrar pedidos de delivery en esta etapa si no se especifican montos manualmente.
-            if (!$hasPayments && $activeSession) {
-                $orderData = $order->readOne();
-                if ($orderData['delivery_type'] !== 'delivery') {
-                    $finalPayments = [['metodo' => 'efectivo', 'monto' => $orderData['total'], 'referencia' => 'Cobro Automático POS']];
-                }
-            }
             $sessionId = $activeSession ? $activeSession['id'] : null;
 
             // Determinar si es electrónica para el modelo
@@ -625,13 +608,8 @@ class OrderController {
                     // Pasamos 'null' para los pagos, indicando que no se procesará un nuevo pago.
                     // finalizeSale se encargará de generar el documento de venta si no existe.
                     
-                    // CORRECCIÓN: Si se completa un pedido y hay caja abierta, registramos el cobro automáticamente 
-                    // para asegurar que el monto (como el del ID 69) ingrese al Monitor de Tesorería.
-                    $payments = [];
-                    if ($activeSession) {
-                        $payments = [['metodo' => 'efectivo', 'monto' => $orderData['total'], 'referencia' => 'Cobro Automático al Completar']];
-                    }
-                    $order->finalizeSale($payments, $registerId);
+                    // Al completar pedido, se formaliza la venta (ticket) sin registrar ingreso de dinero automático.
+                    $order->finalizeSale(null, $registerId);
                 }
             }
 

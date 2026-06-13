@@ -5,6 +5,12 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     const openModalsStack = [];
 
+    /**
+     * UX: Rastro del elemento que disparó el cobro para devolver el foco
+     * (Útil cuando se abre desde la tabla de pedidos/opciones)
+     */
+    let lastPayModalTrigger = null;
+
     document.addEventListener('show.bs.modal', function (event) {
         const modalEl = event.target;
         if (!openModalsStack.includes(modalEl.id)) openModalsStack.push(modalEl.id);
@@ -71,6 +77,11 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (modalId === 'ticketModal') {
             const searchInput = document.getElementById('posSearch');
             if (searchInput) setTimeout(() => searchInput.focus(), 50);
+        } else if (modalId === 'modalPayOrder') {
+            // Restaurar foco al disparador original (ej: botón de 3 puntos en tabla)
+            if (lastPayModalTrigger && lastPayModalTrigger.isConnected) {
+                setTimeout(() => lastPayModalTrigger.focus(), 50);
+            }
         }
     });
 
@@ -412,6 +423,10 @@ document.addEventListener('DOMContentLoaded', function() {
      * Funcionalidad de Cobro Mixto (Adaptada de Orders)
      */
     function openPaymentModal(order) {
+        // Guardar el elemento que tenía el foco antes de abrir el modal
+        lastPayModalTrigger = document.activeElement;
+        if (lastPayModalTrigger) lastPayModalTrigger.blur();
+
         document.getElementById('pay-modal-id').innerText = order.id;
         document.getElementById('pay-input-order-id').value = order.id;
         document.getElementById('pay-modal-total').innerText = 'Gs. ' + new Intl.NumberFormat('es-PY').format(order.total);
@@ -607,7 +622,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const payModalEl = active.closest('#modalPayOrder');
         if (payModalEl) {
             // Recorrido restringido solicitado: Botón cerrar, montos de pago y botón de imprimir
-            const focusable = Array.from(payModalEl.querySelectorAll('.btn-close, .pay-input, #pay-btn-submit'));
+            // Mejora: Se incluye el botón de solo guardar en el recorrido
+            const focusable = Array.from(payModalEl.querySelectorAll('.btn-close, .pay-input, #pay-btn-submit, #pay-btn-save-only'));
             const fIdx = focusable.indexOf(active);
 
             if (e.key === 'ArrowDown' || e.key === 'Enter') {

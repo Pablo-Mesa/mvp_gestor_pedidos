@@ -8,8 +8,8 @@
 <script>
     window.posConfig = {
         isCashOpen: <?php echo $isCashOpen ? 'true' : 'false'; ?>,
-        storeLat: <?php echo $siteSettings['store_lat'] ?? -25.3006; ?>,
-        storeLng: <?php echo $siteSettings['store_lng'] ?? -57.6359; ?>
+        storeLat: <?php echo (float)($siteSettings['store_lat'] ?? -25.3006); ?>,
+        storeLng: <?php echo (float)($siteSettings['store_lng'] ?? -57.6359); ?>
     };
 </script>
 

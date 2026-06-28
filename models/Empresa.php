@@ -60,4 +60,14 @@ class Empresa {
         }
         return $mapped;
     }
+    
+    /**
+     * Obtiene la primera empresa (para FacturaSend)
+     */
+    public function getFirst() {
+        $query = "SELECT * FROM " . $this->table . " LIMIT 1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
 }

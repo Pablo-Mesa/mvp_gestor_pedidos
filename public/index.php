@@ -315,13 +315,6 @@ switch ($route) {
         $controller = new SettingController();
         $controller->checkout();
         break;
-    case 'sifende':
-    case 'admin_sifende':
-    case 'settings_sifende':
-        require_once '../controllers/SettingController.php';
-        $controller = new SettingController();
-        $controller->sifende();
-        break;
     case 'settings_delivery':
         require_once '../controllers/SettingController.php';
         $controller = new SettingController();
@@ -507,6 +500,38 @@ switch ($route) {
         require_once '../controllers/HeroPromoController.php';
         $controller = new HeroPromoController();
         $controller->update();
+        break;
+
+    // --- FACTURACIÓN ELECTRÓNICA (FACTURASEND) ---
+    case 'factura_emitir':
+        require_once '../controllers/FacturaController.php';
+        $controller = new FacturaController();
+        $controller->emitirFactura();
+        break;
+    case 'factura_reemitir':
+        require_once '../controllers/FacturaController.php';
+        $controller = new FacturaController();
+        $controller->reemitirFactura();
+        break;
+    case 'factura_consultar_estado':
+        require_once '../controllers/FacturaController.php';
+        $controller = new FacturaController();
+        $controller->consultarEstado();
+        break;
+    case 'factura_pdf':
+        require_once '../controllers/FacturaController.php';
+        $controller = new FacturaController();
+        $controller->obtenerPDF();
+        break;
+    case 'facturasend_config':
+        require_once '../controllers/FacturaController.php';
+        $controller = new FacturaController();
+        $controller->configuracion();
+        break;
+    case 'facturasend_guardar_config':
+        require_once '../controllers/FacturaController.php';
+        $controller = new FacturaController();
+        $controller->guardarConfiguracion();
         break;
 
     // --- API CLIENTES Y AYUDAS ---

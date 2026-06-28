@@ -322,7 +322,7 @@ class SettingController {
         
         $contacts = $rawContacts ? json_decode($rawContacts, true) : [];
 
-        $content_view = '../views/admin/settings_contact.php';
+        $content_view = '../views/admin/settings/contact.php';
         require_once '../views/layouts/admin_layout.php';
     }
 

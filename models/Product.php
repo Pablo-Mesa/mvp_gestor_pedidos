@@ -15,6 +15,15 @@ class Product {
     public $price_half;
     public $image;
     public $is_active;
+    
+    // Campos adicionales para FacturaSend
+    public $unidad_medida;
+    public $iva_porcentaje;
+    public $ncm;
+    public $iva_base;
+    public $lote;
+    public $vencimiento;
+    public $numero_serie;
 
     public function __construct() {
         $database = new Database();
@@ -94,7 +103,7 @@ class Product {
     }
 
     public function create() {
-        $query = 'INSERT INTO ' . $this->table . ' (codigobarra, name, category_id, es_vendible, description, price, price_half, image, is_active) VALUES (:codigobarra, :name, :category_id, :es_vendible, :description, :price, :price_half, :image, :is_active)';
+        $query = 'INSERT INTO ' . $this->table . ' (codigobarra, name, category_id, es_vendible, description, price, price_half, image, is_active, unidad_medida, iva_porcentaje, ncm, iva_base, lote, vencimiento, numero_serie) VALUES (:codigobarra, :name, :category_id, :es_vendible, :description, :price, :price_half, :image, :is_active, :unidad_medida, :iva_porcentaje, :ncm, :iva_base, :lote, :vencimiento, :numero_serie)';
         $stmt = $this->conn->prepare($query);
 
         // Limpieza básica
@@ -116,12 +125,21 @@ class Product {
 
         $stmt->bindParam(':image', $this->image);
         $stmt->bindParam(':is_active', $this->is_active);
+        
+        // Campos FacturaSend
+        $stmt->bindParam(':unidad_medida', $this->unidad_medida ?? 77);
+        $stmt->bindParam(':iva_porcentaje', $this->iva_porcentaje ?? 10);
+        $stmt->bindParam(':ncm', $this->ncm ?? null);
+        $stmt->bindParam(':iva_base', $this->iva_base ?? null);
+        $stmt->bindParam(':lote', $this->lote ?? null);
+        $stmt->bindParam(':vencimiento', $this->vencimiento ?? null);
+        $stmt->bindParam(':numero_serie', $this->numero_serie ?? null);
 
         return $stmt->execute();
     }
 
     public function update() {
-        $query = 'UPDATE ' . $this->table . ' SET codigobarra = :codigobarra, name = :name, category_id = :category_id, es_vendible = :es_vendible, description = :description, price = :price, price_half = :price_half, image = :image, is_active = :is_active WHERE id = :id';
+        $query = 'UPDATE ' . $this->table . ' SET codigobarra = :codigobarra, name = :name, category_id = :category_id, es_vendible = :es_vendible, description = :description, price = :price, price_half = :price_half, image = :image, is_active = :is_active, unidad_medida = :unidad_medida, iva_porcentaje = :iva_porcentaje, ncm = :ncm, iva_base = :iva_base, lote = :lote, vencimiento = :vencimiento, numero_serie = :numero_serie WHERE id = :id';
         $stmt = $this->conn->prepare($query);
 
         $this->codigobarra = htmlspecialchars(strip_tags($this->codigobarra));
@@ -140,6 +158,16 @@ class Product {
         $stmt->bindParam(':price_half', $price_half_val);
         $stmt->bindParam(':image', $this->image);
         $stmt->bindParam(':is_active', $this->is_active);
+        
+        // Campos FacturaSend
+        $stmt->bindParam(':unidad_medida', $this->unidad_medida ?? 77);
+        $stmt->bindParam(':iva_porcentaje', $this->iva_porcentaje ?? 10);
+        $stmt->bindParam(':ncm', $this->ncm ?? null);
+        $stmt->bindParam(':iva_base', $this->iva_base ?? null);
+        $stmt->bindParam(':lote', $this->lote ?? null);
+        $stmt->bindParam(':vencimiento', $this->vencimiento ?? null);
+        $stmt->bindParam(':numero_serie', $this->numero_serie ?? null);
+        
         $stmt->bindParam(':id', $this->id);
 
         return $stmt->execute();

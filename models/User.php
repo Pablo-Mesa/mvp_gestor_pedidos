@@ -9,6 +9,11 @@ class User {
     public $name;
     public $email;
     public $role;
+    
+    // Campos adicionales para FacturaSend
+    public $documento_tipo;
+    public $documento_numero;
+    public $cargo;
 
     public function __construct() {
         $database = new Database();
@@ -32,7 +37,8 @@ class User {
      * Obtiene los datos de un usuario específico
      */
     public function readOne($id) {
-        $query = "SELECT u.id, u.name, u.email, r.slug as role, u.role_id, u.is_active 
+        $query = "SELECT u.id, u.name, u.email, r.slug as role, u.role_id, u.is_active,
+                  u.documento_tipo, u.documento_numero, u.cargo
                   FROM " . $this->table . " u
                   LEFT JOIN roles r ON u.role_id = r.id
                   WHERE u.id = :id LIMIT 1";
@@ -65,13 +71,17 @@ class User {
      */
     public function update($data) {
         $passwordPart = !empty($data['password']) ? ", password = :password" : "";
-        $query = "UPDATE " . $this->table . " SET name = :name, email = :email, role_id = :role_id, is_active = :is_active " . $passwordPart . " WHERE id = :id";
+        $query = "UPDATE " . $this->table . " SET name = :name, email = :email, role_id = :role_id, is_active = :is_active,
+                  documento_tipo = :documento_tipo, documento_numero = :documento_numero, cargo = :cargo" . $passwordPart . " WHERE id = :id";
         
         $stmt = $this->conn->prepare($query);
         $stmt->bindValue(':name', $data['name']);
         $stmt->bindValue(':email', $data['email']);
         $stmt->bindValue(':role_id', $data['role_id']);
         $stmt->bindValue(':is_active', $data['is_active']);
+        $stmt->bindValue(':documento_tipo', $data['documento_tipo'] ?? 1);
+        $stmt->bindValue(':documento_numero', $data['documento_numero'] ?? null);
+        $stmt->bindValue(':cargo', $data['cargo'] ?? 'Vendedor');
         $stmt->bindValue(':id', $data['id']);
 
         if (!empty($data['password'])) {

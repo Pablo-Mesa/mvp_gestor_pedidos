@@ -13,6 +13,25 @@ class Client {
     public $has_whatsapp;
     public $billing_name;
     public $billing_ruc;
+    
+    // Campos adicionales para FacturaSend
+    public $nombre_fantasia;
+    public $tipo_operacion;
+    public $numero_casa;
+    public $departamento;
+    public $departamento_descripcion;
+    public $distrito;
+    public $distrito_descripcion;
+    public $ciudad;
+    public $ciudad_descripcion;
+    public $pais;
+    public $pais_descripcion;
+    public $tipo_contribuyente;
+    public $documento_numero;
+    public $celular;
+    public $codigo;
+    public $contribuyente;
+    public $billing_address;
 
     public function __construct() {
         $database = new Database();
@@ -55,7 +74,7 @@ class Client {
     }
 
     public function getById($id) {
-        $query = "SELECT id, name, email, phone, has_whatsapp, billing_name, billing_ruc FROM " . $this->table . " WHERE id = :id LIMIT 1";
+        $query = "SELECT * FROM " . $this->table . " WHERE id = :id LIMIT 1";
         $stmt = $this->conn->prepare($query);
         $stmt->execute([':id' => $id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
@@ -67,6 +86,53 @@ class Client {
         return $stmt->execute([
             ':name' => $name,
             ':ruc' => $ruc,
+            ':id' => $id
+        ]);
+    }
+    
+    /**
+     * Actualiza datos completos de facturación para FacturaSend
+     */
+    public function updateFacturacionCompleta($id, $datos) {
+        $query = "UPDATE " . $this->table . " SET 
+            nombre_fantasia = :nombre_fantasia,
+            tipo_operacion = :tipo_operacion,
+            numero_casa = :numero_casa,
+            departamento = :departamento,
+            departamento_descripcion = :departamento_descripcion,
+            distrito = :distrito,
+            distrito_descripcion = :distrito_descripcion,
+            ciudad = :ciudad,
+            ciudad_descripcion = :ciudad_descripcion,
+            pais = :pais,
+            pais_descripcion = :pais_descripcion,
+            tipo_contribuyente = :tipo_contribuyente,
+            documento_numero = :documento_numero,
+            celular = :celular,
+            codigo = :codigo,
+            contribuyente = :contribuyente,
+            billing_address = :billing_address
+            WHERE id = :id";
+        
+        $stmt = $this->conn->prepare($query);
+        return $stmt->execute([
+            ':nombre_fantasia' => $datos['nombre_fantasia'] ?? null,
+            ':tipo_operacion' => $datos['tipo_operacion'] ?? 1,
+            ':numero_casa' => $datos['numero_casa'] ?? null,
+            ':departamento' => $datos['departamento'] ?? null,
+            ':departamento_descripcion' => $datos['departamento_descripcion'] ?? null,
+            ':distrito' => $datos['distrito'] ?? null,
+            ':distrito_descripcion' => $datos['distrito_descripcion'] ?? null,
+            ':ciudad' => $datos['ciudad'] ?? null,
+            ':ciudad_descripcion' => $datos['ciudad_descripcion'] ?? null,
+            ':pais' => $datos['pais'] ?? 'PRY',
+            ':pais_descripcion' => $datos['pais_descripcion'] ?? 'Paraguay',
+            ':tipo_contribuyente' => $datos['tipo_contribuyente'] ?? 1,
+            ':documento_numero' => $datos['documento_numero'] ?? null,
+            ':celular' => $datos['celular'] ?? null,
+            ':codigo' => $datos['codigo'] ?? null,
+            ':contribuyente' => $datos['contribuyente'] ?? 0,
+            ':billing_address' => $datos['billing_address'] ?? null,
             ':id' => $id
         ]);
     }

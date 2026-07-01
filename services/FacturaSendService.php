@@ -248,6 +248,17 @@ class FacturaSendService {
     }
     
     /**
+     * Genera URL de consulta pública del QR usando el CDC
+     * Solo genera URL en producción, en pruebas devuelve NULL
+     */
+    public function generarQrUrl($cdc) {
+        if ($this->modo === 'production') {
+            return "https://consulta.set.gov.py/kude/consulta?cdc=" . $cdc;
+        }
+        return null;
+    }
+
+    /**
      * Registra llamada a API en log
      */
     private function logApiCall($metodo, $endpoint, $payload) {

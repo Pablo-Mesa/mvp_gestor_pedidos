@@ -182,7 +182,7 @@ class FacturaController {
         
         try {
             $venta = $this->getVentaCabecera($venta_id);
-            
+            echo "venta: " . json_encode($venta);    
             if (empty($venta['cdc'])) {
                 echo json_encode(['success' => false, 'error' => 'La venta no tiene CDC']);
                 return;

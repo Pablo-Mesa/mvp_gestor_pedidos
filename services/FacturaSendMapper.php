@@ -74,12 +74,23 @@ class FacturaSendMapper {
      * Mapea datos del cliente al formato FacturaSend
      */
     private function mapearCliente($cliente) {
+        
+        // Determinar tipo de operación y contribuyente basado en si tiene RUC
+        $ruc = $cliente['billing_ruc'] ?? '';
+        if (!empty($ruc) && strlen($ruc) > 5) {
+            $tipoOperacion = 1; // B2B para clientes con RUC
+            $esContribuyente = true;
+        } else {
+            $tipoOperacion = 2; // B2C para clientes sin RUC
+            $esContribuyente = false;
+        }
+
         return [
-            'contribuyente' => (bool)($cliente['contribuyente'] ?? 0),
+            'contribuyente' => $esContribuyente,
             'ruc' => $cliente['billing_ruc'] ?? '',
             'razonSocial' => $cliente['billing_name'] ?? $cliente['name'] ?? '',
             'nombreFantasia' => $cliente['nombre_fantasia'] ?? $cliente['billing_name'] ?? $cliente['name'] ?? '',
-            'tipoOperacion' => $cliente['tipo_operacion'] ?? 1,
+            'tipoOperacion' => $tipoOperacion,
             'direccion' => $cliente['billing_address'] ?? $cliente['address'] ?? '',
             'numeroCasa' => $cliente['numero_casa'] ?? '',
             'departamento' => $cliente['departamento'] ?? null,
@@ -123,16 +134,17 @@ class FacturaSendMapper {
         // Mapear entregas (pagos)
         $entregas = [];
         foreach ($pagos as $pago) {
+            $metodoPago = $pago['metodo_pago'] ?? 'efectivo';
             $entrega = [
-                'tipo' => $this->getTipoPago($pago['metodo_pago']),
-                'monto' => (float)$pago['monto'],
+                'tipo' => $this->getTipoPago($metodoPago),
+                'monto' => (float)($pago['monto'] ?? 0),
                 'moneda' => $pago['moneda'] ?? 'PYG',
                 'monedaDescripcion' => $pago['moneda_descripcion'] ?? 'Guarani',
                 'cambio' => (float)($pago['cambio'] ?? 0.0)
             ];
-            
+
             // Agregar detalles específicos según tipo de pago
-            if ($pago['metodo_pago'] === 'pos' && !empty($pago['tarjeta_numero'])) {
+            if ($metodoPago === 'pos' && !empty($pago['tarjeta_numero'])) {
                 $entrega['infoTarjeta'] = [
                     'numero' => $pago['tarjeta_numero'],
                     'tipo' => $pago['tarjeta_tipo'] ?? 1,
@@ -145,7 +157,7 @@ class FacturaSendMapper {
                 ];
             }
             
-            if ($pago['metodo_pago'] === 'cheque' && !empty($pago['cheque_numero'])) {
+            if ($metodoPago === 'cheque' && !empty($pago['cheque_numero'])) {
                 $entrega['infoCheque'] = [
                     'numeroCheque' => $pago['cheque_numero'],
                     'banco' => $pago['cheque_banco'] ?? ''
@@ -178,19 +190,25 @@ class FacturaSendMapper {
         $items = [];
         
         foreach ($detalles as $detalle) {
+            // Usar codigobarra si existe, si no usar el ID del producto como fallback
+            $codigo = $detalle['codigobarra'] ?? '';
+            if (empty($codigo)) {
+                $codigo = $detalle['producto_id'] ?? $detalle['id'] ?? '';
+            }
+
             $item = [
-                'codigo' => $detalle['codigobarra'] ?? '',
-                'descripcion' => $detalle['name'] ?? '',
+                'codigo' => $codigo,
+                'descripcion' => $detalle['producto_nombre'] ?? $detalle['name'] ?? '',
                 'observacion' => $detalle['description'] ?? '',
                 'ncm' => $detalle['ncm'] ?? '',
                 'unidadMedida' => $detalle['unidad_medida'] ?? 77,
                 'cantidad' => (float)$detalle['cantidad'],
                 'precioUnitario' => (float)$detalle['precio_unitario_venta'],
                 'cambio' => 0.0,
-                'ivaTipo' => $this->getIvaTipo($detalle['iva_tipo']),
+                'ivaTipo' => $this->getIvaTipo($detalle['iva_tipo_sifen']),
                 'ivaBase' => round((float)$detalle['precio_unitario_venta'] * (float)$detalle['cantidad'], 2),
-                'iva' => (float)$detalle['iva_tipo'],
-                'ivaProporcion' => $this->getIvaProporcion($detalle['iva_tipo']),
+                'iva' => $this->getIvaPorcentaje($detalle['iva_tipo_sifen']),
+                'ivaProporcion' => $this->getIvaProporcion($detalle['iva_tipo_sifen']),
                 'lote' => $detalle['lote'] ?? '',
                 'vencimiento' => !empty($detalle['vencimiento']) ? date('Y-m-d', strtotime($detalle['vencimiento'])) : '',
                 'numeroSerie' => $detalle['numero_serie'] ?? '',
@@ -228,10 +246,24 @@ class FacturaSendMapper {
             5 => 2,
             0 => 3
         ];
-        
+
         return $mapeo[$ivaPorcentaje] ?? 1;
     }
-    
+
+    /**
+     * Devuelve el valor numérico del porcentaje IVA
+     */
+    private function getIvaPorcentaje($ivaTipoSifen) {
+        // iva_tipo_sifen: 1=10%, 2=5%, 3=Exento
+        $mapeo = [
+            1 => 10,
+            2 => 5,
+            3 => 0
+        ];
+
+        return $mapeo[$ivaTipoSifen] ?? 10;
+    }
+
     /**
      * Convierte porcentaje IVA a ivaProporcion FacturaSend
      * Según FacturaSend: ivaTipo=1 (10%) -> ivaProporcion=100
@@ -242,7 +274,7 @@ class FacturaSendMapper {
             5 => 50,
             0 => 0
         ];
-        
+
         return $mapeo[$ivaPorcentaje] ?? 100;
     }
     
@@ -257,8 +289,8 @@ class FacturaSendMapper {
             $errores[] = 'Falta número de factura';
         }
         
-        // Validar cliente
-        if (empty($cliente['billing_ruc']) && empty($cliente['billing_name'])) {
+        // Validar cliente Para clientes sin RUC, usar el nombre del cliente como nombre de facturación
+        if (empty($cliente['billing_ruc']) && empty($cliente['billing_name']) && empty($cliente['name'])) {
             $errores[] = 'Cliente debe tener RUC o nombre de facturación';
         }
         

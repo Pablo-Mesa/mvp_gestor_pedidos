@@ -779,10 +779,14 @@ if (empty($orders) && $hasFilter):
     async function processQuickInvoice(url, docType) {
         try {
             const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-            const res = await resp.json();
+
+            // Log del texto crudo de la respuesta
+            const text = await resp.text();
+            const res = JSON.parse(text);
             if (res.success) {
-                if (res.print_sale_id) printSaleTicket(res.print_sale_id, '80mm', docType);
-                
+                if (res.print_sale_id) {
+                    printSaleTicket(res.print_sale_id, '80mm', docType);
+                }
                 // Cerrar cualquier modal de facturación abierto
                 const mPending = bootstrap.Modal.getInstance(document.getElementById('modalPendingOrders'));
                 if (mPending) mPending.hide();

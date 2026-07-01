@@ -10,7 +10,8 @@ require_once '../models/CashRegister.php'; // Nuevo Modelo
 require_once '../models/DeliveryRate.php';
 require_once '../models/Client.php';
 require_once '../models/Empresa.php';
-require_once '../services/SifendeService.php';
+require_once '../services/FacturaSendService.php';
+require_once '../services/FacturaSendMapper.php';
 
 class OrderController {
 
@@ -432,7 +433,7 @@ class OrderController {
     /**
      * Muestra la interfaz de cobro mixto para un pedido
      */
-    public function finalize() {
+    public function finalize() {        
         $this->checkAdminAccess();
         $id = $_GET['id'] ?? null;
         if (!$id) { header('Location: ?route=orders'); exit; }
@@ -484,10 +485,9 @@ class OrderController {
             $ventaId = $orderModel->finalizeSale($payments, $registerId, $docType, $isElectronic); 
             
             if ($ventaId) {
-                // Si es factura, disparar envío a Sifende
+                // Si es factura, disparar envío a FacturaSend
                 if ($isElectronic) {
-                    $sifende = new SifendeService();
-                    $sifende->enviarFactura($ventaId);
+                    $this->emitirFacturaElectronica($ventaId);
                 }
 
                 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
@@ -552,10 +552,9 @@ class OrderController {
             $ventaId = $order->finalizeSale($finalPayments, $sessionId, $docType, $isElectronic);
 
             if ($ventaId) {
-                // Si es factura, disparar envío a Sifende
+                // Si es factura, disparar envío a FacturaSend
                 if ($isElectronic) {
-                    $sifende = new SifendeService();
-                    $sifende->enviarFactura($ventaId);
+                    $this->emitirFacturaElectronica($ventaId);
                 }
 
                 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
@@ -1157,6 +1156,153 @@ class OrderController {
             echo json_encode(['success' => false, 'message' => 'Error al guardar ubicación: ' . $locationModel->error]);
         }
         exit;
+    }
+
+    /**
+     * Emite factura electrónica usando FacturaSend
+     * @param int $ventaId ID de la venta en pos_ventas_cabecera
+     */
+    private function emitirFacturaElectronica($ventaId) {
+        // Debug log al inicio del método
+        file_put_contents(__DIR__ . '/../public/debug_facturasend.log',
+            "ORDERCONTROLLER - emitirFacturaElectronica llamado para venta $ventaId\n",
+            FILE_APPEND
+        );
+        try {
+            $database = new Database();
+            $conn = $database->getConnection();
+
+            // 1. Obtener datos de la venta
+            $query = "SELECT * FROM pos_ventas_cabecera WHERE id = :id LIMIT 1";
+            $stmt = $conn->prepare($query);
+            $stmt->execute([':id' => $ventaId]);
+            $venta = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$venta) {
+                error_log("Venta no encontrada: $ventaId");
+                return;
+            }
+
+            // Verificar que no esté ya emitida
+            if (!empty($venta['cdc'])) {
+                error_log("Venta ya tiene CDC: $ventaId");
+                return;
+            }
+
+            // 2. Obtener detalles de la venta
+            $query = "SELECT vd.*, p.name as producto_nombre, p.unidad_medida, p.iva_tipo_sifen FROM pos_ventas_detalle vd JOIN products p ON vd.producto_id = p.id WHERE vd.venta_id = :id";
+            $stmt = $conn->prepare($query);
+            $stmt->execute([':id' => $ventaId]);
+            $detalles = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (empty($detalles)) {
+                error_log("La venta no tiene detalles: $ventaId");
+                return;
+            }
+
+            // 3. Obtener datos del cliente
+            $clienteModel = new Client();
+            $cliente = $clienteModel->getById($venta['cliente_id']);
+
+            // 4. Obtener datos del usuario emisor
+            $userModel = new User();
+            $usuario = $userModel->readOne($venta['user_id']);
+
+            // 5. Obtener datos de la empresa
+            $empresaModel = new Empresa();
+            $empresa = $empresaModel->getFirst();
+
+            // 6. Obtener pagos
+            $query = "SELECT * FROM pagos WHERE venta_id = :id";
+            $stmt = $conn->prepare($query);
+            $stmt->execute([':id' => $ventaId]);
+            $pagos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // 7. Validar datos mínimos
+            $mapper = new FacturaSendMapper();
+
+            $errores = $mapper->validarDatosMinimos($venta, $detalles, $cliente, $empresa);
+
+            if (!empty($errores)) {
+                $this->actualizarEstadoSifen($conn, $ventaId, 'rechazado', json_encode($errores));
+                error_log("Validación fallida para venta $ventaId: " . json_encode($errores));
+                return;
+            }
+
+            // 8. Mapear a formato FacturaSend
+            $facturaJson = $mapper->ventaToFacturaSend($venta, $detalles, $cliente, $empresa, $usuario, $pagos);
+
+            // 9. Enviar a FacturaSend
+            $service = new FacturaSendService();
+
+            if (!$service->isConfigured()) {
+                error_log("FacturaSend no está configurado");
+                return;
+            }
+
+            $response = $service->enviarLote([$facturaJson]);
+
+            if (!$response['success']) {
+                $this->actualizarEstadoSifen($conn, $ventaId, 'rechazado', $response['error']);
+                error_log("Error FacturaSend para venta $ventaId: " . $response['error']);
+                return;
+            }
+            
+            // 10. Procesar respuesta exitosa
+            $data = $response['data']['result']['deList'][0] ?? null;
+
+            if ($data) {
+                $cdc = $data['cdc'] ?? null;
+                $qr_url = $service->generarQrUrl($cdc);
+                $estado = 'aprobado';
+
+                file_put_contents(__DIR__ . '/../public/debug_facturasend.log',
+                    "ORDERCONTROLLER - Actualizando venta $ventaId con CDC: $cdc, QR URL: " . ($qr_url ?? 'NULL') . "\n",
+                    FILE_APPEND
+                );
+
+                $this->actualizarVentaSifen($conn, $ventaId, $cdc, $qr_url, $estado, json_encode($response['data']));
+
+                file_put_contents(__DIR__ . '/../public/debug_facturasend.log',
+                    "ORDERCONTROLLER - Venta actualizada correctamente\n",
+                    FILE_APPEND
+                );
+
+                error_log("Factura emitida exitosamente para venta $ventaId. CDC: $cdc");
+            } else {
+                file_put_contents(__DIR__ . '/../public/debug_facturasend.log',
+                    "ORDERCONTROLLER - ERROR: No se encontraron datos en respuesta para venta $ventaId\n",
+                    FILE_APPEND
+                );
+            }
+
+        } catch (Exception $e) {         
+            error_log("Error al emitir factura electrónica para venta $ventaId: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Actualiza el estado SIFEN de una venta
+     */
+    private function actualizarEstadoSifen($conn, $ventaId, $estado, $error) {
+        $query = "UPDATE pos_ventas_cabecera SET estado_sifen = :estado, respuesta_sifen = :error WHERE id = :id";
+        $stmt = $conn->prepare($query);
+        $stmt->execute([':estado' => $estado, ':error' => $error, ':id' => $ventaId]);
+    }
+
+    /**
+     * Actualiza la venta con datos de SIFEN
+     */
+    private function actualizarVentaSifen($conn, $ventaId, $cdc, $qr_url, $estado, $respuesta) {
+        $query = "UPDATE pos_ventas_cabecera SET cdc = :cdc, qr_url = :qr_url, estado_sifen = :estado, respuesta_sifen = :respuesta WHERE id = :id";
+        $stmt = $conn->prepare($query);
+        $stmt->execute([
+            ':cdc' => $cdc,
+            ':qr_url' => $qr_url,
+            ':estado' => $estado,
+            ':respuesta' => $respuesta,
+            ':id' => $ventaId
+        ]);
     }
 }
 ?>

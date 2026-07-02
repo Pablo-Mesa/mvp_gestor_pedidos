@@ -464,8 +464,11 @@
     <script>
         function printOrderDirectly(orderId, format = '80mm') {
             const printFrame = document.getElementById('printFrame');
-            
-            // Definimos qué hacer cuando el contenido cargue
+
+            // Limpiar contenido anterior
+            printFrame.src = 'about:blank';
+
+            // Definimos qué hacer cuando el contenido cargue (ANTES de asignar src)
             printFrame.onload = function() {
                 printFrame.contentWindow.focus();
                 printFrame.contentWindow.print();
@@ -478,13 +481,17 @@
 
         function printSaleTicket(saleId, format = '80mm', overrideDocType = null) {
             const printFrame = document.getElementById('printFrame');
-            
+
+            // Limpiar contenido anterior
+            printFrame.src = 'about:blank';
+
+            // Definimos qué hacer cuando el contenido cargue (ANTES de asignar src)
             printFrame.onload = () => {
                 printFrame.contentWindow.focus();
                 printFrame.contentWindow.print();
                 printFrame.onload = null; // Limpiar listener
             };
-            
+
             let url = `?route=sales_ticket&id=${saleId}&format=${format}`;
             if (overrideDocType) {
                 url += `&override_doc_type=${overrideDocType}`;

@@ -42,12 +42,33 @@ $fontSize = (isset($format) && $format === '58mm') ? '11px' : '13px';
         </div>
 
         <div class="divider"></div>
-        
+
         <div>Ticket Nro: <span class="bold"><?php echo $sale['nro_factura']; ?></span></div>
         <div>Fecha/Hora: <?php echo date('d/m/Y H:i', strtotime($sale['fecha_hora'])); ?></div>
         <div>Cliente: <?php echo htmlspecialchars($sale['client_name'] ?? 'Cliente Ocasional'); ?></div>
         <?php if(!empty($sale['client_ruc'])): ?>
             <div>RUC/CI: <?php echo $sale['client_ruc']; ?></div>
+        <?php endif; ?>
+        <?php if($isFactura && !empty($sale['client_address'])): ?>
+            <div>Dirección: <?php echo htmlspecialchars($sale['client_address']); ?></div>
+        <?php endif; ?>
+
+        <?php if($isFactura): ?>
+            <div class="divider"></div>
+            <?php if(!empty($sale['cdc'])): ?>
+                <div style="font-size: 0.85em;">CDC: <?php echo $sale['cdc']; ?></div>
+            <?php endif; ?>
+            <?php if(!empty($sale['fecha_firma'])): ?>
+                <div style="font-size: 0.85em;">Fecha Firma: <?php echo date('d/m/Y H:i', strtotime($sale['fecha_firma'])); ?></div>
+            <?php endif; ?>
+            <?php if(!empty($empresa['timbrado_vigente'])): ?>
+                <div style="font-size: 0.85em;">Timbrado: <?php echo $empresa['timbrado_vigente']; ?></div>
+            <?php endif; ?>
+            <?php if(!empty($sale['qr_url'])): ?>
+                <div class="center" style="margin: 10px 0;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=<?php echo urlencode($sale['qr_url']); ?>" alt="QR SET" style="width: 100px; height: 100px;">
+                </div>
+            <?php endif; ?>
         <?php endif; ?>
 
         <div class="divider"></div>
@@ -92,11 +113,33 @@ $fontSize = (isset($format) && $format === '58mm') ? '11px' : '13px';
                     <td>Grav. 10%: <?php echo number_format($sale['gravada_10'], 0, ',', '.'); ?></td>
                     <td class="text-end">IVA 10%: <?php echo number_format($sale['iva_10'], 0, ',', '.'); ?></td>
                 </tr>
+                <?php if(!empty($sale['gravada_5']) || !empty($sale['iva_5'])): ?>
+                <tr>
+                    <td>Grav. 5%: <?php echo number_format($sale['gravada_5'], 0, ',', '.'); ?></td>
+                    <td class="text-end">IVA 5%: <?php echo number_format($sale['iva_5'], 0, ',', '.'); ?></td>
+                </tr>
+                <?php endif; ?>
+                <?php if(!empty($sale['exenta'])): ?>
+                <tr>
+                    <td>Exenta: <?php echo number_format($sale['exenta'], 0, ',', '.'); ?></td>
+                    <td class="text-end">IVA 0%: 0</td>
+                </tr>
+                <?php endif; ?>
             </table>
-            <div class="bold">TOTAL IVA: Gs. <?php echo number_format($sale['iva_10'], 0, ',', '.'); ?></div>
+            <div class="bold">TOTAL IVA: Gs. <?php echo number_format(($sale['iva_10'] ?? 0) + ($sale['iva_5'] ?? 0), 0, ',', '.'); ?></div>
         </div>
 
         <div class="divider"></div>
+
+        <?php if($isFactura): ?>
+            <div style="font-size: 0.85em;">
+                <div>Condición: <?php echo ($sale['condicion_tipo'] ?? 1) == 1 ? 'Contado' : 'Crédito'; ?></div>
+                <?php if(isset($metodosPago) && !empty($metodosPago)): ?>
+                    <div>Método Pago: <?php echo strtoupper(implode(', ', $metodosPago)); ?></div>
+                <?php endif; ?>
+            </div>
+            <div class="divider"></div>
+        <?php endif; ?>
 
         <div class="center">
             <p>¡Gracias por su preferencia!</p>

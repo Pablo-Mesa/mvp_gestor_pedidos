@@ -542,6 +542,7 @@ CREATE TABLE IF NOT EXISTS `pos_ventas_cabecera` (
   `punto_emision` varchar(5) DEFAULT NULL COMMENT 'Ej: 001 en formato 001-001-0000001',
   `cdc` char(44) DEFAULT NULL COMMENT 'Clave de Acceso Única de 44 dígitos',
   `qr_url` text COMMENT 'URL de consulta pública del KUDE',
+  `fecha_firma` timestamp NULL COMMENT 'Fecha y hora de firma electrónica (SET)',
   `estado_sifen` enum('pendiente','aprobado','rechazado','contingencia') DEFAULT 'pendiente',
   `respuesta_sifen` text COMMENT 'Respuesta cruda del WS o mensajes de error',
   `xml_path` varchar(255) DEFAULT NULL COMMENT 'Ruta al archivo XML firmado y aprobado',

@@ -350,8 +350,11 @@ class OrderController {
         $empresa = $empresaModel->readAll()->fetch(PDO::FETCH_ASSOC);
 
         $db = (new Database())->getConnection();
-        // Traemos la cabecera de la venta
-        $querySale = "SELECT v.*, c.name as client_name, c.billing_ruc as client_ruc 
+        // Traemos la cabecera de la venta con datos adicionales para factura legal
+        $querySale = "SELECT v.*, 
+                             c.name as client_name, 
+                             c.billing_ruc as client_ruc,
+                             c.billing_address as client_address
                       FROM pos_ventas_cabecera v
                       LEFT JOIN clients c ON v.cliente_id = c.id
                       WHERE v.id = :id";
@@ -376,6 +379,15 @@ class OrderController {
         $stmtDetails = $db->prepare($queryDetails);
         $stmtDetails->execute([':id' => $saleId]);
         $details = $stmtDetails->fetchAll(PDO::FETCH_ASSOC);
+
+        // Traemos los métodos de pago de la venta
+        $queryPagos = "SELECT DISTINCT pd.metodo_pago 
+                       FROM pagos_detalles pd
+                       JOIN pagos p ON pd.pago_id = p.id
+                       WHERE p.venta_id = :id";
+        $stmtPagos = $db->prepare($queryPagos);
+        $stmtPagos->execute([':id' => $saleId]);
+        $metodosPago = $stmtPagos->fetchAll(PDO::FETCH_COLUMN);
 
         require_once '../views/admin/sales/ticket.php';
     }
@@ -1253,6 +1265,7 @@ class OrderController {
 
             if ($data) {
                 $cdc = $data['cdc'] ?? null;
+                $fecha_firma = $data['fechaFirma'] ?? null;
                 $qr_url = $service->generarQrUrl($cdc);
                 $estado = 'aprobado';
 
@@ -1261,7 +1274,7 @@ class OrderController {
                     FILE_APPEND
                 );
 
-                $this->actualizarVentaSifen($conn, $ventaId, $cdc, $qr_url, $estado, json_encode($response['data']));
+                $this->actualizarVentaSifen($conn, $ventaId, $cdc, $qr_url, $fecha_firma, $estado, json_encode($response['data']));
 
                 file_put_contents(__DIR__ . '/../public/debug_facturasend.log',
                     "ORDERCONTROLLER - Venta actualizada correctamente\n",
@@ -1293,12 +1306,13 @@ class OrderController {
     /**
      * Actualiza la venta con datos de SIFEN
      */
-    private function actualizarVentaSifen($conn, $ventaId, $cdc, $qr_url, $estado, $respuesta) {
-        $query = "UPDATE pos_ventas_cabecera SET cdc = :cdc, qr_url = :qr_url, estado_sifen = :estado, respuesta_sifen = :respuesta WHERE id = :id";
+    private function actualizarVentaSifen($conn, $ventaId, $cdc, $qr_url, $fecha_firma, $estado, $respuesta) {
+        $query = "UPDATE pos_ventas_cabecera SET cdc = :cdc, qr_url = :qr_url, fecha_firma = :fecha_firma, estado_sifen = :estado, respuesta_sifen = :respuesta WHERE id = :id";
         $stmt = $conn->prepare($query);
         $stmt->execute([
             ':cdc' => $cdc,
             ':qr_url' => $qr_url,
+            ':fecha_firma' => $fecha_firma,
             ':estado' => $estado,
             ':respuesta' => $respuesta,
             ':id' => $ventaId

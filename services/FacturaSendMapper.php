@@ -11,6 +11,12 @@ require_once '../models/Empresa.php';
 
 class FacturaSendMapper {
     
+    // Constantes para tipos de IVA según FacturaSend
+    const IVA_TIPO_GRAVADO = 1;  // IVA gravado (5% o 10%)
+    const IVA_TIPO_EXONERADO = 2;  // Exonerado de impuesto (iva=0)
+    const IVA_TIPO_EXENTO = 3;  // Exento de impuesto (iva=0)
+    const IVA_TIPO_PARCIAL = 4;  // IVA parcial (gravado/exento proporcional)
+    
     /**
      * Transforma una venta completa al formato JSON de FacturaSend
      * @param array $venta Datos de la cabecera de venta
@@ -205,10 +211,10 @@ class FacturaSendMapper {
                 'cantidad' => (float)$detalle['cantidad'],
                 'precioUnitario' => (float)$detalle['precio_unitario_venta'],
                 'cambio' => 0.0,
-                'ivaTipo' => $this->getIvaTipo($detalle['iva_tipo_sifen']),
+                'ivaTipo' => $this->getIvaTipo($detalle['iva_porcentaje'] ?? 10),
                 'ivaBase' => round((float)$detalle['precio_unitario_venta'] * (float)$detalle['cantidad'], 2),
-                'iva' => $this->getIvaPorcentaje($detalle['iva_tipo_sifen']),
-                'ivaProporcion' => $this->getIvaProporcion($detalle['iva_tipo_sifen']),
+                'iva' => $detalle['iva_porcentaje'] ?? 10,
+                'ivaProporcion' => $this->getIvaProporcion($detalle['iva_porcentaje'] ?? 10),
                 'lote' => $detalle['lote'] ?? '',
                 'vencimiento' => !empty($detalle['vencimiento']) ? date('Y-m-d', strtotime($detalle['vencimiento'])) : '',
                 'numeroSerie' => $detalle['numero_serie'] ?? '',
@@ -239,15 +245,23 @@ class FacturaSendMapper {
     
     /**
      * Convierte porcentaje IVA a tipo FacturaSend
+     * Mapeo según documentación FacturaSend:
+     * - 1 = IVA gravado (5% o 10%)
+     * - 2 = Exonerado (iva=0)
+     * - 3 = Exento (iva=0)
+     * - 4 = IVA parcial (gravado/exento proporcional)
      */
     private function getIvaTipo($ivaPorcentaje) {
+        // Tanto IVA 5% como IVA 10% usan ivaTipo=1 (gravado)
+        if ($ivaPorcentaje == 5 || $ivaPorcentaje == 10) {
+            return self::IVA_TIPO_GRAVADO;
+        }
+        
         $mapeo = [
-            10 => 1,
-            5 => 2,
-            0 => 3
+            0 => self::IVA_TIPO_EXENTO
         ];
 
-        return $mapeo[$ivaPorcentaje] ?? 1;
+        return $mapeo[$ivaPorcentaje] ?? self::IVA_TIPO_GRAVADO;
     }
 
     /**
@@ -266,12 +280,16 @@ class FacturaSendMapper {
 
     /**
      * Convierte porcentaje IVA a ivaProporcion FacturaSend
-     * Según FacturaSend: ivaTipo=1 (10%) -> ivaProporcion=100
+     * Según FacturaSend: ivaTipo=1 (gravado 5% o 10%) -> ivaProporcion=100
+     * Para IVA gravado (5% o 10%), siempre es 100
      */
     private function getIvaProporcion($ivaPorcentaje) {
+        // Para IVA gravado (5% o 10%), ivaProporcion siempre es 100
+        if ($ivaPorcentaje == 5 || $ivaPorcentaje == 10) {
+            return 100;
+        }
+        
         $mapeo = [
-            10 => 100,
-            5 => 50,
             0 => 0
         ];
 
@@ -281,7 +299,7 @@ class FacturaSendMapper {
     /**
      * Valida que los datos mínimos estén presentes
      */
-    public function validarDatosMinimos($venta, $detalles, $cliente, $empresa) {
+    public function validarDatosMinimos($venta, $detalles, $cliente, $empresa, $pagos) {
         $errores = [];
         
         // Validar venta
@@ -306,6 +324,12 @@ class FacturaSendMapper {
         }
         if (empty($empresa['sucursal'])) {
             $errores[] = 'Empresa debe tener sucursal configurada';
+        }
+        
+        // Validar pagos cuando condición es contado (tipo 1)
+        $condicionTipo = $venta['condicion_tipo'] ?? 1;
+        if ($condicionTipo == 1 && empty($pagos)) {
+            $errores[] = 'Para emitir factura con condición de pago al contado, debe registrar al menos un pago antes de emitir la factura electrónica';
         }
         
         // Validar detalles

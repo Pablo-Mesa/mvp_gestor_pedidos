@@ -1,0 +1,51 @@
+--
+-- Estructura de tabla para la tabla `pos_ventas_cabecera`
+--
+
+DROP TABLE IF EXISTS `pos_ventas_cabecera`;
+CREATE TABLE IF NOT EXISTS `pos_ventas_cabecera` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `order_id` int DEFAULT NULL,
+  `cliente_id` int DEFAULT NULL,
+  `user_id` int DEFAULT NULL,
+  `nro_factura` varchar(20) NOT NULL,
+  `timbrado` varchar(8) DEFAULT NULL COMMENT 'Timbrado con el que se emitió la factura (SET)',
+  `punto_emision` varchar(5) DEFAULT NULL COMMENT 'Ej: 001 en formato 001-001-0000001',
+  `cdc` char(44) DEFAULT NULL COMMENT 'Clave de Acceso Única de 44 dígitos',
+  `qr_url` text COMMENT 'URL de consulta pública del KUDE',
+  `fecha_firma` timestamp NULL DEFAULT NULL COMMENT 'Fecha y hora de firma electrónica (SET)',
+  `estado_sifen` enum('pendiente','aprobado','rechazado','contingencia') DEFAULT 'pendiente',
+  `respuesta_sifen` text COMMENT 'Respuesta cruda del WS o mensajes de error',
+  `xml_path` varchar(255) DEFAULT NULL COMMENT 'Ruta al archivo XML firmado y aprobado',
+  `kude_path` varchar(255) DEFAULT NULL COMMENT 'Ruta al archivo KuDE si se guarda en servidor',
+  `fecha_hora` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `gravada_10` decimal(12,2) DEFAULT '0.00',
+  `iva_10` decimal(12,2) DEFAULT '0.00',
+  `gravada_5` decimal(12,2) DEFAULT '0.00',
+  `iva_5` decimal(12,2) DEFAULT '0.00',
+  `exenta` decimal(12,2) DEFAULT '0.00',
+  `total_venta` decimal(12,2) NOT NULL,
+  `estado` tinyint(1) DEFAULT '1',
+  `tipo_documento` tinyint DEFAULT '1' COMMENT '1: Factura, 4: Auto-factura, 5: Nota Credito, 6: Nota Debito',
+  `establecimiento` varchar(3) DEFAULT '001',
+  `punto_expedicion` varchar(3) DEFAULT '001',
+  `tipo_emision` tinyint DEFAULT '1' COMMENT '1: Normal, 2: Contingencia',
+  `tipo_transaccion` tinyint DEFAULT '1' COMMENT '1: Venta Mercaderias, 2: Servicios, etc.',
+  `tipo_impuesto` tinyint DEFAULT '1' COMMENT '1: IVA, 2: ISC, 3: Unico, 4: Otro',
+  `moneda` char(3) DEFAULT 'PYG',
+  `cambio` decimal(15,4) DEFAULT '0.0000',
+  `presencia` tinyint DEFAULT '1' COMMENT '1: Presencial, 2: Electronica, etc.',
+  `condicion_tipo` tinyint DEFAULT '1' COMMENT '1: Contado, 2: Credito',
+  `facturasend_lote_id` varchar(50) DEFAULT NULL COMMENT 'ID del Lote en FacturaSend',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `cdc` (`cdc`),
+  KEY `fk_venta_order_rel` (`order_id`),
+  KEY `fk_venta_staff_rel` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=210 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Volcado de datos para la tabla `pos_ventas_cabecera`
+--
+
+INSERT INTO `pos_ventas_cabecera` (`id`, `order_id`, `cliente_id`, `user_id`, `nro_factura`, `timbrado`, `punto_emision`, `cdc`, `qr_url`, `fecha_firma`, `estado_sifen`, `respuesta_sifen`, `xml_path`, `kude_path`, `fecha_hora`, `gravada_10`, `iva_10`, `gravada_5`, `iva_5`, `exenta`, `total_venta`, `estado`, `tipo_documento`, `establecimiento`, `punto_expedicion`, `tipo_emision`, `tipo_transaccion`, `tipo_impuesto`, `moneda`, `cambio`, `presencia`, `condicion_tipo`, `facturasend_lote_id`) VALUES
+(1, 1, 8, 1, 'TK-0000001', NULL, NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, '2026-05-16 20:35:16', 76818.18, 7681.82, 0.00, 0.00, 0.00, 84500.00, 1, 1, '001', '001', 1, 1, 1, 'PYG', 0.0000, 1, 1, NULL);

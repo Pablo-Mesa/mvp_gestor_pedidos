@@ -766,10 +766,11 @@ if (empty($orders) && $hasFilter):
                 // 1. Disparar impresión de comanda
                 printOrderDirectly(orderId, '80mm');
                 // 2. Pequeña pausa para asegurar que el trigger de impresión se procese y redirigir
-                setTimeout(() => processQuickInvoice(apiUrl, docType), 1200);
+                await new Promise(resolve => setTimeout(resolve, 1200));
+                await processQuickInvoice(apiUrl, docType);
             }
         } else {
-            processQuickInvoice(apiUrl, docType);
+            await processQuickInvoice(apiUrl, docType);
         }
     }
 
@@ -804,10 +805,16 @@ if (empty($orders) && $hasFilter):
 
                 refreshOrders(true);
             } else {
+                console.log(res);
                 Toast.fire(res.message || "Error al procesar", "error");
+                throw new Error(res.message || "Error al procesar");
             }
         } catch (e) {
-            Toast.fire("Error de red (Yo soy!)", "error");
+            console.log(e);
+            if (e.message !== "Error al procesar") {
+                Toast.fire("Error de red", "error");
+            }
+            throw e;
         }
     }
 
@@ -1007,7 +1014,20 @@ if (empty($orders) && $hasFilter):
                     btnFactura.classList.remove('disabled', 'btn-secondary', 'opacity-50');
                     btnFactura.classList.add('btn-primary');
                     btnFactura.disabled = false;
-                    btnFactura.onclick = () => generateInvoiceWithComandaCheck(order.id, order.status, 'factura');
+                    btnFactura.onclick = async () => {
+                        // Desactivar botón inmediatamente y mostrar spinner
+                        btnFactura.disabled = true;
+                        btnFactura.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> PROCESANDO...';
+                        
+                        try {
+                            await generateInvoiceWithComandaCheck(order.id, order.status, 'factura');
+                            // Si éxito, el modal se cerrará y la tabla se actualizará
+                        } catch (error) {
+                            // Reactivar botón si hay error
+                            btnFactura.disabled = false;
+                            btnFactura.innerHTML = '<i class="fas fa-file-invoice me-2"></i> FACTURA CONTABLE';
+                        }
+                    };
                 }
 
                 let m = bootstrap.Modal.getOrCreateInstance(qiModalEl);

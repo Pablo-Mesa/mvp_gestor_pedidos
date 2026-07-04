@@ -654,6 +654,9 @@ CREATE TABLE IF NOT EXISTS `products` (
   `ncm` varchar(10) DEFAULT NULL COMMENT 'Nomenclatura Comun Mercosur',
   `iva_tipo_sifen` tinyint DEFAULT '1' COMMENT '1: 10%, 2: 5%, 3: Exento, 4: Gravado/Exento proporcional',
   `iva_base` int DEFAULT '100' COMMENT 'Porcentaje de base imponible (Generalmente 100)',
+  `lote` varchar(50) DEFAULT NULL COMMENT 'Lote del producto',
+  `vencimiento` date DEFAULT NULL COMMENT 'Fecha de vencimiento',
+  `numero_serie` varchar(50) DEFAULT NULL COMMENT 'Número de serie',
   PRIMARY KEY (`id`),
   KEY `fk_category` (`category_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

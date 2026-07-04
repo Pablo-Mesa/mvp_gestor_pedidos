@@ -125,15 +125,23 @@ class Product {
 
         $stmt->bindParam(':image', $this->image);
         $stmt->bindParam(':is_active', $this->is_active);
-        
-        // Campos FacturaSend
-        $stmt->bindParam(':unidad_medida', $this->unidad_medida ?? 77);
-        $stmt->bindParam(':iva_porcentaje', $this->iva_porcentaje ?? 10);
-        $stmt->bindParam(':ncm', $this->ncm ?? null);
-        $stmt->bindParam(':iva_base', $this->iva_base ?? null);
-        $stmt->bindParam(':lote', $this->lote ?? null);
-        $stmt->bindParam(':vencimiento', $this->vencimiento ?? null);
-        $stmt->bindParam(':numero_serie', $this->numero_serie ?? null);
+
+        // Campos FacturaSend - usar variables temporales para bindParam
+        $unidad_medida_val = $this->unidad_medida ?? 77;
+        $iva_porcentaje_val = $this->iva_porcentaje ?? 10;
+        $ncm_val = $this->ncm ?? null;
+        $iva_base_val = $this->iva_base ?? null;
+        $lote_val = $this->lote ?? null;
+        $vencimiento_val = $this->vencimiento ?? null;
+        $numero_serie_val = $this->numero_serie ?? null;
+
+        $stmt->bindParam(':unidad_medida', $unidad_medida_val);
+        $stmt->bindParam(':iva_porcentaje', $iva_porcentaje_val);
+        $stmt->bindParam(':ncm', $ncm_val);
+        $stmt->bindParam(':iva_base', $iva_base_val);
+        $stmt->bindParam(':lote', $lote_val);
+        $stmt->bindParam(':vencimiento', $vencimiento_val);
+        $stmt->bindParam(':numero_serie', $numero_serie_val);
 
         return $stmt->execute();
     }
@@ -158,16 +166,24 @@ class Product {
         $stmt->bindParam(':price_half', $price_half_val);
         $stmt->bindParam(':image', $this->image);
         $stmt->bindParam(':is_active', $this->is_active);
-        
-        // Campos FacturaSend
-        $stmt->bindParam(':unidad_medida', $this->unidad_medida ?? 77);
-        $stmt->bindParam(':iva_porcentaje', $this->iva_porcentaje ?? 10);
-        $stmt->bindParam(':ncm', $this->ncm ?? null);
-        $stmt->bindParam(':iva_base', $this->iva_base ?? null);
-        $stmt->bindParam(':lote', $this->lote ?? null);
-        $stmt->bindParam(':vencimiento', $this->vencimiento ?? null);
-        $stmt->bindParam(':numero_serie', $this->numero_serie ?? null);
-        
+
+        // Campos FacturaSend - usar variables temporales para bindParam
+        $unidad_medida_val = $this->unidad_medida ?? 77;
+        $iva_porcentaje_val = $this->iva_porcentaje ?? 10;
+        $ncm_val = $this->ncm ?? null;
+        $iva_base_val = $this->iva_base ?? null;
+        $lote_val = $this->lote ?? null;
+        $vencimiento_val = $this->vencimiento ?? null;
+        $numero_serie_val = $this->numero_serie ?? null;
+
+        $stmt->bindParam(':unidad_medida', $unidad_medida_val);
+        $stmt->bindParam(':iva_porcentaje', $iva_porcentaje_val);
+        $stmt->bindParam(':ncm', $ncm_val);
+        $stmt->bindParam(':iva_base', $iva_base_val);
+        $stmt->bindParam(':lote', $lote_val);
+        $stmt->bindParam(':vencimiento', $vencimiento_val);
+        $stmt->bindParam(':numero_serie', $numero_serie_val);
+
         $stmt->bindParam(':id', $this->id);
 
         return $stmt->execute();

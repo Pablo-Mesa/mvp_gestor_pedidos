@@ -87,6 +87,58 @@ $action = $isEdit ? '?route=products_update' : '?route=products_store';
             </div>
         </div>
 
+        <div class="mb-4">
+            <h5 class="form-label mb-3" style="border-bottom: 1px solid #dee2e6; padding-bottom: 0.5rem;">Datos Fiscales (FacturaSend)</h5>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">IVA (%)</label>
+                    <select name="iva_porcentaje" class="form-select">
+                        <option value="10" <?php echo ($isEdit && isset($product['iva_porcentaje']) && $product['iva_porcentaje'] == 10) ? 'selected' : (!$isEdit ? 'selected' : ''); ?>>10%</option>
+                        <option value="5" <?php echo ($isEdit && isset($product['iva_porcentaje']) && $product['iva_porcentaje'] == 5) ? 'selected' : ''; ?>>5%</option>
+                        <option value="0" <?php echo ($isEdit && isset($product['iva_porcentaje']) && $product['iva_porcentaje'] == 0) ? 'selected' : ''; ?>>Exento</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Unidad de Medida</label>
+                    <select name="unidad_medida" class="form-select">
+                        <option value="77" <?php echo ($isEdit && isset($product['unidad_medida']) && $product['unidad_medida'] == 77) ? 'selected' : (!$isEdit ? 'selected' : ''); ?>>77 - Unidad</option>
+                        <option value="96" <?php echo ($isEdit && isset($product['unidad_medida']) && $product['unidad_medida'] == 96) ? 'selected' : ''; ?>>96 - Kilogramo</option>
+                        <option value="128" <?php echo ($isEdit && isset($product['unidad_medida']) && $product['unidad_medida'] == 128) ? 'selected' : ''; ?>>128 - Litro</option>
+                        <option value="1" <?php echo ($isEdit && isset($product['unidad_medida']) && $product['unidad_medida'] == 1) ? 'selected' : ''; ?>>1 - Metro</option>
+                        <option value="2" <?php echo ($isEdit && isset($product['unidad_medida']) && $product['unidad_medida'] == 2) ? 'selected' : ''; ?>>2 - Metro cuadrado</option>
+                        <option value="3" <?php echo ($isEdit && isset($product['unidad_medida']) && $product['unidad_medida'] == 3) ? 'selected' : ''; ?>>3 - Metro cúbico</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">NCM (Nomenclatura Mercosur)</label>
+                    <input type="text" name="ncm" class="form-control" value="<?php echo $isEdit ? htmlspecialchars($product['ncm'] ?? '') : ''; ?>" placeholder="Ej: 19053100">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Base IVA (%)</label>
+                    <input type="number" name="iva_base" class="form-control" value="<?php echo $isEdit ? ($product['iva_base'] ?? 100) : 100; ?>" placeholder="Generalmente 100">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Lote (Opcional)</label>
+                    <input type="text" name="lote" class="form-control" value="<?php echo $isEdit ? htmlspecialchars($product['lote'] ?? '') : ''; ?>">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Vencimiento (Opcional)</label>
+                    <input type="date" name="vencimiento" class="form-control" value="<?php echo $isEdit && !empty($product['vencimiento']) ? date('Y-m-d', strtotime($product['vencimiento'])) : ''; ?>">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">N° Serie (Opcional)</label>
+                    <input type="text" name="numero_serie" class="form-control" value="<?php echo $isEdit ? htmlspecialchars($product['numero_serie'] ?? '') : ''; ?>">
+                </div>
+            </div>
+        </div>
+
         <div class="form-actions d-flex align-items-center gap-3">
             <button type="submit" class="btn-save">
                 <i class="fas fa-save"></i> Guardar Producto

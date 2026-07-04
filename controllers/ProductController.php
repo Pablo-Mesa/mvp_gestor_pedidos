@@ -74,6 +74,15 @@ class ProductController {
             $product->price_half = $_POST['price_half'] ?? null;
             $product->is_active = isset($_POST['is_active']) ? 1 : 0;
 
+            // Campos FacturaSend
+            $product->unidad_medida = $_POST['unidad_medida'] ?? 77;
+            $product->iva_porcentaje = $_POST['iva_porcentaje'] ?? 10;
+            $product->ncm = $_POST['ncm'] ?? null;
+            $product->iva_base = $_POST['iva_base'] ?? 100;
+            $product->lote = $_POST['lote'] ?? null;
+            $product->vencimiento = $_POST['vencimiento'] ?? null;
+            $product->numero_serie = $_POST['numero_serie'] ?? null;
+
             if (isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
                 $filename = time() . '_' . $_FILES['image']['name'];
                 move_uploaded_file($_FILES['image']['tmp_name'], 'uploads/' . $filename);
@@ -116,6 +125,15 @@ class ProductController {
             $product->price_half = $_POST['price_half'] ?? null;
             $product->is_active = isset($_POST['is_active']) ? 1 : 0;
             $product->image = $_POST['current_image'];
+
+            // Campos FacturaSend
+            $product->unidad_medida = $_POST['unidad_medida'] ?? 77;
+            $product->iva_porcentaje = $_POST['iva_porcentaje'] ?? 10;
+            $product->ncm = $_POST['ncm'] ?? null;
+            $product->iva_base = $_POST['iva_base'] ?? 100;
+            $product->lote = $_POST['lote'] ?? null;
+            $product->vencimiento = $_POST['vencimiento'] ?? null;
+            $product->numero_serie = $_POST['numero_serie'] ?? null;
 
             if (isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
                 $filename = time() . '_' . $_FILES['image']['name'];

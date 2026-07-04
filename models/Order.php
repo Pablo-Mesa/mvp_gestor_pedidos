@@ -424,13 +424,6 @@ class Order {
 
             if ($existingVenta) {
                 $ventaId = $existingVenta['id'];
-                
-                // MEJORA: Si se solicita Factura y el registro actual es un Ticket (formalización legal)
-                if ($docType === 'factura') {
-                    $qUpgrade = "UPDATE pos_ventas_cabecera SET nro_factura = REPLACE(nro_factura, 'TK-', 'FAC-') 
-                                WHERE id = :vid AND nro_factura LIKE 'TK-%'";
-                    $this->conn->prepare($qUpgrade)->execute([':vid' => $ventaId]);
-                }
 
                 // Validar si ya existe un pago para esta venta para evitar duplicidad
             // SOLO si se intenta procesar un pago nuevo (cuando $payments no es nulo ni vacío)
@@ -478,8 +471,8 @@ class Order {
                     }
                 }
 
-                // Definir prefijo según el tipo de documento
-                $prefix = ($docType === 'factura') ? 'FAC-' : 'TK-';
+                // Definir prefijo: siempre TK- inicialmente, cambiará a FAC- solo cuando FacturaSend confirme exitosamente
+                $prefix = 'TK-';
 
                 // 2. Insertar Cabecera de Venta
                 $qVenta = "INSERT INTO pos_ventas_cabecera 

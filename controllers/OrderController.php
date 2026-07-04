@@ -499,7 +499,16 @@ class OrderController {
             if ($ventaId) {
                 // Si es factura, disparar envío a FacturaSend
                 if ($isElectronic) {
-                    $this->emitirFacturaElectronica($ventaId);
+                    $facturaResult = $this->emitirFacturaElectronica($ventaId);
+                    if (!$facturaResult['success']) {
+                        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                            if (ob_get_length()) ob_clean();
+                            header('Content-Type: application/json');
+                            echo json_encode(['success' => false, 'message' => $facturaResult['message']]);
+                            exit;
+                        }
+                        return;
+                    }
                 }
 
                 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
@@ -566,7 +575,16 @@ class OrderController {
             if ($ventaId) {
                 // Si es factura, disparar envío a FacturaSend
                 if ($isElectronic) {
-                    $this->emitirFacturaElectronica($ventaId);
+                    $facturaResult = $this->emitirFacturaElectronica($ventaId);
+                    if (!$facturaResult['success']) {
+                        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                            if (ob_get_length()) ob_clean();
+                            header('Content-Type: application/json');
+                            echo json_encode(['success' => false, 'message' => $facturaResult['message']]);
+                            exit;
+                        }
+                        return;
+                    }
                 }
 
                 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
@@ -1173,6 +1191,7 @@ class OrderController {
     /**
      * Emite factura electrónica usando FacturaSend
      * @param int $ventaId ID de la venta en pos_ventas_cabecera
+     * @return array Resultado con success y message
      */
     private function emitirFacturaElectronica($ventaId) {
         // Debug log al inicio del método
@@ -1192,24 +1211,24 @@ class OrderController {
 
             if (!$venta) {
                 error_log("Venta no encontrada: $ventaId");
-                return;
+                return ['success' => false, 'message' => 'Venta no encontrada'];
             }
 
             // Verificar que no esté ya emitida
             if (!empty($venta['cdc'])) {
                 error_log("Venta ya tiene CDC: $ventaId");
-                return;
+                return ['success' => false, 'message' => 'Esta venta ya tiene factura electrónica emitida'];
             }
 
             // 2. Obtener detalles de la venta
-            $query = "SELECT vd.*, p.name as producto_nombre, p.unidad_medida, p.iva_tipo_sifen FROM pos_ventas_detalle vd JOIN products p ON vd.producto_id = p.id WHERE vd.venta_id = :id";
+            $query = "SELECT vd.*, p.name as producto_nombre, p.unidad_medida, p.iva_tipo_sifen, p.iva_porcentaje, p.ncm, p.iva_base, p.lote, p.vencimiento, p.numero_serie FROM pos_ventas_detalle vd JOIN products p ON vd.producto_id = p.id WHERE vd.venta_id = :id";
             $stmt = $conn->prepare($query);
             $stmt->execute([':id' => $ventaId]);
             $detalles = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             if (empty($detalles)) {
                 error_log("La venta no tiene detalles: $ventaId");
-                return;
+                return ['success' => false, 'message' => 'La venta no tiene detalles'];
             }
 
             // 3. Obtener datos del cliente
@@ -1233,12 +1252,12 @@ class OrderController {
             // 7. Validar datos mínimos
             $mapper = new FacturaSendMapper();
 
-            $errores = $mapper->validarDatosMinimos($venta, $detalles, $cliente, $empresa);
+            $errores = $mapper->validarDatosMinimos($venta, $detalles, $cliente, $empresa, $pagos);
 
             if (!empty($errores)) {
                 $this->actualizarEstadoSifen($conn, $ventaId, 'rechazado', json_encode($errores));
                 error_log("Validación fallida para venta $ventaId: " . json_encode($errores));
-                return;
+                return ['success' => false, 'message' => implode(', ', $errores)];
             }
 
             // 8. Mapear a formato FacturaSend
@@ -1249,7 +1268,7 @@ class OrderController {
 
             if (!$service->isConfigured()) {
                 error_log("FacturaSend no está configurado");
-                return;
+                return ['success' => false, 'message' => 'FacturaSend no está configurado'];
             }
 
             $response = $service->enviarLote([$facturaJson]);
@@ -1257,7 +1276,7 @@ class OrderController {
             if (!$response['success']) {
                 $this->actualizarEstadoSifen($conn, $ventaId, 'rechazado', $response['error']);
                 error_log("Error FacturaSend para venta $ventaId: " . $response['error']);
-                return;
+                return ['success' => false, 'message' => $response['error']];
             }
             
             // 10. Procesar respuesta exitosa
@@ -1268,13 +1287,14 @@ class OrderController {
                 $fecha_firma = $data['fechaFirma'] ?? null;
                 $qr_url = $service->generarQrUrl($cdc);
                 $estado = 'aprobado';
+                $loteId = $response['data']['result']['loteId'] ?? null;
 
                 file_put_contents(__DIR__ . '/../public/debug_facturasend.log',
-                    "ORDERCONTROLLER - Actualizando venta $ventaId con CDC: $cdc, QR URL: " . ($qr_url ?? 'NULL') . "\n",
+                    "ORDERCONTROLLER - Actualizando venta $ventaId con CDC: $cdc, QR URL: " . ($qr_url ?? 'NULL') . ", Lote ID: " . ($loteId ?? 'NULL') . "\n",
                     FILE_APPEND
                 );
 
-                $this->actualizarVentaSifen($conn, $ventaId, $cdc, $qr_url, $fecha_firma, $estado, json_encode($response['data']));
+                $this->actualizarVentaSifen($conn, $ventaId, $cdc, $qr_url, $fecha_firma, $estado, json_encode($response), $loteId);
 
                 file_put_contents(__DIR__ . '/../public/debug_facturasend.log',
                     "ORDERCONTROLLER - Venta actualizada correctamente\n",
@@ -1282,15 +1302,18 @@ class OrderController {
                 );
 
                 error_log("Factura emitida exitosamente para venta $ventaId. CDC: $cdc");
+                return ['success' => true, 'message' => 'Factura emitida exitosamente'];
             } else {
                 file_put_contents(__DIR__ . '/../public/debug_facturasend.log',
                     "ORDERCONTROLLER - ERROR: No se encontraron datos en respuesta para venta $ventaId\n",
                     FILE_APPEND
                 );
+                return ['success' => false, 'message' => 'No se encontraron datos en respuesta de FacturaSend'];
             }
 
-        } catch (Exception $e) {         
+        } catch (Exception $e) {
             error_log("Error al emitir factura electrónica para venta $ventaId: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error al emitir factura: ' . $e->getMessage()];
         }
     }
 
@@ -1306,8 +1329,13 @@ class OrderController {
     /**
      * Actualiza la venta con datos de SIFEN
      */
-    private function actualizarVentaSifen($conn, $ventaId, $cdc, $qr_url, $fecha_firma, $estado, $respuesta) {
-        $query = "UPDATE pos_ventas_cabecera SET cdc = :cdc, qr_url = :qr_url, fecha_firma = :fecha_firma, estado_sifen = :estado, respuesta_sifen = :respuesta WHERE id = :id";
+    private function actualizarVentaSifen($conn, $ventaId, $cdc, $qr_url, $fecha_firma, $estado, $respuesta, $loteId = null) {
+        // Actualizar número de factura de TK- a FAC- cuando se emite factura electrónica exitosamente
+        $queryFactura = "UPDATE pos_ventas_cabecera SET nro_factura = REPLACE(nro_factura, 'TK-', 'FAC-') WHERE id = :id AND nro_factura LIKE 'TK-%'";
+        $stmtFactura = $conn->prepare($queryFactura);
+        $stmtFactura->execute([':id' => $ventaId]);
+
+        $query = "UPDATE pos_ventas_cabecera SET cdc = :cdc, qr_url = :qr_url, fecha_firma = :fecha_firma, estado_sifen = :estado, respuesta_sifen = :respuesta, facturasend_lote_id = :loteId WHERE id = :id";
         $stmt = $conn->prepare($query);
         $stmt->execute([
             ':cdc' => $cdc,
@@ -1315,6 +1343,7 @@ class OrderController {
             ':fecha_firma' => $fecha_firma,
             ':estado' => $estado,
             ':respuesta' => $respuesta,
+            ':loteId' => $loteId,
             ':id' => $ventaId
         ]);
     }

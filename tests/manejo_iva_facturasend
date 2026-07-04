@@ -1,0 +1,53 @@
+{
+    "otros datos de la Factura..." : "...",
+    
+    "items" : [{
+        "codigo" : "A-001",
+        "descripcion": "Producto o Servicio Gravada 5% por el 100% del valor del ítem", 
+        "cantidad": 1,
+        "precioUnitario": 85000,
+        "ivaTipo" : 1,
+        "ivaProporcion" : 100,
+        "iva" : 5
+    }, {
+        "codigo" : "A-002",
+        "descripcion": "Producto o Servicio Gravada 10% por el 100% del valor del ítem", 
+        "cantidad": 1,
+        "precioUnitario": 95000,
+        "ivaTipo" : 1,
+        "ivaProporcion" : 100,
+        "iva" : 10
+    }, {
+        "codigo" : "A-003",
+        "descripcion": "Producto o Servicio Iva Parcial Gravada 10% por el 30% del valor del ítem", 
+        "cantidad": 1,
+        "precioUnitario": 105000,
+        "ivaTipo" : 4,
+        "ivaProporcion" : 30,
+        "iva" : 10
+    }, {
+        "codigo" : "A-004",
+        "descripcion": "Producto o Servicio Iva Parcial Gravada 5% por el 70% del valor del ítem", 
+        "cantidad": 1,
+        "precioUnitario": 115000,
+        "ivaTipo" : 4,
+        "ivaProporcion" : 70,
+        "iva" : 5
+    }, {
+        "codigo" : "A-005",
+        "descripcion": "Producto o Servicio Exonerado de Impuesto", 
+        "cantidad": 1,
+        "precioUnitario": 125000,
+        "ivaTipo" : 2,
+        "ivaProporcion" : 0,
+        "iva" : 0
+    }, {
+        "codigo" : "A-006",
+        "descripcion": "Producto o Servicio Exento de Impuesto", 
+        "cantidad": 1,
+        "precioUnitario": 135000,
+        "ivaTipo" : 3,
+        "ivaProporcion" : 0,
+        "iva" : 0
+    }]
+}

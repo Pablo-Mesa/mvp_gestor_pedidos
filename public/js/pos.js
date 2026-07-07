@@ -1336,12 +1336,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!modalBody) return;
 
         if (posCart.length === 0) {
-            modalBody.innerHTML = `
+            Toast.fire("El pedido está vacío.<br>Cargue productos para ver el detalle extendido.", "warning");            
+            return;
+            /*modalBody.innerHTML = `
                 <div class="text-center py-5 text-muted">
                     <i class="fas fa-receipt fa-4x mb-3 opacity-25"></i>
                     <p class="h5">El pedido está vacío</p>
                     <p class="small">Cargue productos para ver el detalle extendido.</p>
-                </div>`;
+                </div>`;*/
         } else {
             let total = 0;
             let html = `

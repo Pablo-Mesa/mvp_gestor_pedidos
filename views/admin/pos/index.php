@@ -374,7 +374,13 @@
                     <div class="row">
                         <div class="col-md-7">
                             <table class="table table-sm table-borderless align-middle">
-                                <thead><tr class="text-muted small"><th>MÉTODO</th><th style="width:160px">MONTO</th><th>REF.</th></tr></thead>
+                                <thead>
+                                    <tr class="text-muted small">
+                                        <th style="width:110px">MÉTODO</th>
+                                        <th style="width:160px">MONTO</th>
+                                        <th>REF.</th>
+                                    </tr>
+                                </thead>
                                 <tbody>
                                     <?php 
                                     $pMethods = ['efectivo' => '💵 Efectivo', 'pos' => '💳 Tarjeta', 'transferencia' => '🏦 Transf.', 'qr' => '📱 QR'];

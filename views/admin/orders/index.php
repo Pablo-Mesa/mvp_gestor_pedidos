@@ -573,16 +573,24 @@
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="order_id" id="pay-input-order-id">
+                    <!-- Campo oculto para decidir si se imprime o no en el backend -->
+                    <input type="hidden" name="should_print" id="pay-should-print" value="1">
                     <div class="row">
                         <div class="col-md-7">
                             <table class="table table-sm table-borderless align-middle">
-                                <thead><tr class="text-muted small"><th>MÉTODO</th><th style="width:160px">MONTO</th><th>REF.</th></tr></thead>
+                                <thead>
+                                    <tr class="text-muted small">
+                                        <th style="width:110px">MÉTODO</th>
+                                        <th style="width:160px">MONTO</th>
+                                        <th>REF.</th>
+                                    </tr>
+                                </thead>
                                 <tbody>
                                     <?php 
                                     $pMethods = ['efectivo' => '💵 Efectivo', 'pos' => '💳 Tarjeta', 'transferencia' => '🏦 Transf.', 'qr' => '📱 QR'];
                                     $pi = 0; foreach($pMethods as $key => $label): ?>
                                     <tr>
-                                        <td class="small fw-bold"><?php echo $label; ?></td>
+                                        <td class="small fw-bold text-dark"><?php echo $label; ?></td>
                                         <td>
                                             <input type="hidden" name="payments[<?php echo $pi; ?>][metodo]" value="<?php echo $key; ?>">
                                             <div class="input-group input-group-sm">
@@ -599,7 +607,7 @@
                         <div class="col-md-5">
                             <div class="bg-light p-3 rounded border text-center">
                                 <p class="mb-0 text-muted small">TOTAL A COBRAR</p>
-                                <h3 class="fw-bold mb-3" id="pay-modal-total">Gs. 0</h3>
+                                <h3 class="fw-bold mb-3 text-dark" id="pay-modal-total">Gs. 0</h3>
                                 <div id="pay-balance-card" class="p-2 border rounded">
                                     <p id="pay-balance-label" class="mb-0 small fw-bold text-muted">RESTA COBRAR</p>
                                     <h4 id="pay-balance-display" class="mb-0">Gs. 0</h4>
@@ -608,8 +616,15 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer py-2">
-                    <button type="submit" id="pay-btn-submit" class="btn btn-success w-100 py-2 fw-bold">FINALIZAR Y REGISTRAR VENTA</button>
+                <div class="modal-footer py-2 d-flex flex-row-reverse gap-2">
+                    <!-- Botón Principal: Recibe el foco primero por ser el primero en el DOM (flex-row-reverse lo mueve a la derecha) -->
+                    <button type="submit" id="pay-btn-submit" class="btn btn-success flex-fill py-2 fw-bold" onclick="document.getElementById('pay-should-print').value='1'">
+                        <i class="fas fa-print me-1"></i> GUARDAR E IMPRIMIR
+                    </button>
+                    <!-- Botón Secundario -->
+                    <button type="submit" id="pay-btn-save-only" class="btn btn-outline-success flex-fill py-2 fw-bold" onclick="document.getElementById('pay-should-print').value='0'">
+                        <i class="fas fa-save me-1"></i> SOLO GUARDAR
+                    </button>
                 </div>
             </form>
         </div>

@@ -13,6 +13,7 @@
     border-radius: 16px;
     padding: 20px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    max-width: 700px;
 }
 
 .pos-search-bar {
@@ -38,8 +39,15 @@
     overflow-x: auto;
     scrollbar-width: none;
     flex-shrink: 0;
-    padding-bottom: 12px;
+    padding: 4px;
+    margin-bottom: 10px;
+
+    /* Agrega estas dos líneas clave */
+    width: 100%;                 /* O fuerza un max-width si está dentro de otro flex */
+    white-space: nowrap;         /* Evita terminantemente el salto de línea */
+    -webkit-overflow-scrolling: touch; /* Mejora el scroll táctil en móviles */
 }
+
 .pos-category-pills::-webkit-scrollbar { display: none; }
 
 .btn-pos-filter {
@@ -167,7 +175,7 @@
 
 /* Panel Derecho: Ticket */
 .pos-ticket {
-    width: 400px;
+    width: 600px;
     background: #2d3436;
     color: white;
     border-radius: 16px;
@@ -290,6 +298,8 @@
 }
 .pay-input[type=number] {
     -moz-appearance: textfield;
+    -webkit-appearance: textfield;
+    appearance: textfield;
 }
 
 /* Overlay Global de Carga */

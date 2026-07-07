@@ -145,7 +145,7 @@
 
     /* Efecto de enfoque en filas (Consistencia con Pedidos) */
     table tbody:hover tr {
-        filter: blur(1px);
+        filter: blur(0.5px);
         opacity: 0.6;
         transition: all 0.3s;
     }
@@ -165,6 +165,7 @@
 </style>
 
 <div class="header-actions">
+    <!-- encabezado vista -->
     <div class="header-main">
         <h1 class="page-title">Gestión de Productos</h1>
         <a href="?route=products_create" class="btn-add-product">
@@ -172,6 +173,7 @@
         </a>
     </div>
 
+    <!-- buscador y filtros -->
     <div class="filter-container-admin">
         <form id="adminProductSearchForm" action="index.php" method="GET" class="search-box-admin">
             <input type="hidden" name="route" value="products">
@@ -208,6 +210,7 @@
     </div>
 </div>
 
+<!-- contenedor de tabla con scroll -->
 <div class="contenedor-tabla">
     <table>
         <thead>

@@ -805,14 +805,14 @@ if (empty($orders) && $hasFilter):
 
                 refreshOrders(true);
             } else {
-                console.log(res);
+                //console.log(res);
                 Toast.fire(res.message || "Error al procesar", "error");
                 throw new Error(res.message || "Error al procesar");
             }
         } catch (e) {
-            console.log(e);
+            //console.log(e);
             if (e.message !== "Error al procesar") {
-                Toast.fire("Error de red", "error");
+                //console.log("Error de red", "error");
             }
             throw e;
         }

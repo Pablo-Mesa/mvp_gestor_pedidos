@@ -450,4 +450,3 @@
 </div>
 
 <script src="<?php echo $baseUrl; ?>js/pos.js"></script>
-0

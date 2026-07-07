@@ -585,6 +585,27 @@ document.addEventListener('DOMContentLoaded', function() {
             else if (e.key === 'ArrowUp') { e.preventDefault(); document.getElementById('posSearch').focus(); }
         }
 
+        // Scroll automático en categorías al recibir foco
+        if (active.classList.contains('btn-pos-filter')) {
+            const container = active.closest('.pos-category-pills');
+            if (container) {
+                const containerLeft = container.scrollLeft;
+                const containerWidth = container.clientWidth;
+                const buttonLeft = active.offsetLeft;
+                const buttonWidth = active.offsetWidth;
+                const buttonRight = buttonLeft + buttonWidth;
+
+                // Si el botón está parcialmente oculto a la derecha
+                if (buttonRight > containerLeft + containerWidth) {
+                    container.scrollLeft = buttonRight - containerWidth;
+                }
+                // Si el botón está parcialmente oculto a la izquierda
+                else if (buttonLeft < containerLeft) {
+                    container.scrollLeft = buttonLeft;
+                }
+            }
+        }
+
         // 3. Grid de Productos
         const card = active.closest('.pos-item-card');
         if (card && !active.classList.contains('btn-portion')) {

@@ -88,8 +88,8 @@ $action = $isEdit ? '?route=products_update' : '?route=products_store';
         </div>
 
         <div class="mb-4">
-            <h5 class="form-label mb-3" style="border-bottom: 1px solid #dee2e6; padding-bottom: 0.5rem;">Datos Fiscales (FacturaSend)</h5>
-
+            <h5 class="form-label mb-3" style="border-bottom: 1px solid #dee2e6; padding-bottom: 0.5rem;">Datos Fiscales</h5>
+                    
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label class="form-label">IVA (%)</label>

@@ -9,6 +9,7 @@ $pendingInvoices = $orderModel->getOrdersAwaitingInvoice();
 ?>
 
 <div class="container-fluid py-4">
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-file-invoice-dollar me-2"></i>Facturación / Tickets</h1>
         <div class="d-flex gap-2">
@@ -16,12 +17,12 @@ $pendingInvoices = $orderModel->getOrdersAwaitingInvoice();
                 <i class="fas fa-plus-circle me-1"></i> Facturar Pedido <small style="font-size: 0.7rem; opacity: 0.8;">[Alt + F]</small>
             </button>
             <form action="index.php" method="GET" class="d-flex gap-2">
-            <input type="hidden" name="route" value="sales_history">
-            <input type="date" name="date" class="form-control" value="<?php echo $_GET['date'] ?? date('Y-m-d'); ?>">
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-search"></i>
-            </button>
-        </form>
+                <input type="hidden" name="route" value="sales_history">
+                <input type="date" name="date" class="form-control" value="<?php echo $_GET['date'] ?? date('Y-m-d'); ?>">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
         </div>
     </div>
 
@@ -93,6 +94,7 @@ $pendingInvoices = $orderModel->getOrdersAwaitingInvoice();
             </div>
         </div>
     </div>
+    
 </div>
 
 <!-- Modal de Pedidos Pendientes de Facturar -->
